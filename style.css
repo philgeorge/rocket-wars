@@ -1,0 +1,14 @@
+body {
+  background: #181818;
+  color: #fff;
+  font-family: 'Courier New', Courier, monospace;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#game-container {
+  margin-top: 20px;
+}
