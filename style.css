@@ -1,14 +1,36 @@
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+}
+
 body {
   background: #181818;
   color: #fff;
   font-family: 'Courier New', Courier, monospace;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
 }
 
 #game-container {
   margin-top: 20px;
+  width: 2400px;
+  height: 600px;
+  display: block;
+  /* Ensure container is not clipped by viewport */
+  min-width: 2400px;
+  min-height: 600px;
+}
+
+canvas {
+  display: block;
+  /* Ensure canvas is not clipped by viewport */
+  min-width: 2400px;
+  min-height: 600px;
+}
+
+/* Allow scrolling below the world by adding extra space */
+body::after {
+  content: '';
+  display: block;
+  height: 200px;
 }

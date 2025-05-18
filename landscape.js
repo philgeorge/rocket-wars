@@ -27,9 +27,9 @@ export function generateLandscapePoints(width, baseY, numPoints) {
     const minFlatWidthPx = 40;
     const maxFlatWidthPx = 100;
 
-    // 2. Forcibly insert 1-3 flat base sections in left and right thirds
+    // 2. Forcibly insert 3 flat base sections in left and right thirds
     function insertFlatBases(startIdx, endIdx, clampToEdge = false, isLeft = false) {
-        const numFlats = 1 + Math.floor(Math.random() * 3); // 1-3 bases
+        const numFlats = 3; 
         for (let f = 0; f < numFlats; f++) {
             const flatWidthPx = minFlatWidthPx + Math.floor(Math.random() * (maxFlatWidthPx - minFlatWidthPx + 1));
             const flatLen = Math.max(2, Math.round(flatWidthPx / segment));

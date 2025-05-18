@@ -14,6 +14,10 @@ const config = {
         create: create,
         update: update
     },
+    input: {
+        mouse: { preventDefault: false },
+        touch: { preventDefault: false }
+    },
     // Enable physics if needed later
 };
 
@@ -38,6 +42,20 @@ function create() {
     const numPoints = 40;
     const { points, flatBases } = generateLandscapePoints(WORLD_WIDTH, baseY, numPoints);
     drawLandscape(graphics, points, WORLD_WIDTH, WORLD_HEIGHT, flatBases);
+
+    // Mark the left and right edges of the world with vertical lines
+    graphics.lineStyle(4, 0xff0000, 1); // Red, 4px
+    // Left edge
+    graphics.beginPath();
+    graphics.moveTo(0, 0);
+    graphics.lineTo(0, WORLD_HEIGHT);
+    graphics.strokePath();
+    // Right edge
+    graphics.beginPath();
+    graphics.moveTo(WORLD_WIDTH - 1, 0);
+    graphics.lineTo(WORLD_WIDTH - 1, WORLD_HEIGHT);
+    graphics.strokePath();
+    graphics.lineStyle(); // reset
 }
 
 function update() {
