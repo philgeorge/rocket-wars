@@ -17,7 +17,7 @@ const config = {
     // Enable physics if needed later
 };
 
-const WORLD_WIDTH = 2400;
+const WORLD_WIDTH = 3000;
 const WORLD_HEIGHT = 600;
 
 const game = new Phaser.Game(config);
@@ -27,9 +27,8 @@ function preload() {
 }
 
 function create() {
-    // Set world bounds larger than the viewport
-    this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
-    this.physics && this.physics.world.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+    // Set the game canvas size to match the world size for full scrollable area
+    this.scale.resize(WORLD_WIDTH, WORLD_HEIGHT);
 
     // Draw a simple 2D landscape using graphics
     const graphics = this.add.graphics();
@@ -39,21 +38,10 @@ function create() {
     const numPoints = 40;
     const { points, flatBases } = generateLandscapePoints(WORLD_WIDTH, baseY, numPoints);
     drawLandscape(graphics, points, WORLD_WIDTH, WORLD_HEIGHT, flatBases);
-
-    // Enable camera panning with arrow keys
-    this.cursors = this.input.keyboard.createCursorKeys();
 }
 
 function update() {
-    // Camera panning logic
-    const cam = this.cameras.main;
-    if (this.cursors) {
-        if (this.cursors.left.isDown) {
-            cam.scrollX -= 8;
-        } else if (this.cursors.right.isDown) {
-            cam.scrollX += 8;
-        }
-    }
+    // No camera panning logic needed
 }
 
 // Optionally, update the camera bounds in create() if you want the world height to match the viewport height dynamically:
