@@ -7,7 +7,7 @@ import { createGunTurret, placeTurretsOnBases } from './base.js';
 const config = {
     type: Phaser.AUTO,
     width: window.innerWidth,
-    height: window.innerHeight,
+    height: window.innerHeight - 20, // Account for margin
     backgroundColor: '#222',
     parent: 'game-container',
     scene: {
@@ -21,6 +21,10 @@ const config = {
             gravity: { y: 300 },
             debug: false
         }
+    },
+    scale: {
+        mode: Phaser.Scale.NONE,
+        autoCenter: Phaser.Scale.CENTER_BOTH
     }
 };
 
@@ -36,6 +40,28 @@ function preload() {
 function create() {
     // Set camera bounds to the world size
     this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+    
+    // Handle browser resize to show more/less of the world
+    let resizeTimeout;
+    const handleResize = () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            const newWidth = window.innerWidth;
+            const newHeight = window.innerHeight - 20; // Account for margin
+            
+            // Resize the game renderer
+            this.scale.resize(newWidth, newHeight);
+            
+            // Update camera viewport size to show more/less of the world
+            this.cameras.main.setSize(newWidth, newHeight);
+        }, 100); // Throttle resize events
+    };
+    
+    // Initial resize to fit container
+    handleResize();
+    
+    // Listen for window resize events
+    window.addEventListener('resize', handleResize);
     
     // Draw a simple 2D landscape using graphics
     const graphics = this.add.graphics();
