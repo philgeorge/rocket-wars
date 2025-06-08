@@ -34,7 +34,7 @@ function preload() {
 function create() {
     // Set the game canvas size to match the world size for full scrollable area
     this.scale.resize(WORLD_WIDTH, WORLD_HEIGHT);
-
+    
     // Draw a simple 2D landscape using graphics
     const graphics = this.add.graphics();
     graphics.fillStyle(0x3a5c2c, 1); // greenish color for landscape
@@ -60,9 +60,12 @@ function create() {
 
     // Create and place gun turrets on the flat bases
     const turrets = placeTurretsOnBases(this, flatBases, points);
+    console.log(`Created ${turrets.length} turrets:`, turrets.map(t => ({team: t.team, x: t.x, y: t.y})));
+    
+    // Store turrets for access in input handlers
+    this.turrets = turrets;
+    this.currentPlayerTurret = null;
 
-    // Disable Phaser input to allow native scrolling on canvas
-//    this.input.enabled = false;
 }
 
 function update() {

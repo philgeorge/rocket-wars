@@ -65,10 +65,17 @@ export function createGunTurret(scene, x, y, team = 'player1') {
     turret.barrel = barrel;
     turret.team = team;
     
+    // Make the turret interactive (this works even with pointer-events: none on canvas)
+    turret.setInteractive(new Phaser.Geom.Circle(0, 0, 30), Phaser.Geom.Circle.Contains);
+    
+    // Add aiming state tracking
+    turret.isAiming = false;
+    turret.aimingLine = null;
+    
     // Method to rotate the gun barrel
     turret.setGunAngle = function(angleInDegrees) {
-        // Clamp angle between -90 and 90 degrees (can't shoot backwards)
-        const clampedAngle = Math.max(-90, Math.min(90, angleInDegrees));
+        // Both turrets can aim from -180° to 0° (upper half-circle, left to right)
+        const clampedAngle = Math.max(-180, Math.min(0, angleInDegrees));
         this.barrel.rotation = Phaser.Math.DegToRad(clampedAngle);
         return clampedAngle;
     };
@@ -80,6 +87,66 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         const tipX = this.x + Math.cos(angle) * barrelLength;
         const tipY = this.y - 5 + Math.sin(angle) * barrelLength; // -5 for barrel Y offset
         return { x: tipX, y: tipY };
+    };
+    
+    // Method to start aiming
+    turret.startAiming = function() {
+        this.isAiming = true;
+        // Create aiming line graphics
+        if (!this.aimingLine) {
+            this.aimingLine = scene.add.graphics();
+        }
+    };
+    
+    // Method to update aim based on world coordinates
+    turret.updateAim = function(worldX, worldY) {
+        if (!this.isAiming) return;
+        
+        // Calculate angle from turret to target point
+        const deltaX = worldX - this.x;
+        const deltaY = worldY - (this.y - 5); // -5 for barrel Y offset
+        const angleInRadians = Math.atan2(deltaY, deltaX);
+        let angleInDegrees = Phaser.Math.RadToDeg(angleInRadians);
+        
+        // Normalize angle to -180 to +180 range
+        while (angleInDegrees > 180) angleInDegrees -= 360;
+        while (angleInDegrees < -180) angleInDegrees += 360;
+        
+        // If angle is in bottom half (positive Y, meaning below turret), 
+        // clamp to nearest valid angle based on which side of turret the mouse is on
+        if (deltaY > 0) {
+            // Mouse is below turret - snap to nearest edge based on X position
+            if (deltaX <= 0) {
+                // Mouse is on left side or directly below -> snap to -180° (left)
+                angleInDegrees = -180;
+            } else {
+                // Mouse is on right side -> snap to 0° (right)  
+                angleInDegrees = 0;
+            }
+        }
+        
+        // Set gun angle (with clamping to -180° to 0° range)
+        const clampedAngle = this.setGunAngle(angleInDegrees);
+        
+        // Draw aiming line
+        this.aimingLine.clear();
+        this.aimingLine.lineStyle(2, 0xffff00, 0.8); // Yellow line
+        
+        const tipPos = this.getGunTipPosition();
+        const lineLength = 150;
+        const lineEndX = tipPos.x + Math.cos(Phaser.Math.DegToRad(clampedAngle)) * lineLength;
+        const lineEndY = tipPos.y + Math.sin(Phaser.Math.DegToRad(clampedAngle)) * lineLength;
+        
+        this.aimingLine.lineBetween(tipPos.x, tipPos.y, lineEndX, lineEndY);
+    };
+    
+    // Method to stop aiming
+    turret.stopAiming = function() {
+        this.isAiming = false;
+        if (this.aimingLine) {
+            this.aimingLine.clear();
+        }
+        return this.barrel.rotation; // Return final angle for shooting
     };
     
     // Set initial angle (pointing slightly upward)
