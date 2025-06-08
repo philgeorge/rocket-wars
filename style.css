@@ -26,6 +26,8 @@ canvas {
   /* Ensure canvas is not clipped by viewport */
   min-width: 2400px;
   min-height: 600px;
+  /* Allow touch/pointer events to pass through for scrolling */
+  pointer-events: none;
 }
 
 /* Allow scrolling below the world by adding extra space */
