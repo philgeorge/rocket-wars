@@ -89,3 +89,22 @@ export function drawLandscape(graphics, points, worldWidth, worldHeight, flatBas
     });
     graphics.lineStyle(); // reset
 }
+
+export function drawWorldBoundaries(graphics, worldWidth, worldHeight) {
+    // Mark the left and right edges of the world with vertical lines
+    graphics.lineStyle(4, 0xff0000, 1); // Red, 4px
+    
+    // Left edge
+    graphics.beginPath();
+    graphics.moveTo(0, 0);
+    graphics.lineTo(0, worldHeight);
+    graphics.strokePath();
+    
+    // Right edge
+    graphics.beginPath();
+    graphics.moveTo(worldWidth - 1, 0);
+    graphics.lineTo(worldWidth - 1, worldHeight);
+    graphics.strokePath();
+    
+    graphics.lineStyle(); // reset
+}
