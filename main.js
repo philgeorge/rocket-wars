@@ -2,6 +2,7 @@
 // Entry point for Rocket Wars game logic
 
 import { generateLandscapePoints, drawLandscape } from './landscape.js';
+import { createGunTurret, placeTurretsOnBases } from './base.js';
 
 const config = {
     type: Phaser.AUTO,
@@ -56,6 +57,12 @@ function create() {
     graphics.lineTo(WORLD_WIDTH - 1, WORLD_HEIGHT);
     graphics.strokePath();
     graphics.lineStyle(); // reset
+
+    // Create and place gun turrets on the flat bases
+    const turrets = placeTurretsOnBases(this, flatBases, points);
+
+    // Disable Phaser input to allow native scrolling on canvas
+//    this.input.enabled = false;
 }
 
 function update() {
