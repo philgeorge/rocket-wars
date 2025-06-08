@@ -45,6 +45,17 @@
 - **Frameworks/Tools**: 
   - Phaser.js: A feature-rich 2D game framework for browser-based games, providing built-in support for physics, animations, and input handling.
 
+- **Phaser.js Architecture Principles**:
+  - **Always follow standard Phaser.js conventions** - When implementing any feature, prioritize established Phaser patterns over custom solutions
+  - **Camera System**: Use Phaser's built-in camera bounds and controls for large worlds, not browser scrolling
+  - **Coordinate Systems**: Use Phaser's world coordinates (pointer.worldX/worldY) for game logic, screen coordinates only for UI
+  - **Scene Management**: Structure code using Phaser's scene lifecycle (preload, create, update) rather than ad-hoc initialization
+  - **Input Handling**: Use Phaser's input events and pointer system rather than DOM event listeners where possible  
+  - **Physics Integration**: Leverage Phaser's physics systems (Arcade, Matter) rather than custom physics calculations
+  - **Scaling Strategy**: Use appropriate Phaser scale modes (NONE, FIT, etc.) based on responsive requirements
+  - **Asset Management**: Use Phaser's loader and asset cache systems for consistent resource handling
+  - **Graphics Rendering**: Prefer Phaser's Graphics API and sprite systems over direct canvas manipulation
+
 - **Responsive Design**: 
   - Ensure the game scales and adapts to different screen sizes (laptop, tablet, mobile).
   - Ensure compatibility with all modern browsers (e.g., Chrome, Firefox, Safari, Edge).
