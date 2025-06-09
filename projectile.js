@@ -1,9 +1,18 @@
 // projectile.js
 // Projectile physics and graphics for Rocket Wars
 
+/**
+ * Create a projectile with physics and visual trail
+ * @param {Phaser.Scene} scene - The Phaser scene
+ * @param {number} startX - Starting X position
+ * @param {number} startY - Starting Y position
+ * @param {number} angle - Launch angle in radians
+ * @param {number} power - Launch power (0.2 to 1.0)
+ * @returns {Phaser.GameObjects.Graphics & {trail: Array<{x: number, y: number, time: number}>, maxTrailLength: number, isProjectile: boolean, startTime: number, maxFlightTime: number, trailGraphics?: Phaser.GameObjects.Graphics}}
+ */
 export function createProjectile(scene, startX, startY, angle, power) {
     // Create projectile graphics (small rocket/bullet)
-    const projectile = scene.add.graphics();
+    const projectile = /** @type {Phaser.GameObjects.Graphics & {trail: Array<{x: number, y: number, time: number}>, maxTrailLength: number, isProjectile: boolean, startTime: number, maxFlightTime: number, trailGraphics?: Phaser.GameObjects.Graphics}} */ (scene.add.graphics());
     projectile.fillStyle(0xff6b6b, 1); // Reddish color for projectile
     projectile.fillCircle(0, 0, 3); // 3px radius circle
     projectile.lineStyle(1, 0xff4444, 1);
@@ -15,7 +24,7 @@ export function createProjectile(scene, startX, startY, angle, power) {
     
     // Enable physics on the projectile
     scene.physics.add.existing(projectile);
-    projectile.body.setCircle(3); // Set physics body to match visual circle
+    /** @type {Phaser.Physics.Arcade.Body} */ (projectile.body).setCircle(3); // Set physics body to match visual circle
     
     // Calculate initial velocity based on angle and power
     // Power ranges from 0.2 to 1.0, let's scale it to reasonable velocity
@@ -28,10 +37,10 @@ export function createProjectile(scene, startX, startY, angle, power) {
     const velocityY = Math.sin(angle) * velocity;
     
     // Set initial velocity
-    projectile.body.setVelocity(velocityX, velocityY);
+    /** @type {Phaser.Physics.Arcade.Body} */ (projectile.body).setVelocity(velocityX, velocityY);
     
     // Add some bounce (optional - projectiles can bounce off terrain)
-    projectile.body.setBounce(0.3, 0.3);
+    /** @type {Phaser.Physics.Arcade.Body} */ (projectile.body).setBounce(0.3, 0.3);
     
     // Add trail effect
     projectile.trail = [];
@@ -45,6 +54,10 @@ export function createProjectile(scene, startX, startY, angle, power) {
     return projectile;
 }
 
+/**
+ * Update projectile trail with current position
+ * @param {Phaser.GameObjects.Graphics & {trail: Array<{x: number, y: number, time: number}>, maxTrailLength: number}} projectile
+ */
 export function updateProjectileTrail(projectile) {
     // Add current position to trail
     projectile.trail.push({
@@ -59,6 +72,11 @@ export function updateProjectileTrail(projectile) {
     }
 }
 
+/**
+ * Draw projectile trail as connected line segments with fading alpha
+ * @param {Phaser.Scene} scene - The Phaser scene
+ * @param {Phaser.GameObjects.Graphics & {trail: Array<{x: number, y: number, time: number}>, trailGraphics?: Phaser.GameObjects.Graphics}} projectile
+ */
 export function drawProjectileTrail(scene, projectile) {
     if (!projectile.trailGraphics) {
         projectile.trailGraphics = scene.add.graphics();
@@ -85,6 +103,14 @@ export function drawProjectileTrail(scene, projectile) {
     }
 }
 
+/**
+ * Create explosion effect with debris
+ * @param {Phaser.Scene} scene - The Phaser scene
+ * @param {number} x - Explosion X coordinate
+ * @param {number} y - Explosion Y coordinate
+ * @param {number} [radius=20] - Explosion radius
+ * @returns {null}
+ */
 export function createExplosion(scene, x, y, radius = 20) {
     // Define colors for debris
     const colors = [0xff6b6b, 0xff9f43, 0xffc048, 0xfff3a0];
@@ -94,7 +120,7 @@ export function createExplosion(scene, x, y, radius = 20) {
     
     for (let i = 0; i < 8; i++) {
         // Create debris as simple graphics object
-        const debris = scene.add.graphics();
+        const debris = /** @type {Phaser.GameObjects.Graphics & {startX: number, startY: number, moveAngle: number, maxDistance: number, lifeTime: number, maxLife: number}} */ (scene.add.graphics());
         debris.fillStyle(colors[i % colors.length], 0.9);
         debris.fillRect(-2, -2, 4, 4); // Small square debris
         

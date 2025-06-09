@@ -1,0 +1,23 @@
+{
+  "name": "rocket-wars",
+  "version": "0.1.0",
+  "description": "browser-based game where players fire rockets at each other's base",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/philgeorge/rocket-wars.git"
+  },
+  "author": "Phil George",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/philgeorge/rocket-wars/issues"
+  },
+  "homepage": "https://github.com/philgeorge/rocket-wars#readme",
+  "devDependencies": {
+    "phaser": "^3.90.0",
+    "typescript": "^5.8.3"
+  }
+}
