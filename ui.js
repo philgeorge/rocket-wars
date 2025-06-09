@@ -17,8 +17,9 @@ export function createStatusPanel(scene, gameState) {
     // Calculate panel height based on number of players
     const numPlayers = gameState.numPlayers || 2;
     const baseHeight = 80; // Height for title and environment section
-    const playerHeight = 35; // Height per player section
-    const totalHeight = baseHeight + (numPlayers * playerHeight);
+    const playerHeight = 50; // Height per player section (increased to fit 3 lines of text)
+    const bottomPadding = 6;
+    const totalHeight = baseHeight + (numPlayers * playerHeight) + bottomPadding;
     
     // Create background
     const bg = scene.add.graphics();
@@ -70,12 +71,12 @@ export function createStatusPanel(scene, gameState) {
             fontStyle: 'bold'
         });
         
-        const playerHealth = scene.add.text(10, yOffset + 15, '', {
+        const playerHealth = scene.add.text(10, yOffset + 18, '', {
             fontSize: '14px',
             color: '#ffffff'
         });
         
-        const playerStats = scene.add.text(10, yOffset + 30, '', {
+        const playerStats = scene.add.text(10, yOffset + 34, '', {
             fontSize: '14px',
             color: '#ffffff'
         });
