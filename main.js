@@ -5,61 +5,19 @@ import { generateLandscapePoints, drawLandscape, drawWorldBoundaries } from './l
 import { createGunTurret, placeTurretsOnBases } from './turret.js';
 import { createProjectile, updateProjectileTrail, drawProjectileTrail, createExplosion, checkProjectileCollisions, cleanupProjectile } from './projectile.js';
 import { createStatusPanel, createGameState, updateWindForNewTurn, applyDamage, positionStatusPanel } from './ui.js';
+import { initializeGameSetup } from './gameSetup.js';
 
 const WORLD_WIDTH = 3000;
 const WORLD_HEIGHT = 600;
 
-// Game configuration from form
-let gameConfig = {
-    numPlayers: 2,
-    windVariation: 50,
-    gravity: 30
-};
+// Game configuration will be set from form
+let gameConfig = null;
 
-// Initialize form handlers when DOM is loaded
-document.addEventListener('DOMContentLoaded', initializeFormHandlers);
-
-/**
- * Initialize form event handlers and slider updates
- */
-function initializeFormHandlers() {
-    const form = document.getElementById('game-config-form');
-    const windVariationSlider = /** @type {HTMLInputElement} */ (document.getElementById('wind-variation'));
-    const windVariationValue = document.getElementById('wind-variation-value');
-    const gravitySlider = /** @type {HTMLInputElement} */ (document.getElementById('gravity'));
-    const gravityValue = document.getElementById('gravity-value');
-    
-    // Update slider value displays
-    windVariationSlider.addEventListener('input', (e) => {
-        const target = /** @type {HTMLInputElement} */ (e.target);
-        windVariationValue.textContent = `${target.value}%`;
-    });
-    
-    gravitySlider.addEventListener('input', (e) => {
-        const target = /** @type {HTMLInputElement} */ (e.target);
-        gravityValue.textContent = target.value;
-    });
-    
-    // Handle form submission
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        
-        // Get form values
-        const numPlayersSelect = /** @type {HTMLSelectElement} */ (document.getElementById('num-players'));
-        gameConfig.numPlayers = parseInt(numPlayersSelect.value);
-        gameConfig.windVariation = parseInt(windVariationSlider.value);
-        gameConfig.gravity = parseInt(gravitySlider.value);
-        
-        console.log('Starting game with config:', gameConfig);
-        
-        // Hide form and show game
-        document.getElementById('config-form-container').style.display = 'none';
-        document.getElementById('game-container').style.display = 'flex';
-        
-        // Start the game
-        startGame();
-    });
-}
+// Initialize game setup and wait for form submission
+initializeGameSetup().then((config) => {
+    gameConfig = config;
+    startGame();
+});
 
 /**
  * Start the Phaser game with the configured parameters
