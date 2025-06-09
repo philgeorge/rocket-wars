@@ -121,6 +121,31 @@ function setupCameraAndInput(scene) {
     let dragStartX, dragStartY;
     let cameraStartX, cameraStartY;
     
+    // Function to stop dragging (used by multiple events)
+    const stopDragging = () => {
+        isDragging = false;
+    };
+    
+    // Function to stop aiming and shoot (only for deliberate release)
+    const stopAimingAndShoot = () => {
+        if (scene.currentPlayerTurret && scene.currentPlayerTurret.isAiming) {
+            const shootData = scene.currentPlayerTurret.stopAiming();
+            console.log(`Shooting at angle: ${Phaser.Math.RadToDeg(shootData.angle)} degrees, power: ${Math.round(shootData.power * 100)}%`);
+            
+            // TODO: Launch projectile here
+            
+            scene.currentPlayerTurret = null;
+        }
+    };
+    
+    // Function to cancel aiming without shooting (for interruptions)
+    const cancelAiming = () => {
+        if (scene.currentPlayerTurret && scene.currentPlayerTurret.isAiming) {
+            scene.currentPlayerTurret.stopAiming(); // Just stop aiming, don't shoot
+            scene.currentPlayerTurret = null;
+        }
+    };
+    
     // Mouse/touch controls for camera panning
     scene.input.on('pointerdown', (pointer) => {
         // Check if we clicked on a turret first
@@ -162,18 +187,27 @@ function setupCameraAndInput(scene) {
     });
     
     scene.input.on('pointerup', (pointer) => {
-        if (scene.currentPlayerTurret && scene.currentPlayerTurret.isAiming) {
-            // Stop aiming and shoot
-            const shootData = scene.currentPlayerTurret.stopAiming();
-            console.log(`Shooting at angle: ${Phaser.Math.RadToDeg(shootData.angle)} degrees, power: ${Math.round(shootData.power * 100)}%`);
-            
-            // TODO: Launch projectile here
-            
-            scene.currentPlayerTurret = null;
-        }
-        
-        // Stop camera dragging
-        isDragging = false;
+        stopAimingAndShoot(); // Deliberate release = shoot
+        stopDragging();
+    });
+    
+    // Handle mouse leaving the game area or window losing focus
+    // These events fire when mouse goes outside browser window
+    scene.input.on('pointerupoutside', (pointer) => {
+        cancelAiming(); // Interrupted = cancel, don't shoot
+        stopDragging();
+    });
+    
+    // Handle window losing focus (Alt+Tab, etc.)
+    window.addEventListener('blur', () => {
+        cancelAiming(); // Interrupted = cancel, don't shoot
+        stopDragging();
+    });
+    
+    // Handle mouse leaving the canvas entirely
+    scene.game.canvas.addEventListener('mouseleave', () => {
+        cancelAiming(); // Interrupted = cancel, don't shoot
+        stopDragging();
     });
     
     // Keyboard controls for camera
