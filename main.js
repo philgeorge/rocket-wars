@@ -69,6 +69,12 @@ function create() {
             
             // Update camera viewport size to show more/less of the world
             this.cameras.main.setSize(newWidth, newHeight);
+            
+            // Reposition status panel to stay at top-right of new viewport
+            if (this.statusPanel) {
+                this.statusPanel.x = newWidth - 220; // 220 = panel width + padding
+                this.statusPanel.y = 20; // 20px from top
+            }
         }, 100); // Throttle resize events
     };
     
@@ -107,7 +113,10 @@ function create() {
     // Initialize game state and UI
     this.gameState = createGameState();
     this.statusPanel = createStatusPanel(this, this.gameState);
-    positionStatusPanel(this.statusPanel, this.cameras.main);
+    
+    // Position status panel at fixed screen location (top-right)
+    this.statusPanel.x = this.cameras.main.width - 220; // 220 = panel width + padding
+    this.statusPanel.y = 20; // 20px from top
     
     // Initialize status panel display
     this.statusPanel.updateDisplay(this.gameState);
@@ -122,11 +131,6 @@ function create() {
 }
 
 function update() {
-    // Update status panel position to follow camera
-    if (this.statusPanel) {
-        positionStatusPanel(this.statusPanel, this.cameras.main);
-    }
-    
     // Camera controls are handled in setupCameraAndInput
     
     // Update projectiles
