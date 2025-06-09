@@ -72,6 +72,53 @@ export function createGunTurret(scene, x, y, team = 'player1') {
     turret.isAiming = false;
     turret.aimingLine = null;
     turret.currentPower = 0.5; // Default to 50% power
+    turret.aimTooltip = null; // Add tooltip reference
+
+    // Method to create or update the aiming tooltip
+    turret.createOrUpdateTooltip = function(angle, power, mouseX, mouseY) {
+        if (!this.aimTooltip) {
+            // Create tooltip container
+            this.aimTooltip = scene.add.container(0, 0);
+            
+            // Create background rectangle
+            const bg = scene.add.graphics();
+            bg.fillStyle(0x000000, 0.8);
+            bg.lineStyle(1, 0xffffff, 0.6);
+            bg.fillRoundedRect(-40, -15, 80, 30, 5);
+            bg.strokeRoundedRect(-40, -15, 80, 30, 5);
+            
+            // Create text
+            const text = scene.add.text(0, 0, '', {
+                fontSize: '12px',
+                fill: '#ffffff',
+                align: 'center'
+            }).setOrigin(0.5, 0.5);
+            
+            this.aimTooltip.add([bg, text]);
+            this.aimTooltip.text = text; // Store reference for updates
+        }
+        
+        // Update tooltip content
+        const angleDegrees = Math.round(Phaser.Math.RadToDeg(angle));
+        const powerPercent = Math.round(power * 100);
+        this.aimTooltip.text.setText(`${Math.abs(angleDegrees)}°\n${powerPercent}%`);
+        
+        // Position tooltip near mouse cursor but offset to avoid blocking view
+        const offsetX = 30;
+        const offsetY = -30;
+        this.aimTooltip.x = mouseX + offsetX;
+        this.aimTooltip.y = mouseY + offsetY;
+        
+        // Make sure tooltip stays visible
+        this.aimTooltip.setVisible(true);
+    };
+
+    // Method to hide the tooltip
+    turret.hideTooltip = function() {
+        if (this.aimTooltip) {
+            this.aimTooltip.setVisible(false);
+        }
+    };
     
     // Method to rotate the gun barrel
     turret.setGunAngle = function(angleInDegrees) {
@@ -166,6 +213,9 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         const lineEndY = tipPos.y + Math.sin(Phaser.Math.DegToRad(clampedAngle)) * lineLength;
         
         this.aimingLine.lineBetween(tipPos.x, tipPos.y, lineEndX, lineEndY);
+        
+        // Update tooltip with current angle and power (use clamped angle, same as aiming line)
+        this.createOrUpdateTooltip(Phaser.Math.DegToRad(clampedAngle), power, worldX, worldY);
     };
     
     // Method to stop aiming
@@ -174,6 +224,7 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         if (this.aimingLine) {
             this.aimingLine.clear();
         }
+        this.hideTooltip(); // Hide tooltip on stop
         return {
             angle: this.barrel.rotation,
             power: this.currentPower || 0.5 // Default to 50% power if not set
