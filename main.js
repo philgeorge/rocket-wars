@@ -3,6 +3,7 @@
 
 import { generateLandscapePoints, drawLandscape, drawWorldBoundaries } from './landscape.js';
 import { createGunTurret, placeTurretsOnBases } from './turret.js';
+import { createProjectile, updateProjectileTrail, drawProjectileTrail, createExplosion, checkProjectileCollisions, cleanupProjectile } from './projectile.js';
 
 const config = {
     type: Phaser.AUTO,
@@ -40,12 +41,19 @@ const WORLD_HEIGHT = 600;
 const game = new Phaser.Game(config);
 
 function preload() {
-    // Load assets here
+    // Create a simple 1x1 white pixel texture for particles
+    this.add.graphics()
+        .fillStyle(0xffffff)
+        .fillRect(0, 0, 1, 1)
+        .generateTexture('pixel', 1, 1);
 }
 
 function create() {
     // Set camera bounds to the world size
     this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+    
+    // Set physics world bounds
+    this.physics.world.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
     
     // Handle browser resize to show more/less of the world
     let resizeTimeout;
@@ -89,6 +97,12 @@ function create() {
     this.turrets = turrets;
     this.currentPlayerTurret = null;
     
+    // Store projectiles for physics updates
+    this.projectiles = [];
+    
+    // Store landscape data for collision detection
+    this.landscapeData = { points, flatBases };
+    
     // Set up camera controls and input
     setupCameraAndInput(this);
 
@@ -100,6 +114,46 @@ function create() {
 
 function update() {
     // Camera controls are handled in setupCameraAndInput
+    
+    // Update projectiles
+    if (this.projectiles) {
+        // Update each projectile
+        for (let i = this.projectiles.length - 1; i >= 0; i--) {
+            const projectile = this.projectiles[i];
+            
+            // Update trail effect
+            updateProjectileTrail(projectile);
+            drawProjectileTrail(this, projectile);
+            
+            // Check for collisions
+            const collisions = checkProjectileCollisions(this, projectile, this.landscapeData, this.turrets);
+            
+            // Check if projectile should be removed
+            let shouldRemove = false;
+            
+            if (collisions.terrain) {
+                console.log('Projectile hit terrain!');
+                createExplosion(this, projectile.x, projectile.y, 25);
+                shouldRemove = true;
+            } else if (collisions.turret) {
+                console.log(`Projectile hit ${collisions.turret.team} turret!`);
+                createExplosion(this, projectile.x, projectile.y, 30);
+                shouldRemove = true;
+            } else if (collisions.worldBounds) {
+                console.log('Projectile left world bounds');
+                shouldRemove = true;
+            } else if (this.time.now - projectile.startTime > projectile.maxFlightTime) {
+                console.log('Projectile timed out');
+                shouldRemove = true;
+            }
+            
+            // Remove projectile if needed
+            if (shouldRemove) {
+                cleanupProjectile(projectile);
+                this.projectiles.splice(i, 1);
+            }
+        }
+    }
     
     // Keyboard camera movement
     if (this.cameraControls && !this.cameraControls.isDragging() && !this.cameraControls.isPanning() && !this.currentPlayerTurret) {
@@ -150,7 +204,17 @@ function setupCameraAndInput(scene) {
             const shootData = scene.currentPlayerTurret.stopAiming();
             console.log(`Shooting at angle: ${Phaser.Math.RadToDeg(shootData.angle)} degrees, power: ${Math.round(shootData.power * 100)}%`);
             
-            // TODO: Launch projectile here
+            // Launch projectile from turret gun tip
+            const tipPosition = scene.currentPlayerTurret.getGunTipPosition();
+            const projectile = createProjectile(scene, tipPosition.x, tipPosition.y, shootData.angle, shootData.power);
+            
+            // Add projectile to scene's projectile list for tracking
+            if (!scene.projectiles) {
+                scene.projectiles = [];
+            }
+            scene.projectiles.push(projectile);
+            
+            console.log(`Projectile launched from (${Math.round(tipPosition.x)}, ${Math.round(tipPosition.y)})`);
             
             scene.currentPlayerTurret = null;
         }
