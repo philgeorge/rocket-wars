@@ -82,7 +82,61 @@
   - Graphics: Use tools like Piskel or GIMP for creating assets.
   - Testing: Test on multiple browsers and devices to ensure compatibility.
 
-## 5. Levels and Progression
+## 5. AI-Assisted Development Process
+- **Development Workflow**:
+  - This project is being developed with AI assistance (GitHub Copilot Agent)
+  - The AI can modify code files and check for syntax errors, but cannot observe runtime behavior
+  - Effective collaboration requires clear communication about testing and feedback
+
+- **AI Agent Limitations**:
+  - **No runtime visibility**: Cannot see browser console output, runtime errors, or visual behavior
+  - **No browser observation**: Cannot observe what happens in any browser interface
+  - **Static analysis only**: Can detect syntax errors with `get_errors` but not logic or runtime issues
+  - **No network access**: Cannot see loading failures, API errors, or network-related issues
+
+- **Testing and Feedback Protocol**:
+  - **Development Server**: Use VS Code Live Server extension for local development (auto-reload on file changes)
+  - **Testing Environment**: Test in Chrome browser with Live Server running (not Simple Browser or Python HTTP server)
+  - **After AI makes changes**: Human should test specific functionality and report back
+  - **Console monitoring**: Human should check Chrome Developer Console for errors and log messages
+  - **Specific test requests**: AI should ask for targeted testing rather than general "does it work?"
+  - **Clear success criteria**: Define what should happen when testing a feature
+  - **Error reporting**: Include exact error messages, console output, and unexpected behaviors
+
+- **Example Testing Request Format**:
+  ```
+  "I've implemented power-based aiming. Please test by:
+  1. Click on a turret (should see yellow aiming line)
+  2. Drag close to turret (line should be short and yellow)
+  3. Drag far from turret (line should be long and reddish)
+  4. Release inside game area (should see console message with angle/power)
+  5. Try dragging outside browser window (should cancel without shooting)
+  
+  Expected console output: 'Shooting at angle: X degrees, power: Y%'
+  Report any errors or unexpected behavior."
+  ```
+
+- **Development Environment**:
+  - **VS Code Live Server**: Primary development server (auto-reload, proper MIME types)
+  - **Chrome Browser**: Primary testing environment with full DevTools access
+  - **No Simple Browser**: AI should not use Simple Browser (provides no feedback to AI)
+  - **No Python HTTP Server**: Not needed when Live Server is available
+
+- **Version Control Best Practices**:
+  - Make Git commits after each successful AI-assisted change
+  - If AI process is interrupted, manually restore to last working state
+  - Document significant architectural decisions in commit messages
+
+- **Communication Guidelines**:
+  - **No browser launching**: AI should not open Simple Browser or any browser (provides no feedback)
+  - **Focus on code validation**: AI should use `get_errors` for syntax validation and await human feedback for functional validation
+  - **Live Server workflow**: Human tests changes in Chrome with Live Server, reports specific observations
+  - **Human feedback should include**: Specific observations about what worked/didn't work, exact console messages, error details
+  - **Both parties should be explicit**: About assumptions, expected outcomes, and testing criteria
+  - AI may update this file (GameDesignDocument.md) in any useful way as we learn more about the game and the best development approach.
+  - AI should *not* update the AiAgentNotes.md file because that is specifically for the human author to record his thoughts and experience with building a game with an AI Agent.
+
+## 6. Levels and Progression
 - **Level Design**: 
   - Initially we'll have just single games
   - The player can pick gravity (from within a range)
@@ -97,14 +151,14 @@
   - Initially just single, configurable games.
   - Future enhancement: More consideration to be given to increasing difficulty over time.
 
-## 6. Monetization (Optional)
+## 7. Monetization (Optional)
 - **Free-to-Play**: 
   - The game will definitely be free to play
   - This game is intended as a fun experiment which I will only share with friends if it works at all
   - Future Enhancement: If it becomes popular I would consider payments for things like customised base graphics, or weapons that aren't more powerful but look interesting or funny
 - **Ads**: I may consider inserting ads in the future, but preferably never!
 
-## 7. Development Plan
+## 8. Development Plan
 - **Milestones**: 
   1. **Week 1-2**: Set up the project structure and environment.
      - Create the basic HTML, CSS, and JavaScript files.
@@ -130,7 +184,7 @@
 - **Timeline**: 
   - Estimated completion: 3 months (12 weekends) with 2 hours per weekend.
 
-## 8. Team (Optional)
+## 9. Team (Optional)
 - **Roles**:
   - Game Designer: Phil
   - Developer/Programmer: Phil
