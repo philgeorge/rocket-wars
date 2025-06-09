@@ -116,8 +116,8 @@ export function generateLandscapePoints(width, baseY, numPoints) {
                 points[pointIndex].y = flatY;
             }
             
-            // Debug output to verify flat sections
-            console.log(`Created flat base ${f + 1} in ${isLeft ? 'left' : 'right'} section: points ${baseStart}-${baseStart + flatLen - 1}, Y=${flatY}, width=${flatWidthPx}px, original variation=${Math.round(yVariation)}px`);
+            // Debug output to verify flat sections (simplified)
+            console.log(`Created flat base ${f + 1} in ${isLeft ? 'left' : 'right'} section: points ${baseStart}-${baseStart + flatLen - 1}, Y=${flatY}`);
             
             flatBases.push({ start: baseStart, end: baseStart + flatLen - 1 });
         }
@@ -140,11 +140,10 @@ export function generateLandscapePoints(width, baseY, numPoints) {
             }
         }
         
-        if (allFlat) {
-            console.log(`✓ Verified flat base ${index} is properly flat`);
-        } else {
+        if (!allFlat) {
             console.warn(`Fixed flat base ${index} inconsistencies`);
         }
+        // Note: Removed success logging to reduce console noise
     });
 
     return { points, flatBases };
@@ -184,12 +183,11 @@ export function drawLandscape(graphics, points, worldWidth, worldHeight, flatBas
                 // Log the actual Y values for debugging
                 const yValues = [];
                 for (let i = base.start; i <= base.end; i++) {
-                    yValues.push(Math.round(points[i].y * 100) / 100); // Round to 2 decimal places
+                    yValues.push(Math.round(points[i].y * 100) / 100);
                 }
                 console.warn(`Y values: [${yValues.join(', ')}]`);
-            } else {
-                console.log(`✓ Flat base ${index} is properly flat at Y=${Math.round(expectedY)}`);
             }
+            // Note: Removed success logging to reduce console noise
             
             graphics.beginPath();
             graphics.moveTo(start.x, start.y);

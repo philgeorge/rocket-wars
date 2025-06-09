@@ -1,5 +1,5 @@
-// base.js
-// Player base (gun turret) graphics and logic for Rocket Wars
+// turret.js
+// Player gun turret graphics and logic for Rocket Wars
 
 export function createGunTurret(scene, x, y, team = 'player1') {
     // Create a container to hold all turret parts
@@ -8,14 +8,14 @@ export function createGunTurret(scene, x, y, team = 'player1') {
     // Colors for different teams
     const teamColors = {
         player1: 0x4a90e2, // Blue
-        player2: 0xe74c3c  // Red
+        player2: 0xf1c40f  // Yellow (changed from red to avoid confusion with aiming lines)
     };
     
     const color = teamColors[team] || teamColors.player1;
     
     // Create the base (flat-bottomed platform)
     const base = scene.add.graphics();
-    base.fillStyle(0x2c3e50, 1); // Dark gray
+    base.fillStyle(0x5d6d7e, 1); // Medium gray (lighter for better contrast)
     
     // Draw the top semicircle (arc from -PI to 0)
     base.beginPath();
@@ -42,14 +42,14 @@ export function createGunTurret(scene, x, y, team = 'player1') {
     const turretBody = scene.add.graphics();
     turretBody.fillStyle(color, 1);
     turretBody.fillCircle(0, -5, 12);
-    turretBody.lineStyle(2, 0x2c3e50, 1);
+    turretBody.lineStyle(2, 0x5d6d7e, 1); // Use same medium gray for outline
     turretBody.strokeCircle(0, -5, 12);
     
     // Create the gun barrel (rectangle that will rotate)
     const barrel = scene.add.graphics();
-    barrel.fillStyle(0x34495e, 1); // Darker gray
+    barrel.fillStyle(0x34495e, 1); // Darker gray for barrel (unchanged)
     barrel.fillRect(0, -3, 25, 6); // 25px long, 6px wide
-    barrel.lineStyle(1, 0x2c3e50, 1);
+    barrel.lineStyle(1, 0x5d6d7e, 1); // Use same medium gray for outline
     barrel.strokeRect(0, -3, 25, 6);
     
     // Position the barrel at the turret center
@@ -197,7 +197,7 @@ export function placeTurretsOnBases(scene, flatBases, points) {
         turrets.push(leftTurret);
     }
     
-    // Place one turret on the rightmost flat base (player 2 - red)
+    // Place one turret on the rightmost flat base (player 2 - yellow)
     if (flatBases.length > 1) {
         const rightBase = flatBases[flatBases.length - 1];
         const rightPoint = points[rightBase.end];

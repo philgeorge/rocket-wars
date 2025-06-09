@@ -2,7 +2,7 @@
 // Entry point for Rocket Wars game logic
 
 import { generateLandscapePoints, drawLandscape, drawWorldBoundaries } from './landscape.js';
-import { createGunTurret, placeTurretsOnBases } from './base.js';
+import { createGunTurret, placeTurretsOnBases } from './turret.js';
 
 const config = {
     type: Phaser.AUTO,
