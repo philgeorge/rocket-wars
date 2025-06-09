@@ -143,10 +143,10 @@ export function checkProjectileCollisions(scene, projectile, landscapeData, turr
         worldBounds: false
     };
     
-    // Check world bounds
+    // Check world bounds (allow projectiles to fly above the top of the world)
     const worldBounds = scene.physics.world.bounds;
     if (projectile.x < 0 || projectile.x > worldBounds.width || 
-        projectile.y < 0 || projectile.y > worldBounds.height) {
+        projectile.y > worldBounds.height) {
         collisions.worldBounds = true;
         return collisions;
     }
