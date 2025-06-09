@@ -27,15 +27,19 @@ export function generateLandscapePoints(width, baseY, numPoints) {
     const minFlatWidthPx = 40;
     const maxFlatWidthPx = 100;
 
-    // 2. Forcibly insert 3 flat base sections in left and right thirds
+    // 2. Forcibly insert flat base sections in left and right thirds (avoiding overlaps)
     function insertFlatBases(startIdx, endIdx, clampToEdge = false, isLeft = false) {
-        const numFlats = 3; 
+        const numFlats = 3;
+        const usedRanges = []; // Track used ranges to avoid overlaps
+        
         for (let f = 0; f < numFlats; f++) {
             const flatWidthPx = minFlatWidthPx + Math.floor(Math.random() * (maxFlatWidthPx - minFlatWidthPx + 1));
             const flatLen = Math.max(2, Math.round(flatWidthPx / segment));
             if (endIdx - startIdx - flatLen <= 0) continue; // skip if not enough room
+            
             let minStart = startIdx;
             let maxStart = endIdx - flatLen;
+            
             // For left side, ensure base doesn't start too close to the left edge
             if (isLeft) {
                 // Find the first point with x >= minFlatWidthPx/2
@@ -46,14 +50,75 @@ export function generateLandscapePoints(width, baseY, numPoints) {
                     }
                 }
             }
-            // Clamp baseStart to valid range
-            let baseStart = minStart + Math.floor(Math.random() * Math.max(1, (maxStart - minStart + 1)));
-            if (clampToEdge && baseStart < 1) baseStart = 1;
-            if (clampToEdge && baseStart + flatLen > numPoints - 2) baseStart = numPoints - 2 - flatLen;
-            const baseY = points[baseStart].y;
-            for (let j = 0; j < flatLen; j++) {
-                points[baseStart + j].y = baseY;
+            
+            // Try to find a non-overlapping position
+            let baseStart = -1;
+            let attempts = 0;
+            while (attempts < 20 && baseStart === -1) { // Max 20 attempts to find a spot
+                const candidateStart = minStart + Math.floor(Math.random() * Math.max(1, (maxStart - minStart + 1)));
+                const candidateEnd = candidateStart + flatLen - 1;
+                
+                // Check if this range overlaps with existing flat bases
+                let overlaps = false;
+                for (const range of usedRanges) {
+                    if (!(candidateEnd < range.start || candidateStart > range.end)) {
+                        overlaps = true;
+                        break;
+                    }
+                }
+                
+                if (!overlaps) {
+                    baseStart = candidateStart;
+                    // Apply edge clamping if needed
+                    if (clampToEdge && baseStart < 1) baseStart = 1;
+                    if (clampToEdge && baseStart + flatLen > numPoints - 2) baseStart = numPoints - 2 - flatLen;
+                }
+                attempts++;
             }
+            
+            if (baseStart === -1) {
+                console.warn(`Could not find non-overlapping position for flat base ${f + 1} in ${isLeft ? 'left' : 'right'} section`);
+                continue; // Skip this flat base
+            }
+            
+            // Record this range as used
+            usedRanges.push({ start: baseStart, end: baseStart + flatLen - 1 });
+            
+            // Calculate the average Y position of the points in this range to create a stable flat section
+            let totalY = 0;
+            let minY = Infinity;
+            let maxY = -Infinity;
+            
+            for (let j = 0; j < flatLen; j++) {
+                const y = points[baseStart + j].y;
+                totalY += y;
+                minY = Math.min(minY, y);
+                maxY = Math.max(maxY, y);
+            }
+            
+            // Use average Y, but ensure it's reasonable for the terrain
+            let flatY = totalY / flatLen;
+            
+            // If there's too much variation in the original points, prefer a more conservative approach
+            const yVariation = maxY - minY;
+            if (yVariation > 50) {
+                // Use the median-like approach: average of min and max
+                flatY = (minY + maxY) / 2;
+                console.log(`Large Y variation (${Math.round(yVariation)}px) in flat base, using median approach`);
+            }
+            
+            // Ensure the flat Y is exactly the same for all points (avoid floating point issues)
+            flatY = Math.round(flatY);
+            
+            // Set all points in the flat section to the exact same Y position
+            for (let j = 0; j < flatLen; j++) {
+                const pointIndex = baseStart + j;
+                points[pointIndex].y = flatY;
+            }
+            
+            // Debug output to verify flat sections
+            console.log(`Created flat base ${f + 1} in ${isLeft ? 'left' : 'right'} section: points ${baseStart}-${baseStart + flatLen - 1}, Y=${flatY}, width=${flatWidthPx}px, original variation=${Math.round(yVariation)}px`);
+            
             flatBases.push({ start: baseStart, end: baseStart + flatLen - 1 });
         }
     }
@@ -61,6 +126,26 @@ export function generateLandscapePoints(width, baseY, numPoints) {
     insertFlatBases(0, leftThird, true, true);
     // Right third (clamp to avoid last index)
     insertFlatBases(rightThird, numPoints - 1, true, false);
+
+    // Final verification: ensure all flat bases are actually flat
+    flatBases.forEach((base, index) => {
+        const expectedY = points[base.start].y;
+        let allFlat = true;
+        
+        for (let i = base.start; i <= base.end; i++) {
+            if (points[i].y !== expectedY) {
+                console.error(`CRITICAL: Flat base ${index} point ${i} has Y=${points[i].y}, expected Y=${expectedY}`);
+                points[i].y = expectedY; // Force fix it
+                allFlat = false;
+            }
+        }
+        
+        if (allFlat) {
+            console.log(`✓ Verified flat base ${index} is properly flat`);
+        } else {
+            console.warn(`Fixed flat base ${index} inconsistencies`);
+        }
+    });
 
     return { points, flatBases };
 }
@@ -76,11 +161,36 @@ export function drawLandscape(graphics, points, worldWidth, worldHeight, flatBas
 
     // Draw brown lines for flat base areas
     graphics.lineStyle(2, 0x8B4513, 1); // thinner brown line (4px)
-    flatBases.forEach(base => {
+    flatBases.forEach((base, index) => {
         // Draw a brown line along the flat base
         const start = points[base.start];
         const end = points[base.end];
         if (start && end) {
+            // Verify the flat base is actually flat
+            let isFlat = true;
+            let maxDifference = 0;
+            const expectedY = start.y;
+            
+            for (let i = base.start; i <= base.end; i++) {
+                const difference = Math.abs(points[i].y - expectedY);
+                maxDifference = Math.max(maxDifference, difference);
+                if (difference > 0.1) { // Allow tiny floating point differences
+                    isFlat = false;
+                }
+            }
+            
+            if (!isFlat) {
+                console.warn(`Flat base ${index} is not actually flat! Points ${base.start}-${base.end}, max difference: ${maxDifference}px`);
+                // Log the actual Y values for debugging
+                const yValues = [];
+                for (let i = base.start; i <= base.end; i++) {
+                    yValues.push(Math.round(points[i].y * 100) / 100); // Round to 2 decimal places
+                }
+                console.warn(`Y values: [${yValues.join(', ')}]`);
+            } else {
+                console.log(`✓ Flat base ${index} is properly flat at Y=${Math.round(expectedY)}`);
+            }
+            
             graphics.beginPath();
             graphics.moveTo(start.x, start.y);
             graphics.lineTo(end.x, end.y);
