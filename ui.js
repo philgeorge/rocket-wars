@@ -5,11 +5,12 @@
  * Create a floating status panel showing game settings and player stats
  * @param {Phaser.Scene} scene - The Phaser scene
  * @param {Object} gameState - Game state object containing wind, gravity, and player data
- * @returns {Phaser.GameObjects.Container & {updateDisplay: Function}}
+ * @returns {Phaser.GameObjects.Container & {updateDisplay: Function, windText: any, gravityText: any, player1Health: any, player1Stats: any, player2Health: any, player2Stats: any}}
  */
 export function createStatusPanel(scene, gameState) {
     // Create main container positioned at top-right of screen
-    const statusPanel = /** @type {Phaser.GameObjects.Container & {updateDisplay: Function}} */ (scene.add.container(0, 0));
+    /** @type {Phaser.GameObjects.Container & {updateDisplay: Function, windText: any, gravityText: any, player1Health: any, player1Stats: any, player2Health: any, player2Stats: any}} */
+    const statusPanel = /** @type {any} */ (scene.add.container(0, 0));
     
     // Create background
     const bg = scene.add.graphics();
@@ -21,60 +22,60 @@ export function createStatusPanel(scene, gameState) {
     // Title
     const title = scene.add.text(100, 15, 'GAME STATUS', {
         fontSize: '16px',
-        fill: '#ffffff',
-        fontWeight: 'bold',
+        color: '#ffffff',
+        fontStyle: 'bold',
         align: 'center'
     }).setOrigin(0.5, 0.5);
     
     // Environment section
     const envTitle = scene.add.text(10, 35, 'ENVIRONMENT', {
         fontSize: '15px',
-        fill: '#00ff00',
-        fontWeight: 'bold'
+        color: '#00ff00',
+        fontStyle: 'bold'
     });
     
     const windText = scene.add.text(10, 50, '', {
         fontSize: '14px',
-        fill: '#ffffff'
+        color: '#ffffff'
     });
     
     const gravityText = scene.add.text(10, 65, '', {
         fontSize: '14px',
-        fill: '#ffffff'
+        color: '#ffffff'
     });
     
     // Player 1 section
     const player1Title = scene.add.text(10, 85, 'PLAYER 1 (BLUE)', {
         fontSize: '15px',
-        fill: '#4a90e2',
-        fontWeight: 'bold'
+        color: '#4a90e2',
+        fontStyle: 'bold'
     });
     
     const player1Health = scene.add.text(10, 100, '', {
         fontSize: '14px',
-        fill: '#ffffff'
+        color: '#ffffff'
     });
     
     const player1Stats = scene.add.text(10, 115, '', {
         fontSize: '14px',
-        fill: '#ffffff'
+        color: '#ffffff'
     });
     
     // Player 2 section
     const player2Title = scene.add.text(10, 135, 'PLAYER 2 (YELLOW)', {
         fontSize: '15px',
-        fill: '#f1c40f',
-        fontWeight: 'bold'
+        color: '#f1c40f',
+        fontStyle: 'bold'
     });
     
     const player2Health = scene.add.text(10, 150, '', {
         fontSize: '14px',
-        fill: '#ffffff'
+        color: '#ffffff'
     });
     
     const player2Stats = scene.add.text(10, 165, '', {
         fontSize: '14px',
-        fill: '#ffffff'
+        color: '#ffffff'
     });
     
     // Add all elements to container
@@ -94,21 +95,23 @@ export function createStatusPanel(scene, gameState) {
     
     // Method to update the display with current game state
     statusPanel.updateDisplay = function(gameState) {
+        /** @type {typeof statusPanel} */
+        const self = this;
         // Update wind display with direction indicator
         const windDirection = gameState.wind.current >= 0 ? '→' : '←';
         const windSpeed = Math.abs(gameState.wind.current);
-        this.windText.setText(`Wind: ${windDirection} ${windSpeed} (±${gameState.wind.variation}%)`);
+        self.windText.setText(`Wind: ${windDirection} ${windSpeed} (±${gameState.wind.variation}%)`);
         
         // Update gravity display
-        this.gravityText.setText(`Gravity: ${gameState.gravity}`);
+        self.gravityText.setText(`Gravity: ${gameState.gravity}`);
         
         // Update Player 1 stats
-        this.player1Health.setText(`Health: ${gameState.player1.health}%`);
-        this.player1Stats.setText(`Kills: ${gameState.player1.kills} Deaths: ${gameState.player1.deaths}`);
+        self.player1Health.setText(`Health: ${gameState.player1.health}%`);
+        self.player1Stats.setText(`Kills: ${gameState.player1.kills} Deaths: ${gameState.player1.deaths}`);
         
         // Update Player 2 stats
-        this.player2Health.setText(`Health: ${gameState.player2.health}%`);
-        this.player2Stats.setText(`Kills: ${gameState.player2.kills} Deaths: ${gameState.player2.deaths}`);
+        self.player2Health.setText(`Health: ${gameState.player2.health}%`);
+        self.player2Stats.setText(`Kills: ${gameState.player2.kills} Deaths: ${gameState.player2.deaths}`);
     };
     
     // Position panel at top-right of screen (will be updated in scene)

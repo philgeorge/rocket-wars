@@ -90,7 +90,7 @@ export function createGunTurret(scene, x, y, team = 'player1') {
             // Create text
             const text = scene.add.text(0, 0, '', {
                 fontSize: '14px',
-                fill: '#ffffff',
+                color: '#ffffff',
                 align: 'center'
             }).setOrigin(0.5, 0.5);
             
