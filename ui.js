@@ -5,19 +5,25 @@
  * Create a floating status panel showing game settings and player stats
  * @param {Phaser.Scene} scene - The Phaser scene
  * @param {Object} gameState - Game state object containing wind, gravity, and player data
- * @returns {Phaser.GameObjects.Container & {updateDisplay: Function, windText: any, gravityText: any, player1Health: any, player1Stats: any, player2Health: any, player2Stats: any}}
+ * @returns {Phaser.GameObjects.Container & {updateDisplay: Function, windText: any, gravityText: any, playerElements: any[]}}
  */
 export function createStatusPanel(scene, gameState) {
     // Create main container positioned at top-right of screen
-    /** @type {Phaser.GameObjects.Container & {updateDisplay: Function, windText: any, gravityText: any, player1Health: any, player1Stats: any, player2Health: any, player2Stats: any}} */
+    /** @type {Phaser.GameObjects.Container & {updateDisplay: Function, windText: any, gravityText: any, playerElements: any[]}} */
     const statusPanel = /** @type {any} */ (scene.add.container(0, 0));
+    
+    // Calculate panel height based on number of players
+    const numPlayers = gameState.numPlayers || 2;
+    const baseHeight = 80; // Height for title and environment section
+    const playerHeight = 35; // Height per player section
+    const totalHeight = baseHeight + (numPlayers * playerHeight);
     
     // Create background
     const bg = scene.add.graphics();
     bg.fillStyle(0x000000, 0.8);
     bg.lineStyle(2, 0xffffff, 0.6);
-    bg.fillRoundedRect(0, 0, 200, 180, 8);
-    bg.strokeRoundedRect(0, 0, 200, 180, 8);
+    bg.fillRoundedRect(0, 0, 200, totalHeight, 8);
+    bg.strokeRoundedRect(0, 0, 200, totalHeight, 8);
     
     // Title
     const title = scene.add.text(100, 15, 'GAME STATUS', {
@@ -44,54 +50,58 @@ export function createStatusPanel(scene, gameState) {
         color: '#ffffff'
     });
     
-    // Player 1 section
-    const player1Title = scene.add.text(10, 85, 'PLAYER 1 (BLUE)', {
-        fontSize: '15px',
-        color: '#4a90e2',
-        fontStyle: 'bold'
-    });
+    // Player colors for dynamic creation
+    const playerColors = {
+        player1: '#4a90e2', // Blue
+        player2: '#f1c40f', // Yellow
+        player3: '#e74c3c', // Red
+        player4: '#2ecc71', // Green
+        player5: '#9b59b6', // Purple
+        player6: '#f39c12'  // Orange
+    };
     
-    const player1Health = scene.add.text(10, 100, '', {
-        fontSize: '14px',
-        color: '#ffffff'
-    });
+    // Create player sections dynamically
+    const playerElements = [];
+    const elements = [bg, title, envTitle, windText, gravityText];
     
-    const player1Stats = scene.add.text(10, 115, '', {
-        fontSize: '14px',
-        color: '#ffffff'
-    });
-    
-    // Player 2 section
-    const player2Title = scene.add.text(10, 135, 'PLAYER 2 (YELLOW)', {
-        fontSize: '15px',
-        color: '#f1c40f',
-        fontStyle: 'bold'
-    });
-    
-    const player2Health = scene.add.text(10, 150, '', {
-        fontSize: '14px',
-        color: '#ffffff'
-    });
-    
-    const player2Stats = scene.add.text(10, 165, '', {
-        fontSize: '14px',
-        color: '#ffffff'
-    });
+    for (let i = 1; i <= numPlayers; i++) {
+        const yOffset = 80 + ((i - 1) * playerHeight);
+        const playerKey = `player${i}`;
+        const playerColor = playerColors[playerKey] || '#ffffff';
+        
+        const playerTitle = scene.add.text(10, yOffset, `PLAYER ${i}`, {
+            fontSize: '15px',
+            color: playerColor,
+            fontStyle: 'bold'
+        });
+        
+        const playerHealth = scene.add.text(10, yOffset + 15, '', {
+            fontSize: '14px',
+            color: '#ffffff'
+        });
+        
+        const playerStats = scene.add.text(10, yOffset + 30, '', {
+            fontSize: '14px',
+            color: '#ffffff'
+        });
+        
+        playerElements.push({
+            playerKey,
+            title: playerTitle,
+            health: playerHealth,
+            stats: playerStats
+        });
+        
+        elements.push(playerTitle, playerHealth, playerStats);
+    }
     
     // Add all elements to container
-    statusPanel.add([
-        bg, title, envTitle, windText, gravityText,
-        player1Title, player1Health, player1Stats,
-        player2Title, player2Health, player2Stats
-    ]);
+    statusPanel.add(elements);
     
     // Store text references for updates
     statusPanel.windText = windText;
     statusPanel.gravityText = gravityText;
-    statusPanel.player1Health = player1Health;
-    statusPanel.player1Stats = player1Stats;
-    statusPanel.player2Health = player2Health;
-    statusPanel.player2Stats = player2Stats;
+    statusPanel.playerElements = playerElements;
     
     // Method to update the display with current game state
     statusPanel.updateDisplay = function(gameState) {
@@ -105,13 +115,14 @@ export function createStatusPanel(scene, gameState) {
         // Update gravity display
         self.gravityText.setText(`Gravity: ${gameState.gravity}`);
         
-        // Update Player 1 stats
-        self.player1Health.setText(`Health: ${gameState.player1.health}%`);
-        self.player1Stats.setText(`Kills: ${gameState.player1.kills} Deaths: ${gameState.player1.deaths}`);
-        
-        // Update Player 2 stats
-        self.player2Health.setText(`Health: ${gameState.player2.health}%`);
-        self.player2Stats.setText(`Kills: ${gameState.player2.kills} Deaths: ${gameState.player2.deaths}`);
+        // Update all player stats
+        self.playerElements.forEach(playerElement => {
+            const player = gameState[playerElement.playerKey];
+            if (player) {
+                playerElement.health.setText(`Health: ${player.health}%`);
+                playerElement.stats.setText(`Kills: ${player.kills} Deaths: ${player.deaths}`);
+            }
+        });
     };
     
     // Position panel at top-right of screen (will be updated in scene)
@@ -122,30 +133,36 @@ export function createStatusPanel(scene, gameState) {
 
 /**
  * Initialize default game state object
+ * @param {Object} [config] - Optional game configuration from form
  * @returns {Object} Default game state with wind, gravity, and player data
  */
-export function createGameState() {
-    const windVariation = 50; // Initial wind variation percentage
+export function createGameState(config = {}) {
+    const windVariation = config.windVariation || 50; // Wind variation from form or default
+    const gravity = config.gravity || 75; // Gravity from form or default
+    const numPlayers = config.numPlayers || 2; // Number of players from form or default
     const maxWind = (windVariation / 100) * 100; // Calculate max wind for initial value
     const initialWind = Math.floor(Math.random() * (2 * maxWind + 1)) - maxWind; // Random initial wind
     
-    return {
+    // Create player objects dynamically based on number of players
+    const gameState = {
         wind: {
             current: initialWind, // Current wind (-100 to +100, negative = left, positive = right)
             variation: windVariation // Wind variation percentage (0-100%), controls how much wind can change
         },
-        gravity: 75, // Default gravity setting
-        player1: {
-            health: 100,
-            kills: 0,
-            deaths: 0
-        },
-        player2: {
-            health: 100,
-            kills: 0,
-            deaths: 0
-        }
+        gravity: gravity, // Gravity setting from form
+        numPlayers: numPlayers
     };
+    
+    // Add player objects dynamically
+    for (let i = 1; i <= numPlayers; i++) {
+        gameState[`player${i}`] = {
+            health: 100,
+            kills: 0,
+            deaths: 0
+        };
+    }
+    
+    return gameState;
 }
 
 /**

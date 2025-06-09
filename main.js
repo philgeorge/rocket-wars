@@ -6,40 +6,99 @@ import { createGunTurret, placeTurretsOnBases } from './turret.js';
 import { createProjectile, updateProjectileTrail, drawProjectileTrail, createExplosion, checkProjectileCollisions, cleanupProjectile } from './projectile.js';
 import { createStatusPanel, createGameState, updateWindForNewTurn, applyDamage, positionStatusPanel } from './ui.js';
 
-const config = {
-    type: Phaser.AUTO,
-    width: window.innerWidth,
-    height: window.innerHeight - 20, // Account for margin
-    backgroundColor: '#222',
-    parent: 'game-container',
-    scene: {
-        preload: preload,
-        create: create,
-        update: update
-    },
-    physics: {
-        default: 'arcade',
-        arcade: {
-            gravity: { y: 300 },
-            debug: false
-        }
-    },
-    scale: {
-        mode: Phaser.Scale.NONE,
-        autoCenter: Phaser.Scale.CENTER_BOTH
-    },
-    input: {
-        touch: {
-            // Enable multi-touch gestures
-            capture: true
-        }
-    }
-};
-
 const WORLD_WIDTH = 3000;
 const WORLD_HEIGHT = 600;
 
-const game = new Phaser.Game(config);
+// Game configuration from form
+let gameConfig = {
+    numPlayers: 2,
+    windVariation: 50,
+    gravity: 30
+};
+
+// Initialize form handlers when DOM is loaded
+document.addEventListener('DOMContentLoaded', initializeFormHandlers);
+
+/**
+ * Initialize form event handlers and slider updates
+ */
+function initializeFormHandlers() {
+    const form = document.getElementById('game-config-form');
+    const windVariationSlider = /** @type {HTMLInputElement} */ (document.getElementById('wind-variation'));
+    const windVariationValue = document.getElementById('wind-variation-value');
+    const gravitySlider = /** @type {HTMLInputElement} */ (document.getElementById('gravity'));
+    const gravityValue = document.getElementById('gravity-value');
+    
+    // Update slider value displays
+    windVariationSlider.addEventListener('input', (e) => {
+        const target = /** @type {HTMLInputElement} */ (e.target);
+        windVariationValue.textContent = `${target.value}%`;
+    });
+    
+    gravitySlider.addEventListener('input', (e) => {
+        const target = /** @type {HTMLInputElement} */ (e.target);
+        gravityValue.textContent = target.value;
+    });
+    
+    // Handle form submission
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        // Get form values
+        const numPlayersSelect = /** @type {HTMLSelectElement} */ (document.getElementById('num-players'));
+        gameConfig.numPlayers = parseInt(numPlayersSelect.value);
+        gameConfig.windVariation = parseInt(windVariationSlider.value);
+        gameConfig.gravity = parseInt(gravitySlider.value);
+        
+        console.log('Starting game with config:', gameConfig);
+        
+        // Hide form and show game
+        document.getElementById('config-form-container').style.display = 'none';
+        document.getElementById('game-container').style.display = 'flex';
+        
+        // Start the game
+        startGame();
+    });
+}
+
+/**
+ * Start the Phaser game with the configured parameters
+ */
+function startGame() {
+    // Create Phaser game config with form parameters
+    const config = {
+        type: Phaser.AUTO,
+        width: window.innerWidth,
+        height: window.innerHeight - 20, // Account for margin
+        backgroundColor: '#222',
+        parent: 'game-container',
+        scene: {
+            preload: preload,
+            create: create,
+            update: update
+        },
+        physics: {
+            default: 'arcade',
+            arcade: {
+                gravity: { x: 0, y: gameConfig.gravity * 10 }, // Scale gravity (0-100 -> 0-1000)
+                debug: false
+            }
+        },
+        scale: {
+            mode: Phaser.Scale.NONE,
+            autoCenter: Phaser.Scale.CENTER_BOTH
+        },
+        input: {
+            touch: {
+                // Enable multi-touch gestures
+                capture: true
+            }
+        }
+    };
+    
+    // Start the game
+    const game = new Phaser.Game(config);
+}
 
 function preload() {
     // Create a simple 1x1 white pixel texture for particles
@@ -97,7 +156,7 @@ function create() {
     drawWorldBoundaries(graphics, WORLD_WIDTH, WORLD_HEIGHT);
 
     // Create and place gun turrets on the flat bases
-    const turrets = placeTurretsOnBases(this, flatBases, points);
+    const turrets = placeTurretsOnBases(this, flatBases, points, gameConfig.numPlayers);
     console.log(`Created ${turrets.length} turrets:`, turrets.map(t => ({team: t.team, x: t.x, y: t.y})));
     
     // Store turrets for access in input handlers
@@ -111,7 +170,7 @@ function create() {
     this.landscapeData = { points, flatBases };
     
     // Initialize game state and UI
-    this.gameState = createGameState();
+    this.gameState = createGameState(gameConfig);
     this.statusPanel = createStatusPanel(this, this.gameState);
     
     // Position status panel at fixed screen location (top-right)

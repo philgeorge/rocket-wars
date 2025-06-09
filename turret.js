@@ -8,7 +8,11 @@ export function createGunTurret(scene, x, y, team = 'player1') {
     // Colors for different teams
     const teamColors = {
         player1: 0x4a90e2, // Blue
-        player2: 0xf1c40f  // Yellow (changed from red to avoid confusion with aiming lines)
+        player2: 0xf1c40f, // Yellow
+        player3: 0xe74c3c, // Red
+        player4: 0x2ecc71, // Green
+        player5: 0x9b59b6, // Purple
+        player6: 0xf39c12  // Orange
     };
     
     const color = teamColors[team] || teamColors.player1;
@@ -241,19 +245,23 @@ export function createGunTurret(scene, x, y, team = 'player1') {
     return turret;
 }
 
-export function placeTurretsOnBases(scene, flatBases, points) {
+export function placeTurretsOnBases(scene, flatBases, points, numPlayers = 2) {
     const turrets = [];
     
-    // Place one turret on the leftmost flat base (player 1 - blue)
-    if (flatBases.length > 0) {
+    // Ensure we don't try to place more turrets than we have bases
+    const actualPlayers = Math.min(numPlayers, flatBases.length);
+    
+    // Team colors/names for different players
+    const playerTeams = ['player1', 'player2', 'player3', 'player4', 'player5', 'player6'];
+    
+    if (actualPlayers >= 2) {
+        // Place first turret on leftmost base (player 1 - blue)
         const leftBase = flatBases[0];
         const leftPoint = points[leftBase.start];
         const leftTurret = createGunTurret(scene, leftPoint.x + 20, leftPoint.y - 25, 'player1');
         turrets.push(leftTurret);
-    }
-    
-    // Place one turret on the rightmost flat base (player 2 - yellow)
-    if (flatBases.length > 1) {
+        
+        // Place second turret on rightmost base (player 2 - yellow)
         const rightBase = flatBases[flatBases.length - 1];
         const rightPoint = points[rightBase.end];
         const rightTurret = createGunTurret(scene, rightPoint.x - 20, rightPoint.y - 25, 'player2');
@@ -262,5 +270,21 @@ export function placeTurretsOnBases(scene, flatBases, points) {
         turrets.push(rightTurret);
     }
     
+    // Place additional turrets for 3+ players
+    if (actualPlayers > 2) {
+        // Distribute remaining players on available bases
+        const remainingBases = flatBases.slice(1, -1); // Exclude first and last bases already used
+        const remainingPlayers = actualPlayers - 2;
+        
+        for (let i = 0; i < remainingPlayers && i < remainingBases.length; i++) {
+            const base = remainingBases[i];
+            const point = points[Math.floor((base.start + base.end) / 2)]; // Use middle of base
+            const team = playerTeams[i + 2] || `player${i + 3}`; // player3, player4, etc.
+            const turret = createGunTurret(scene, point.x, point.y - 25, team);
+            turrets.push(turret);
+        }
+    }
+    
+    console.log(`Placed ${turrets.length} turrets for ${actualPlayers} players`);
     return turrets;
 }

@@ -12,8 +12,42 @@
   </style>
 </head>
 <body>
-  <h1>Rocket Wars</h1>
-  <div id="game-container"></div>
+  <!-- Pre-game configuration form -->
+  <div id="config-form-container">
+    <form id="game-config-form">
+      <h1>Rocket Wars Configuration</h1>
+      
+      <div class="form-group">
+        <label for="num-players">Number of Players:</label>
+        <select id="num-players" name="numPlayers" required>
+          <option value="2">2 Players</option>
+          <option value="3">3 Players</option>
+          <option value="4">4 Players</option>
+          <option value="5">5 Players</option>
+          <option value="6">6 Players</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="wind-variation">Wind Variation (0-100%):</label>
+        <input type="range" id="wind-variation" name="windVariation" min="0" max="100" value="50">
+        <span id="wind-variation-value">50%</span>
+      </div>
+      
+      <div class="form-group">
+        <label for="gravity">Gravity Strength (0-100):</label>
+        <input type="range" id="gravity" name="gravity" min="0" max="100" value="30">
+        <span id="gravity-value">30</span>
+      </div>
+      
+      <button type="submit">Start Game</button>
+    </form>
+  </div>
+  
+  <div id="game-container" style="display: none;">
+    <!-- Canvas will be inserted here by Phaser -->
+  </div>
+  
   <script type="module" src="main.js"></script>
 </body>
 </html>
