@@ -86,54 +86,70 @@ export function drawProjectileTrail(scene, projectile) {
 }
 
 export function createExplosion(scene, x, y, radius = 20) {
-    // Create explosion visual effect
-    const explosion = scene.add.graphics();
-    
-    // Multiple concentric circles for explosion effect
+    // Define colors for debris
     const colors = [0xff6b6b, 0xff9f43, 0xffc048, 0xfff3a0];
-    const sizes = [radius, radius * 0.7, radius * 0.4, radius * 0.2];
     
-    colors.forEach((color, index) => {
-        explosion.fillStyle(color, 0.8 - index * 0.2); // Decreasing alpha
-        explosion.fillCircle(x, y, sizes[index]);
-    });
+    // Create debris that stays at impact point initially, then spreads outward
+    const debrisObjects = [];
     
-    // Create simple debris manually (more reliable than particle system)
     for (let i = 0; i < 8; i++) {
+        // Create debris as simple graphics object
         const debris = scene.add.graphics();
-        debris.fillStyle(colors[i % colors.length], 0.8);
-        debris.fillCircle(0, 0, 2);
+        debris.fillStyle(colors[i % colors.length], 0.9);
+        debris.fillRect(-2, -2, 4, 4); // Small square debris
+        
+        // Position debris exactly at explosion center
         debris.x = x;
         debris.y = y;
         
-        // Random velocity for debris
-        const debrisAngle = (Math.PI * 2 * i) / 8 + (Math.random() - 0.5) * 0.5;
-        const debrisSpeed = 50 + Math.random() * 100;
+        // Calculate direction for spreading (but don't move yet)
+        const baseAngle = (Math.PI * 2 * i) / 8;
+        const angleVariation = (Math.random() - 0.5) * 0.3;
+        const debrisAngle = baseAngle + angleVariation;
         
-        // Animate debris
-        scene.tweens.add({
-            targets: debris,
-            x: x + Math.cos(debrisAngle) * debrisSpeed,
-            y: y + Math.sin(debrisAngle) * debrisSpeed,
-            alpha: 0,
-            duration: 300,
-            ease: 'Power2',
-            onComplete: () => debris.destroy()
-        });
+        // Store movement data on debris object
+        debris.startX = x; // Remember starting position
+        debris.startY = y;
+        debris.moveAngle = debrisAngle;
+        debris.maxDistance = 20 + Math.random() * 30; // How far debris will travel
+        debris.lifeTime = 0;
+        debris.maxLife = 90; // 1.5 seconds at 60fps
+        
+        debrisObjects.push(debris);
     }
     
-    // Animate explosion shrinking and fading
-    scene.tweens.add({
-        targets: explosion,
-        scaleX: 1.5,
-        scaleY: 1.5,
-        alpha: 0,
-        duration: 400,
-        ease: 'Power2',
-        onComplete: () => explosion.destroy()
+    // Manual animation loop for debris
+    const debrisTimer = scene.time.addEvent({
+        delay: 16, // ~60fps
+        repeat: 90, // 1.5 seconds
+        callback: () => {
+            debrisObjects.forEach((debris, index) => {
+                if (!debris.active) return;
+                
+                debris.lifeTime++;
+                const progress = debris.lifeTime / debris.maxLife;
+                
+                // Calculate current position based on how much time has passed
+                // Debris spreads outward over time with gravity effect
+                const distance = debris.maxDistance * progress;
+                const gravityDrop = progress * progress * 15; // Quadratic gravity effect
+                
+                debris.x = debris.startX + Math.cos(debris.moveAngle) * distance;
+                debris.y = debris.startY + Math.sin(debris.moveAngle) * distance + gravityDrop;
+                
+                // Fade out over time
+                debris.alpha = 1 - progress;
+                
+                // Destroy when life is over
+                if (debris.lifeTime >= debris.maxLife) {
+                    debris.destroy();
+                }
+            });
+        }
     });
     
-    return explosion;
+    // Return null since we removed the explosion graphics
+    return null;
 }
 
 export function checkProjectileCollisions(scene, projectile, landscapeData, turrets) {
