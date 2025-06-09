@@ -25,6 +25,12 @@ const config = {
     scale: {
         mode: Phaser.Scale.NONE,
         autoCenter: Phaser.Scale.CENTER_BOTH
+    },
+    input: {
+        touch: {
+            // Enable multi-touch gestures
+            capture: true
+        }
     }
 };
 
@@ -96,7 +102,7 @@ function update() {
     // Camera controls are handled in setupCameraAndInput
     
     // Keyboard camera movement
-    if (this.cameraControls && !this.cameraControls.isDragging() && !this.currentPlayerTurret) {
+    if (this.cameraControls && !this.cameraControls.isDragging() && !this.cameraControls.isPanning() && !this.currentPlayerTurret) {
         const camera = this.cameras.main;
         const speed = 5;
         
@@ -121,9 +127,21 @@ function setupCameraAndInput(scene) {
     let dragStartX, dragStartY;
     let cameraStartX, cameraStartY;
     
+    // Multi-touch pan/scroll controls
+    let isPanning = false;
+    let panStartX, panStartY;
+    let panCameraStartX, panCameraStartY;
+    let activePointers = new Set(); // Track active touch points
+    
     // Function to stop dragging (used by multiple events)
     const stopDragging = () => {
         isDragging = false;
+    };
+    
+    // Function to stop panning (used by multi-touch events)
+    const stopPanning = () => {
+        isPanning = false;
+        activePointers.clear();
     };
     
     // Function to stop aiming and shoot (only for deliberate release)
@@ -148,7 +166,27 @@ function setupCameraAndInput(scene) {
     
     // Mouse/touch controls for camera panning
     scene.input.on('pointerdown', (pointer) => {
-        // Check if we clicked on a turret first
+        // Track active pointers for multi-touch detection
+        activePointers.add(pointer.id);
+        
+        // If we have 2+ fingers, start panning instead of aiming/dragging
+        if (activePointers.size >= 2) {
+            // Cancel any aiming or single-finger dragging
+            cancelAiming();
+            stopDragging();
+            
+            // Start multi-touch panning
+            if (!isPanning) {
+                isPanning = true;
+                panStartX = pointer.x;
+                panStartY = pointer.y;
+                panCameraStartX = scene.cameras.main.scrollX;
+                panCameraStartY = scene.cameras.main.scrollY;
+            }
+            return;
+        }
+        
+        // Single touch/mouse: check if we clicked on a turret first
         let clickedTurret = null;
         scene.turrets.forEach(turret => {
             const distance = Phaser.Math.Distance.Between(pointer.worldX, pointer.worldY, turret.x, turret.y);
@@ -163,7 +201,7 @@ function setupCameraAndInput(scene) {
             scene.currentPlayerTurret = clickedTurret;
             clickedTurret.startAiming();
         } else {
-            // Start camera dragging
+            // Start camera dragging (single touch/mouse)
             isDragging = true;
             dragStartX = pointer.x;
             dragStartY = pointer.y;
@@ -172,12 +210,35 @@ function setupCameraAndInput(scene) {
         }
     });
     
+    scene.input.on('pointerup', (pointer) => {
+        // Remove pointer from active set
+        activePointers.delete(pointer.id);
+        
+        // If no more pointers, stop panning
+        if (activePointers.size === 0) {
+            stopPanning();
+        }
+        
+        // Only process shooting/dragging if we're not in multi-touch mode
+        if (activePointers.size < 2) {
+            stopAimingAndShoot(); // Deliberate release = shoot
+            stopDragging();
+        }
+    });
+    
     scene.input.on('pointermove', (pointer) => {
-        if (scene.currentPlayerTurret && scene.currentPlayerTurret.isAiming) {
-            // Aiming mode
+        if (isPanning && activePointers.size >= 2) {
+            // Multi-touch panning mode
+            const deltaX = pointer.x - panStartX;
+            const deltaY = pointer.y - panStartY;
+            
+            scene.cameras.main.scrollX = panCameraStartX - deltaX;
+            scene.cameras.main.scrollY = panCameraStartY - deltaY;
+        } else if (scene.currentPlayerTurret && scene.currentPlayerTurret.isAiming && activePointers.size < 2) {
+            // Aiming mode (single touch only)
             scene.currentPlayerTurret.updateAim(pointer.worldX, pointer.worldY);
-        } else if (isDragging) {
-            // Camera panning mode
+        } else if (isDragging && !isPanning && activePointers.size < 2) {
+            // Camera panning mode (single touch/mouse drag)
             const deltaX = pointer.x - dragStartX;
             const deltaY = pointer.y - dragStartY;
             
@@ -186,28 +247,52 @@ function setupCameraAndInput(scene) {
         }
     });
     
-    scene.input.on('pointerup', (pointer) => {
-        stopAimingAndShoot(); // Deliberate release = shoot
-        stopDragging();
-    });
+    // MacBook trackpad gesture support
+    scene.game.canvas.addEventListener('wheel', (event) => {
+        // Check if this is a trackpad gesture (has deltaX/deltaY and ctrlKey for pinch)
+        if (Math.abs(event.deltaX) > 0 || Math.abs(event.deltaY) > 0) {
+            // Prevent default scrolling behavior
+            event.preventDefault();
+            
+            // Use wheel delta for camera panning
+            const sensitivity = 2; // Adjust for desired pan speed
+            scene.cameras.main.scrollX += event.deltaX * sensitivity;
+            scene.cameras.main.scrollY += event.deltaY * sensitivity;
+            
+            // Cancel any active aiming when trackpad panning
+            if (scene.currentPlayerTurret && scene.currentPlayerTurret.isAiming) {
+                cancelAiming();
+            }
+        }
+    }, { passive: false });
     
     // Handle mouse leaving the game area or window losing focus
     // These events fire when mouse goes outside browser window
     scene.input.on('pointerupoutside', (pointer) => {
-        cancelAiming(); // Interrupted = cancel, don't shoot
-        stopDragging();
+        // Remove pointer from active set
+        activePointers.delete(pointer.id);
+        
+        if (activePointers.size === 0) {
+            cancelAiming(); // Interrupted = cancel, don't shoot
+            stopDragging();
+            stopPanning(); // Also stop panning when leaving area
+        }
     });
     
     // Handle window losing focus (Alt+Tab, etc.)
     window.addEventListener('blur', () => {
         cancelAiming(); // Interrupted = cancel, don't shoot
         stopDragging();
+        stopPanning(); // Also stop panning on focus loss
+        activePointers.clear(); // Clear all active pointers
     });
     
     // Handle mouse leaving the canvas entirely
     scene.game.canvas.addEventListener('mouseleave', () => {
         cancelAiming(); // Interrupted = cancel, don't shoot
         stopDragging();
+        stopPanning(); // Also stop panning when leaving canvas
+        activePointers.clear(); // Clear all active pointers
     });
     
     // Keyboard controls for camera
@@ -218,6 +303,7 @@ function setupCameraAndInput(scene) {
     scene.cameraControls = {
         cursors,
         wasd,
-        isDragging: () => isDragging
+        isDragging: () => isDragging,
+        isPanning: () => isPanning
     };
 }
