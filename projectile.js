@@ -184,7 +184,7 @@ export function checkProjectileCollisions(scene, projectile, landscapeData, turr
         turret: null,
         worldBounds: false
     };
-    
+
     // Check world bounds (allow projectiles to fly above the top of the world)
     const worldBounds = scene.physics.world.bounds;
     if (projectile.x < 0 || projectile.x > worldBounds.width || 
@@ -192,7 +192,7 @@ export function checkProjectileCollisions(scene, projectile, landscapeData, turr
         collisions.worldBounds = true;
         return collisions;
     }
-    
+
     // Check turret collisions
     turrets.forEach(turret => {
         const distance = Phaser.Math.Distance.Between(projectile.x, projectile.y, turret.x, turret.y);
@@ -200,7 +200,12 @@ export function checkProjectileCollisions(scene, projectile, landscapeData, turr
             collisions.turret = turret;
         }
     });
-    
+
+    // Debug: log projectile position every few frames
+    if (scene.time.now % 200 < 16) { // Log roughly every 200ms
+        console.log(`Projectile at (${Math.round(projectile.x)}, ${Math.round(projectile.y)})`);
+    }
+
     // Improved terrain collision check using landscape points
     if (landscapeData && landscapeData.points) {
         const points = landscapeData.points;

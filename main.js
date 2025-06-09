@@ -4,6 +4,7 @@
 import { generateLandscapePoints, drawLandscape, drawWorldBoundaries } from './landscape.js';
 import { createGunTurret, placeTurretsOnBases } from './turret.js';
 import { createProjectile, updateProjectileTrail, drawProjectileTrail, createExplosion, checkProjectileCollisions, cleanupProjectile } from './projectile.js';
+import { createStatusPanel, createGameState, updateWindForNewTurn, applyDamage, positionStatusPanel } from './ui.js';
 
 const config = {
     type: Phaser.AUTO,
@@ -103,6 +104,14 @@ function create() {
     // Store landscape data for collision detection
     this.landscapeData = { points, flatBases };
     
+    // Initialize game state and UI
+    this.gameState = createGameState();
+    this.statusPanel = createStatusPanel(this, this.gameState);
+    positionStatusPanel(this.statusPanel, this.cameras.main);
+    
+    // Initialize status panel display
+    this.statusPanel.updateDisplay(this.gameState);
+    
     // Set up camera controls and input
     setupCameraAndInput(this);
 
@@ -113,6 +122,11 @@ function create() {
 }
 
 function update() {
+    // Update status panel position to follow camera
+    if (this.statusPanel) {
+        positionStatusPanel(this.statusPanel, this.cameras.main);
+    }
+    
     // Camera controls are handled in setupCameraAndInput
     
     // Update projectiles
@@ -138,6 +152,17 @@ function update() {
             } else if (collisions.turret) {
                 console.log(`Projectile hit ${collisions.turret.team} turret!`);
                 createExplosion(this, projectile.x, projectile.y, 30);
+                
+                // Apply damage to the hit turret
+                const damage = 25; // Fixed damage per hit
+                applyDamage(this.gameState, collisions.turret.team, damage);
+                console.log(`${collisions.turret.team} turret took ${damage} damage, health now: ${this.gameState[collisions.turret.team].health}%`);
+                
+                // Update status panel display
+                if (this.statusPanel && this.statusPanel.updateDisplay) {
+                    this.statusPanel.updateDisplay(this.gameState);
+                }
+                
                 shouldRemove = true;
             } else if (collisions.worldBounds) {
                 console.log('Projectile left world bounds');
@@ -208,6 +233,14 @@ function setupCameraAndInput(scene) {
             const tipPosition = scene.currentPlayerTurret.getGunTipPosition();
             const projectile = createProjectile(scene, tipPosition.x, tipPosition.y, shootData.angle, shootData.power);
             
+            // Apply wind effect to projectile physics
+            if (scene.gameState && projectile.body) {
+                const windForce = scene.gameState.wind.current / 100; // Normalize to 0-1
+                const windVelocityX = windForce * 50; // Scale wind effect
+                projectile.body.velocity.x += windVelocityX;
+                console.log(`Applied wind force: ${windForce}, velocity adjustment: ${windVelocityX}`);
+            }
+            
             // Add projectile to scene's projectile list for tracking
             if (!scene.projectiles) {
                 scene.projectiles = [];
@@ -215,6 +248,15 @@ function setupCameraAndInput(scene) {
             scene.projectiles.push(projectile);
             
             console.log(`Projectile launched from (${Math.round(tipPosition.x)}, ${Math.round(tipPosition.y)})`);
+            
+            // Update wind for next turn and trigger status panel update
+            if (scene.gameState) {
+                updateWindForNewTurn(scene.gameState);
+                // Update status panel display
+                if (scene.statusPanel && scene.statusPanel.updateDisplay) {
+                    scene.statusPanel.updateDisplay(scene.gameState);
+                }
+            }
             
             scene.currentPlayerTurret = null;
         }

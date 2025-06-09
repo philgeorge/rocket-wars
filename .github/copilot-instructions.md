@@ -64,10 +64,11 @@ Rocket Wars is a 2D artillery game built with Phaser.js. Players control turrets
 
 ### Making Changes
 1. Always maintain working game state
-2. Test changes immediately in browser
-3. Use browser dev tools for debugging
-4. Commit frequently after successful changes
-5. Follow the existing code patterns and naming conventions
+2. Do not tell me to start python http.server - I am using live server
+3. Test changes immediately in browser
+4. Use browser dev tools for debugging
+5. Commit frequently after successful changes
+6. Follow the existing code patterns and naming conventions
 
 ### Error Handling
 - Add console.log statements for debugging game events
