@@ -148,11 +148,13 @@ export function createGunTurret(scene, x, y, team = 'player1') {
     
     // Method to update aim based on world coordinates
     turret.updateAim = function(worldX, worldY) {
-        if (!this.isAiming) return;
+        /** @type {typeof turret} */  
+        const self = this;
+        if (!self.isAiming) return;
         
         // Calculate angle from turret to target point
-        const deltaX = worldX - this.x;
-        const deltaY = worldY - (this.y - 5); // -5 for barrel Y offset
+        const deltaX = worldX - self.x;
+        const deltaY = worldY - (self.y - 5); // -5 for barrel Y offset
         const angleInRadians = Math.atan2(deltaY, deltaX);
         let angleInDegrees = Phaser.Math.RadToDeg(angleInRadians);
         
@@ -168,7 +170,7 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         const power = minPower + (maxPower - minPower) * ((clampedDistance - minDistance) / (maxDistance - minDistance));
         
         // Store power for shooting
-        this.currentPower = power;
+        self.currentPower = power;
         
         // Normalize angle to -180 to +180 range
         while (angleInDegrees > 180) angleInDegrees -= 360;
@@ -188,10 +190,10 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         }
         
         // Set gun angle (with clamping to -180° to 0° range)
-        const clampedAngle = this.setGunAngle(angleInDegrees);
+        const clampedAngle = self.setGunAngle(angleInDegrees);
         
         // Draw aiming line with length based on power
-        this.aimingLine.clear();
+        self.aimingLine.clear();
         
         // Color intensity based on power (more red = more power)
         const powerColor = Phaser.Display.Color.Interpolate.ColorWithColor(
@@ -202,9 +204,9 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         );
         const colorValue = Phaser.Display.Color.ObjectToColor(powerColor).color;
         
-        this.aimingLine.lineStyle(3, colorValue, 0.9);
+        self.aimingLine.lineStyle(3, colorValue, 0.9);
         
-        const tipPos = this.getGunTipPosition();
+        const tipPos = self.getGunTipPosition();
         const minLineLength = 50;
         const maxLineLength = 200;
         const lineLength = minLineLength + (maxLineLength - minLineLength) * power;
@@ -212,22 +214,24 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         const lineEndX = tipPos.x + Math.cos(Phaser.Math.DegToRad(clampedAngle)) * lineLength;
         const lineEndY = tipPos.y + Math.sin(Phaser.Math.DegToRad(clampedAngle)) * lineLength;
         
-        this.aimingLine.lineBetween(tipPos.x, tipPos.y, lineEndX, lineEndY);
+        self.aimingLine.lineBetween(tipPos.x, tipPos.y, lineEndX, lineEndY);
         
         // Update tooltip with current angle and power (use clamped angle, same as aiming line)
-        this.createOrUpdateTooltip(Phaser.Math.DegToRad(clampedAngle), power, worldX, worldY);
+        self.createOrUpdateTooltip(Phaser.Math.DegToRad(clampedAngle), power, worldX, worldY);
     };
     
     // Method to stop aiming
     turret.stopAiming = function() {
-        this.isAiming = false;
-        if (this.aimingLine) {
-            this.aimingLine.clear();
+        /** @type {typeof turret} */
+        const self = this;
+        self.isAiming = false;
+        if (self.aimingLine) {
+            self.aimingLine.clear();
         }
-        this.hideTooltip(); // Hide tooltip on stop
+        self.hideTooltip(); // Hide tooltip on stop
         return {
-            angle: this.barrel.rotation,
-            power: this.currentPower || 0.5 // Default to 50% power if not set
+            angle: self.barrel.rotation,
+            power: self.currentPower || 0.5 // Default to 50% power if not set
         };
     };
     
