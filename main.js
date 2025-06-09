@@ -239,10 +239,10 @@ function setupCameraAndInput(scene) {
             
             // Apply wind effect to projectile physics
             if (scene.gameState && projectile.body) {
-                const windForce = scene.gameState.wind.current / 100; // Normalize to 0-1
+                const windForce = scene.gameState.wind.current / 100; // Normalize to -1 to +1
                 const windVelocityX = windForce * 50; // Scale wind effect
                 projectile.body.velocity.x += windVelocityX;
-                console.log(`Applied wind force: ${windForce}, velocity adjustment: ${windVelocityX}`);
+                console.log(`Applied wind force: ${scene.gameState.wind.current} (${windForce}), velocity adjustment: ${windVelocityX}`);
             }
             
             // Add projectile to scene's projectile list for tracking

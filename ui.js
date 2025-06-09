@@ -20,7 +20,7 @@ export function createStatusPanel(scene, gameState) {
     
     // Title
     const title = scene.add.text(100, 15, 'GAME STATUS', {
-        fontSize: '14px',
+        fontSize: '16px',
         fill: '#ffffff',
         fontWeight: 'bold',
         align: 'center'
@@ -28,52 +28,52 @@ export function createStatusPanel(scene, gameState) {
     
     // Environment section
     const envTitle = scene.add.text(10, 35, 'ENVIRONMENT', {
-        fontSize: '11px',
-        fill: '#ffff00',
+        fontSize: '15px',
+        fill: '#00ff00',
         fontWeight: 'bold'
     });
     
     const windText = scene.add.text(10, 50, '', {
-        fontSize: '10px',
+        fontSize: '14px',
         fill: '#ffffff'
     });
     
     const gravityText = scene.add.text(10, 65, '', {
-        fontSize: '10px',
+        fontSize: '14px',
         fill: '#ffffff'
     });
     
     // Player 1 section
     const player1Title = scene.add.text(10, 85, 'PLAYER 1 (BLUE)', {
-        fontSize: '11px',
+        fontSize: '15px',
         fill: '#4a90e2',
         fontWeight: 'bold'
     });
     
     const player1Health = scene.add.text(10, 100, '', {
-        fontSize: '10px',
+        fontSize: '14px',
         fill: '#ffffff'
     });
     
     const player1Stats = scene.add.text(10, 115, '', {
-        fontSize: '10px',
+        fontSize: '14px',
         fill: '#ffffff'
     });
     
     // Player 2 section
     const player2Title = scene.add.text(10, 135, 'PLAYER 2 (YELLOW)', {
-        fontSize: '11px',
+        fontSize: '15px',
         fill: '#f1c40f',
         fontWeight: 'bold'
     });
     
     const player2Health = scene.add.text(10, 150, '', {
-        fontSize: '10px',
+        fontSize: '14px',
         fill: '#ffffff'
     });
     
     const player2Stats = scene.add.text(10, 165, '', {
-        fontSize: '10px',
+        fontSize: '14px',
         fill: '#ffffff'
     });
     
@@ -94,8 +94,10 @@ export function createStatusPanel(scene, gameState) {
     
     // Method to update the display with current game state
     statusPanel.updateDisplay = function(gameState) {
-        // Update wind display
-        this.windText.setText(`Wind: ${gameState.wind.current} (${gameState.wind.min}-${gameState.wind.max})`);
+        // Update wind display with direction indicator
+        const windDirection = gameState.wind.current >= 0 ? '→' : '←';
+        const windSpeed = Math.abs(gameState.wind.current);
+        this.windText.setText(`Wind: ${windDirection} ${windSpeed} (±${gameState.wind.variation}%)`);
         
         // Update gravity display
         this.gravityText.setText(`Gravity: ${gameState.gravity}`);
@@ -120,11 +122,14 @@ export function createStatusPanel(scene, gameState) {
  * @returns {Object} Default game state with wind, gravity, and player data
  */
 export function createGameState() {
+    const windVariation = 50; // Initial wind variation percentage
+    const maxWind = (windVariation / 100) * 100; // Calculate max wind for initial value
+    const initialWind = Math.floor(Math.random() * (2 * maxWind + 1)) - maxWind; // Random initial wind
+    
     return {
         wind: {
-            current: Math.floor(Math.random() * 41) + 30, // Random 30-70 to start
-            min: 20,
-            max: 80
+            current: initialWind, // Current wind (-100 to +100, negative = left, positive = right)
+            variation: windVariation // Wind variation percentage (0-100%), controls how much wind can change
         },
         gravity: 75, // Default gravity setting
         player1: {
@@ -141,12 +146,15 @@ export function createGameState() {
 }
 
 /**
- * Update wind value for new turn (varies within min/max range)
+ * Update wind value for new turn (varies within variation range)
  * @param {Object} gameState - Game state object
  */
 export function updateWindForNewTurn(gameState) {
-    const windRange = gameState.wind.max - gameState.wind.min;
-    gameState.wind.current = gameState.wind.min + Math.floor(Math.random() * (windRange + 1));
+    // Calculate max wind based on variation percentage
+    const maxWind = (gameState.wind.variation / 100) * 100; // Scale 0-100% to 0-100 wind units
+    
+    // Generate random wind from -maxWind to +maxWind
+    gameState.wind.current = Math.floor(Math.random() * (2 * maxWind + 1)) - maxWind;
 }
 
 /**
