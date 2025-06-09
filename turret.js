@@ -1,21 +1,14 @@
 // turret.js
 // Player gun turret graphics and logic for Rocket Wars
 
+import { getTeamColorHex, PLAYER_TEAMS } from './constants.js';
+
 export function createGunTurret(scene, x, y, team = 'player1') {
     // Create a container to hold all turret parts
     const turret = scene.add.container(x, y);
     
-    // Colors for different teams
-    const teamColors = {
-        player1: 0x4a90e2, // Blue
-        player2: 0xf1c40f, // Yellow
-        player3: 0xe74c3c, // Red
-        player4: 0x2ecc71, // Green
-        player5: 0x9b59b6, // Purple
-        player6: 0xf39c12  // Orange
-    };
-    
-    const color = teamColors[team] || teamColors.player1;
+    // Get team color from shared constants
+    const color = getTeamColorHex(team);
     
     // Create the base (flat-bottomed platform)
     const base = scene.add.graphics();
@@ -248,11 +241,11 @@ export function createGunTurret(scene, x, y, team = 'player1') {
 export function placeTurretsOnBases(scene, flatBases, points, numPlayers = 2) {
     const turrets = [];
     
-    // Ensure we don't try to place more turrets than we have bases
-    const actualPlayers = Math.min(numPlayers, flatBases.length);
+    // Ensure we don't try to place more turrets than we have bases or more than 4 players max
+    const actualPlayers = Math.min(numPlayers, flatBases.length, 4);
     
-    // Team colors/names for different players
-    const playerTeams = ['player1', 'player2', 'player3', 'player4', 'player5', 'player6'];
+    // Use shared player teams array
+    const playerTeams = PLAYER_TEAMS;
     
     if (actualPlayers >= 2) {
         // Place first turret on leftmost base (player 1 - blue)

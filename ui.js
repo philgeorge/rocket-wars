@@ -1,6 +1,8 @@
 // ui.js
 // Game UI components for Rocket Wars
 
+import { getTeamColorCSS } from './constants.js';
+
 /**
  * Create a floating status panel showing game settings and player stats
  * @param {Phaser.Scene} scene - The Phaser scene
@@ -50,15 +52,8 @@ export function createStatusPanel(scene, gameState) {
         color: '#ffffff'
     });
     
-    // Player colors for dynamic creation
-    const playerColors = {
-        player1: '#4a90e2', // Blue
-        player2: '#f1c40f', // Yellow
-        player3: '#e74c3c', // Red
-        player4: '#2ecc71', // Green
-        player5: '#9b59b6', // Purple
-        player6: '#f39c12'  // Orange
-    };
+    // Player colors for 2-4 players - now using shared constants
+    // (Removed - using getTeamColorCSS function instead)
     
     // Create player sections dynamically
     const playerElements = [];
@@ -67,7 +62,7 @@ export function createStatusPanel(scene, gameState) {
     for (let i = 1; i <= numPlayers; i++) {
         const yOffset = 80 + ((i - 1) * playerHeight);
         const playerKey = `player${i}`;
-        const playerColor = playerColors[playerKey] || '#ffffff';
+        const playerColor = getTeamColorCSS(playerKey);
         
         const playerTitle = scene.add.text(10, yOffset, `PLAYER ${i}`, {
             fontSize: '15px',
