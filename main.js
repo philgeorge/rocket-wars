@@ -164,8 +164,8 @@ function setupCameraAndInput(scene) {
     scene.input.on('pointerup', (pointer) => {
         if (scene.currentPlayerTurret && scene.currentPlayerTurret.isAiming) {
             // Stop aiming and shoot
-            const finalAngle = scene.currentPlayerTurret.stopAiming();
-            console.log(`Shooting at angle: ${Phaser.Math.RadToDeg(finalAngle)} degrees`);
+            const shootData = scene.currentPlayerTurret.stopAiming();
+            console.log(`Shooting at angle: ${Phaser.Math.RadToDeg(shootData.angle)} degrees, power: ${Math.round(shootData.power * 100)}%`);
             
             // TODO: Launch projectile here
             
