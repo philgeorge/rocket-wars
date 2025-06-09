@@ -59,3 +59,17 @@ export function getTeamColorCSS(team) {
 export function getTeamColorName(team) {
     return TEAM_COLORS[team]?.name || TEAM_COLORS.player1.name;
 }
+
+/**
+ * World dimension constants
+ */
+export const WORLD_HEIGHT = 600;
+
+/**
+ * Calculate world width based on number of players
+ * @param {number} numPlayers - Number of players in the game
+ * @returns {number} World width in pixels
+ */
+export function calculateWorldWidth(numPlayers) {
+    return 2000 + (numPlayers * 500);
+}

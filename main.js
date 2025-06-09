@@ -6,16 +6,18 @@ import { createGunTurret, placeTurretsOnBases } from './turret.js';
 import { createProjectile, updateProjectileTrail, drawProjectileTrail, createExplosion, checkProjectileCollisions, cleanupProjectile } from './projectile.js';
 import { createStatusPanel, createGameState, updateWindForNewTurn, applyDamage, positionStatusPanel } from './ui.js';
 import { initializeGameSetup } from './gameSetup.js';
+import { WORLD_HEIGHT, calculateWorldWidth } from './constants.js';
 
-const WORLD_WIDTH = 3000;
-const WORLD_HEIGHT = 600;
-
-// Game configuration will be set from form
+// Game configuration and world dimensions will be set from form
 let gameConfig = null;
+let WORLD_WIDTH = 3000; // Default value, will be recalculated
 
 // Initialize game setup and wait for form submission
 initializeGameSetup().then((config) => {
     gameConfig = config;
+    // Calculate world width based on number of players: 1000 + (numPlayers * 1000)
+    WORLD_WIDTH = calculateWorldWidth(gameConfig.numPlayers);
+    console.log(`World width calculated: ${WORLD_WIDTH} pixels for ${gameConfig.numPlayers} players`);
     startGame();
 });
 
@@ -107,6 +109,7 @@ function create() {
     // Generate and draw random landscape
     const baseY = WORLD_HEIGHT - 100;
     const numPoints = 40;
+    console.log(`Generating landscape with world width: ${WORLD_WIDTH}px, height: ${WORLD_HEIGHT}px`);
     const { points, flatBases } = generateLandscapePoints(WORLD_WIDTH, baseY, numPoints);
     drawLandscape(graphics, points, WORLD_WIDTH, WORLD_HEIGHT, flatBases);
     

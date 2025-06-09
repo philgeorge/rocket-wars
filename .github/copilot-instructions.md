@@ -13,3 +13,5 @@ If you are not sure something will work, or I tell you it's not working, then us
 This is a Phaser.js game, so always prefer Phaser conventions over generic web development patterns. When in doubt, consult the Phaser.js documentation and maintain the existing code style.
 
 Remember that changes we make should work in different browser window sizes and with different device input methods, e.g. mouse, track pad, touch.
+
+Never modify AiAgentNotes.md or this file.
