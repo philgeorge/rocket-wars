@@ -11,6 +11,42 @@ export const defaultGameConfig = {
 };
 
 /**
+ * Load game configuration from localStorage
+ * @returns {Object} Saved config or default config
+ */
+function loadGameConfig() {
+    try {
+        const savedConfig = localStorage.getItem('gameConfig');
+        if (savedConfig) {
+            const config = JSON.parse(savedConfig);
+            console.log('Loaded saved game config:', config);
+            // Merge with defaults to ensure all properties exist
+            return {
+                ...defaultGameConfig,
+                ...config
+            };
+        }
+    } catch (error) {
+        console.warn('Failed to load saved game config:', error);
+    }
+    console.log('Using default game config');
+    return { ...defaultGameConfig };
+}
+
+/**
+ * Save game configuration to localStorage
+ * @param {Object} config - Game configuration to save
+ */
+function saveGameConfig(config) {
+    try {
+        localStorage.setItem('gameConfig', JSON.stringify(config));
+        console.log('Saved game config to localStorage:', config);
+    } catch (error) {
+        console.warn('Failed to save game config:', error);
+    }
+}
+
+/**
  * Initialize the game setup form and return a promise that resolves with game config
  * @returns {Promise<Object>} Promise that resolves with the game configuration when form is submitted
  */
@@ -35,11 +71,22 @@ function initializeFormHandlers(onGameStart) {
     const windVariationValue = document.getElementById('wind-variation-value');
     const gravitySlider = /** @type {HTMLInputElement} */ (document.getElementById('gravity'));
     const gravityValue = document.getElementById('gravity-value');
+    const numPlayersSelect = /** @type {HTMLSelectElement} */ (document.getElementById('num-players'));
     
-    if (!form || !windVariationSlider || !windVariationValue || !gravitySlider || !gravityValue) {
+    if (!form || !windVariationSlider || !windVariationValue || !gravitySlider || !gravityValue || !numPlayersSelect) {
         console.error('Could not find required form elements');
         return;
     }
+    
+    // Load saved configuration and set form values
+    const savedConfig = loadGameConfig();
+    numPlayersSelect.value = savedConfig.numPlayers.toString();
+    windVariationSlider.value = savedConfig.windVariation.toString();
+    gravitySlider.value = savedConfig.gravity.toString();
+    
+    // Update display values
+    windVariationValue.textContent = `${savedConfig.windVariation}%`;
+    gravityValue.textContent = savedConfig.gravity.toString();
     
     // Update slider value displays
     windVariationSlider.addEventListener('input', (e) => {
@@ -57,7 +104,6 @@ function initializeFormHandlers(onGameStart) {
         e.preventDefault();
         
         // Get form values
-        const numPlayersSelect = /** @type {HTMLSelectElement} */ (document.getElementById('num-players'));
         const gameConfig = {
             numPlayers: parseInt(numPlayersSelect.value),
             windVariation: parseInt(windVariationSlider.value),
@@ -65,6 +111,9 @@ function initializeFormHandlers(onGameStart) {
         };
         
         console.log('Starting game with config:', gameConfig);
+        
+        // Save configuration to localStorage
+        saveGameConfig(gameConfig);
         
         // Hide form and show game container
         hideFormShowGame();
