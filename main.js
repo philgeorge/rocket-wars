@@ -109,8 +109,8 @@ function create() {
     graphics.fillStyle(0x3a5c2c, 1); // greenish color for landscape
     // Generate and draw random landscape
     const baseY = WORLD_HEIGHT - 100;
-    const numPoints = 40;
-    console.log(`Generating landscape with world width: ${WORLD_WIDTH}px, height: ${WORLD_HEIGHT}px`);
+    const numPoints = Math.floor(WORLD_WIDTH / 50); // Calculate points based on world width
+    console.log(`Generating landscape with world width: ${WORLD_WIDTH}px, height: ${WORLD_HEIGHT}px, points: ${numPoints}`);
     const { points, flatBases } = generateLandscapePoints(WORLD_WIDTH, baseY, numPoints, gameConfig.numPlayers);
     drawLandscape(graphics, points, WORLD_WIDTH, WORLD_HEIGHT, flatBases);
     
