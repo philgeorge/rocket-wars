@@ -262,15 +262,18 @@ export function placeTurretsOnBases(scene, flatBases, points, numPlayers = 2) {
             const base = shuffledBases[playerIndex];
             const team = playerTeams[playerIndex] || `player${playerIndex + 1}`;
             
-            // Calculate turret position within the flat base
-            const baseMiddle = Math.floor((base.start + base.end) / 2);
-            const point = points[baseMiddle];
+            // Calculate turret position at the center of the flat base
+            const startPoint = points[base.start];
+            const endPoint = points[base.end];
+            const baseCenterX = (startPoint.x + endPoint.x) / 2;
+            const baseCenterY = startPoint.y; // All points in flat base should have same Y
             
             // Add slight random offset within the base for visual variety
-            const offsetRange = Math.min(20, (base.end - base.start) * 2); // Max 20px or base width
+            const baseWidth = endPoint.x - startPoint.x;
+            const offsetRange = Math.min(20, baseWidth * 0.3); // Max 20px or 30% of base width
             const randomOffset = (Math.random() - 0.5) * offsetRange;
             
-            const turret = createGunTurret(scene, point.x + randomOffset, point.y - 25, team);
+            const turret = createGunTurret(scene, baseCenterX + randomOffset, baseCenterY - 25, team);
             
             // Set random initial gun angle for variety
             const randomAngle = -180 + Math.random() * 180; // -180° to 0°
@@ -278,7 +281,7 @@ export function placeTurretsOnBases(scene, flatBases, points, numPlayers = 2) {
             
             turrets.push(turret);
             
-            console.log(`Placed ${team} turret on base ${flatBases.indexOf(base) + 1} at (${Math.round(point.x + randomOffset)}, ${Math.round(point.y - 25)})`);
+            console.log(`Placed ${team} turret on base ${flatBases.indexOf(base) + 1} at (${Math.round(baseCenterX + randomOffset)}, ${Math.round(baseCenterY - 25)})`);
         }
     }
     
