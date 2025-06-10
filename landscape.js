@@ -1,25 +1,49 @@
 // landscape.js
 // Landscape generation and drawing utilities for Rocket Wars
 
-export function generateLandscapePoints(width, baseY, numPoints) {
+import { WORLD_HEIGHT } from './constants.js';
+
+export function generateLandscapePoints(width, baseY, numPoints, numPlayers = 2) {
     const segment = width / (numPoints - 1);
     const points = [];
     const flatBases = [];
-    const leftThird = Math.floor(numPoints / 3);
-    const rightThird = numPoints - leftThird;
+    
+    // Calculate sections: 2 * numPlayers sections
+    const numSections = 2 * numPlayers;
+    const sectionSize = Math.floor(numPoints / numSections);
+    
+    console.log(`Generating landscape with ${numSections} sections for ${numPlayers} players`);
 
-    // 1. Generate initial random landscape (mountains in middle, more variation at edges)
+    // 1. Generate initial random landscape with varied terrain across sections
     for (let i = 0; i < numPoints; i++) {
         let x = Math.floor((i / (numPoints - 1)) * width);
         let y;
-        if (i < leftThird || i >= rightThird) {
-            // Edges: more variation than before, but not as much as mountains
-            y = baseY + Math.floor(Math.random() * 100 - 50); // -16 to +16px variation
+        
+        // Determine which section this point is in
+        const sectionIndex = Math.floor(i / sectionSize);
+        const sectionProgress = (i % sectionSize) / sectionSize; // 0 to 1 within section
+        
+        // Create varied terrain: some sections flat, some mountainous
+        if (sectionIndex % 2 === 0) {
+            // Even sections: flatter terrain
+            y = baseY + Math.floor(Math.random() * 80 - 40); // -40 to +40px variation
         } else {
-            // Middle: mountains, 50% higher than before
-            const t = (i - leftThird) / (rightThird - leftThird);
-            y = baseY - 350 * Math.sin(Math.PI * t) + Math.floor(Math.random() * 60 - 30); // 180px peak, ±30px noise
+            // Odd sections: mountainous terrain (50-80% of world height)
+            // Calculate mountain height: 50-80% of world height from top = 400-640px from top
+            // Since baseY is typically around 700px, mountains should go down 60-300px from baseY
+            const minMountainHeight = WORLD_HEIGHT * 0.5; // 50% = 400px from top
+            const maxMountainHeight = WORLD_HEIGHT * 0.8; // 80% = 640px from top
+            
+            // Random height between min and max for this section
+            const sectionMountainHeight = minMountainHeight + Math.random() * (maxMountainHeight - minMountainHeight);
+            
+            // Calculate how far down from baseY this mountain should go
+            const mountainDepth = baseY - (WORLD_HEIGHT - sectionMountainHeight);
+            
+            // Use sine wave for mountain shape with the calculated depth
+            y = baseY - mountainDepth * Math.sin(Math.PI * sectionProgress) + Math.floor(Math.random() * 40 - 20); // ±20px noise
         }
+        
         points.push({ x, y });
     }
 
@@ -27,105 +51,45 @@ export function generateLandscapePoints(width, baseY, numPoints) {
     const minFlatWidthPx = 40;
     const maxFlatWidthPx = 100;
 
-    // 2. Forcibly insert flat base sections in left and right thirds (avoiding overlaps)
-    function insertFlatBases(startIdx, endIdx, clampToEdge = false, isLeft = false) {
-        const numFlats = 3;
-        const usedRanges = []; // Track used ranges to avoid overlaps
+    // 2. Create one flat base in each section
+    for (let sectionIndex = 0; sectionIndex < numSections; sectionIndex++) {
+        const sectionStartIdx = sectionIndex * sectionSize;
+        const sectionEndIdx = Math.min((sectionIndex + 1) * sectionSize - 1, numPoints - 1);
         
-        for (let f = 0; f < numFlats; f++) {
-            const flatWidthPx = minFlatWidthPx + Math.floor(Math.random() * (maxFlatWidthPx - minFlatWidthPx + 1));
-            const flatLen = Math.max(2, Math.round(flatWidthPx / segment));
-            if (endIdx - startIdx - flatLen <= 0) continue; // skip if not enough room
+        // Skip very small sections
+        if (sectionEndIdx - sectionStartIdx < 3) continue;
+        
+        const flatWidthPx = minFlatWidthPx + Math.floor(Math.random() * (maxFlatWidthPx - minFlatWidthPx + 1));
+        const flatLen = Math.max(2, Math.round(flatWidthPx / segment));
+        
+        // Ensure flat base fits within section
+        const maxFlatLen = Math.min(flatLen, sectionEndIdx - sectionStartIdx - 1);
+        if (maxFlatLen < 2) continue;
+        
+        // Position flat base randomly within the section, avoiding edges
+        const minStart = sectionStartIdx + 1;
+        const maxStart = sectionEndIdx - maxFlatLen;
+        
+        if (minStart <= maxStart) {
+            const baseStart = minStart + Math.floor(Math.random() * (maxStart - minStart + 1));
+            const baseEnd = baseStart + maxFlatLen - 1;
             
-            let minStart = startIdx;
-            let maxStart = endIdx - flatLen;
-            
-            // For left side, ensure base doesn't start too close to the left edge
-            if (isLeft) {
-                // Find the first point with x >= minFlatWidthPx/2
-                for (let i = startIdx; i < endIdx; i++) {
-                    if (points[i].x >= minFlatWidthPx / 2) {
-                        minStart = i;
-                        break;
-                    }
-                }
-            }
-            
-            // Try to find a non-overlapping position
-            let baseStart = -1;
-            let attempts = 0;
-            while (attempts < 20 && baseStart === -1) { // Max 20 attempts to find a spot
-                const candidateStart = minStart + Math.floor(Math.random() * Math.max(1, (maxStart - minStart + 1)));
-                const candidateEnd = candidateStart + flatLen - 1;
-                
-                // Check if this range overlaps with existing flat bases
-                let overlaps = false;
-                for (const range of usedRanges) {
-                    if (!(candidateEnd < range.start || candidateStart > range.end)) {
-                        overlaps = true;
-                        break;
-                    }
-                }
-                
-                if (!overlaps) {
-                    baseStart = candidateStart;
-                    // Apply edge clamping if needed
-                    if (clampToEdge && baseStart < 1) baseStart = 1;
-                    if (clampToEdge && baseStart + flatLen > numPoints - 2) baseStart = numPoints - 2 - flatLen;
-                }
-                attempts++;
-            }
-            
-            if (baseStart === -1) {
-                console.warn(`Could not find non-overlapping position for flat base ${f + 1} in ${isLeft ? 'left' : 'right'} section`);
-                continue; // Skip this flat base
-            }
-            
-            // Record this range as used
-            usedRanges.push({ start: baseStart, end: baseStart + flatLen - 1 });
-            
-            // Calculate the average Y position of the points in this range to create a stable flat section
+            // Calculate the average Y position for the flat section
             let totalY = 0;
-            let minY = Infinity;
-            let maxY = -Infinity;
+            for (let j = baseStart; j <= baseEnd; j++) {
+                totalY += points[j].y;
+            }
+            const flatY = Math.round(totalY / (baseEnd - baseStart + 1));
             
-            for (let j = 0; j < flatLen; j++) {
-                const y = points[baseStart + j].y;
-                totalY += y;
-                minY = Math.min(minY, y);
-                maxY = Math.max(maxY, y);
+            // Set all points in the flat section to the same Y position
+            for (let j = baseStart; j <= baseEnd; j++) {
+                points[j].y = flatY;
             }
             
-            // Use average Y, but ensure it's reasonable for the terrain
-            let flatY = totalY / flatLen;
-            
-            // If there's too much variation in the original points, prefer a more conservative approach
-            const yVariation = maxY - minY;
-            if (yVariation > 50) {
-                // Use the median-like approach: average of min and max
-                flatY = (minY + maxY) / 2;
-                console.log(`Large Y variation (${Math.round(yVariation)}px) in flat base, using median approach`);
-            }
-            
-            // Ensure the flat Y is exactly the same for all points (avoid floating point issues)
-            flatY = Math.round(flatY);
-            
-            // Set all points in the flat section to the exact same Y position
-            for (let j = 0; j < flatLen; j++) {
-                const pointIndex = baseStart + j;
-                points[pointIndex].y = flatY;
-            }
-            
-            // Debug output to verify flat sections (simplified)
-            console.log(`Created flat base ${f + 1} in ${isLeft ? 'left' : 'right'} section: points ${baseStart}-${baseStart + flatLen - 1}, Y=${flatY}`);
-            
-            flatBases.push({ start: baseStart, end: baseStart + flatLen - 1 });
+            console.log(`Created flat base in section ${sectionIndex + 1}: points ${baseStart}-${baseEnd}, Y=${flatY}`);
+            flatBases.push({ start: baseStart, end: baseEnd });
         }
     }
-    // Left third (clamp to avoid index 0, and ensure visible)
-    insertFlatBases(0, leftThird, true, true);
-    // Right third (clamp to avoid last index)
-    insertFlatBases(rightThird, numPoints - 1, true, false);
 
     // Final verification: ensure all flat bases are actually flat
     flatBases.forEach((base, index) => {

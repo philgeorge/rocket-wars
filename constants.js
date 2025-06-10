@@ -63,7 +63,7 @@ export function getTeamColorName(team) {
 /**
  * World dimension constants
  */
-export const WORLD_HEIGHT = 600;
+export const WORLD_HEIGHT = 800;
 
 /**
  * Calculate world width based on number of players

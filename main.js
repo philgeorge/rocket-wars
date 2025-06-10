@@ -111,7 +111,7 @@ function create() {
     const baseY = WORLD_HEIGHT - 100;
     const numPoints = 40;
     console.log(`Generating landscape with world width: ${WORLD_WIDTH}px, height: ${WORLD_HEIGHT}px`);
-    const { points, flatBases } = generateLandscapePoints(WORLD_WIDTH, baseY, numPoints);
+    const { points, flatBases } = generateLandscapePoints(WORLD_WIDTH, baseY, numPoints, gameConfig.numPlayers);
     drawLandscape(graphics, points, WORLD_WIDTH, WORLD_HEIGHT, flatBases);
     
     // Mark the world boundaries
