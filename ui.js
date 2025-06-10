@@ -133,9 +133,9 @@ export function createStatusPanel(scene, gameState) {
  * @returns {Object} Default game state with wind, gravity, and player data
  */
 export function createGameState(config = {}) {
-    const windVariation = config.windVariation || 50; // Wind variation from form or default
-    const gravity = config.gravity || 75; // Gravity from form or default
-    const numPlayers = config.numPlayers || 2; // Number of players from form or default
+    const windVariation = config.windVariation ?? 50; // Wind variation from form or default
+    const gravity = config.gravity ?? 60; // Gravity from form or default (updated default)
+    const numPlayers = config.numPlayers ?? 2; // Number of players from form or default
     const maxWind = (windVariation / 100) * 100; // Calculate max wind for initial value
     const initialWind = Math.floor(Math.random() * (2 * maxWind + 1)) - maxWind; // Random initial wind
     
