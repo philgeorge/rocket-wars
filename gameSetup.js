@@ -7,7 +7,7 @@
 export const defaultGameConfig = {
     numPlayers: 2,
     windVariation: 50,
-    gravity: 30
+    gravity: 60
 };
 
 /**

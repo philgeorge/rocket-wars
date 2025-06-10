@@ -4,7 +4,7 @@ Prefer pure functions over classes where possible.
 
 Apply Single Responsibility principle to stop files from getting large. Each file handles one main game system
 
-Use Javascript but wit JSDoc comments for type safety and IntelliSense.
+Use Javascript but with JSDoc comments for type safety and IntelliSense.
 
 Do not tell me to start python http.server or run the command yourself - I am using live server and will test changes with this.
 

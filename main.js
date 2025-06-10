@@ -18,6 +18,7 @@ initializeGameSetup().then((config) => {
     // Calculate world width based on number of players: 1000 + (numPlayers * 1000)
     WORLD_WIDTH = calculateWorldWidth(gameConfig.numPlayers);
     console.log(`World width calculated: ${WORLD_WIDTH} pixels for ${gameConfig.numPlayers} players`);
+    console.log(`Gravity set to: ${gameConfig.gravity} (effective: ${gameConfig.gravity * 5} pixels/sec²)`);
     startGame();
 });
 
@@ -40,7 +41,7 @@ function startGame() {
         physics: {
             default: 'arcade',
             arcade: {
-                gravity: { x: 0, y: gameConfig.gravity * 10 }, // Scale gravity (0-100 -> 0-1000)
+                gravity: { x: 0, y: gameConfig.gravity * 5 }, // Scale gravity (20-100 -> 100-500)
                 debug: false
             }
         },
