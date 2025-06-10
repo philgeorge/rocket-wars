@@ -23,9 +23,10 @@ This file contains notes about my learnings from using an AI Agent to help me bu
 - Allow 2-4 players
 - Include copilot-instructions.md to influence copilot behaviour
 
-## 10 June 1.5 hours
+## 10 June 2 hours
 - Improve landscape size and detail based on number of players
 - More IDE type warning fixes
+- Restructure project to use "src" folder
 
 # Odd Agent Behaviour
 
