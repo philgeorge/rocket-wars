@@ -23,6 +23,10 @@ This file contains notes about my learnings from using an AI Agent to help me bu
 - Allow 2-4 players
 - Include copilot-instructions.md to influence copilot behaviour
 
+## 10 June 1.5 hours
+- Improve landscape size and detail based on number of players
+- More IDE type warning fixes
+
 # Odd Agent Behaviour
 
 - Choosing technology and shaping the look of the game went very well. This is kind of like competitor analysis and market research for a product.
@@ -31,4 +35,4 @@ This file contains notes about my learnings from using an AI Agent to help me bu
 - On one occassion the Agent hung for 15 minutes. When I stopped it the game files were in an intermediate state where it had changed some things, but not everything it wanted, and the game was completely broken. I had to manually bring the game back to a working state. Lesson: make Git commits after every significant Agent change that you're happy with.
 - Agent decided to use "Simple Browser" and Python http.server even though I already had "live server" installed and running. I pointed this out and Agent corrected this.
 - Agent tried to update this file! Fair enough, I have now added explicit instructions that tell it to leave this file for my own personal musings. Hopefully that is enough.
-- When first implementing projectiles, it went through the steps adding a code module and integrating it, and then iterated, telling me "it looks like the projectile.js" file already exists. let me check its current content".
+- When first implementing projectiles, it went through the steps adding a code module and integrating it, and then iterated, telling me "it looks like the projectile.js" file already exists. let me check its current content". I think this is when it needs to clear its context by "Summarizing conversation history" in the middle of actioning a single prompt.
