@@ -201,11 +201,6 @@ export function checkProjectileCollisions(scene, projectile, landscapeData, turr
         }
     });
 
-    // Debug: log projectile position every few frames
-    if (scene.time.now % 200 < 16) { // Log roughly every 200ms
-        console.log(`Projectile at (${Math.round(projectile.x)}, ${Math.round(projectile.y)})`);
-    }
-
     // Improved terrain collision check using landscape points
     if (landscapeData && landscapeData.points) {
         const points = landscapeData.points;

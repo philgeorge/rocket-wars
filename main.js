@@ -69,6 +69,10 @@ function preload() {
         .generateTexture('pixel', 1, 1);
 }
 
+/**
+ * Create the game scene
+ * @this {Phaser.Scene & {turrets: any[], currentPlayerTurret: any, projectiles: any[], landscapeData: any, gameState: any, statusPanel: any, cameraControls: any}}
+ */
 function create() {
     // Set camera bounds to the world size
     this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
@@ -151,6 +155,10 @@ function create() {
     }
 }
 
+/**
+ * Update the game scene
+ * @this {Phaser.Scene & {turrets: any[], currentPlayerTurret: any, projectiles: any[], landscapeData: any, gameState: any, statusPanel: any, cameraControls: any}}
+ */
 function update() {
     // Camera controls are handled in setupCameraAndInput
     
@@ -318,6 +326,7 @@ function setupCameraAndInput(scene) {
         }
         
         // Single touch/mouse: check if we clicked on a turret first
+        /** @type {any} */
         let clickedTurret = null;
         scene.turrets.forEach(turret => {
             const distance = Phaser.Math.Distance.Between(pointer.worldX, pointer.worldY, turret.x, turret.y);
