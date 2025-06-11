@@ -189,12 +189,12 @@ export function applyDamage(gameState, playerKey, damage) {
 }
 
 /**
- * Position status panel relative to camera view
+ * Position status panel relative to viewport
  * @param {Phaser.GameObjects.Container} statusPanel - The status panel container
- * @param {Phaser.Cameras.Scene2D.Camera} camera - The main camera
+ * @param {number} viewportWidth - The viewport width
  */
-export function positionStatusPanel(statusPanel, camera) {
-    // Position at top-right of camera view with some padding
-    statusPanel.x = camera.scrollX + camera.width - 220; // 220 = panel width + padding
-    statusPanel.y = camera.scrollY + 20; // 20px from top
+export function positionStatusPanel(statusPanel, viewportWidth) {
+    // Position at top-right of viewport with some padding
+    statusPanel.x = viewportWidth - 230; // 210px panel width + 20px padding
+    statusPanel.y = 20; // 20px from top
 }

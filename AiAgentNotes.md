@@ -28,6 +28,10 @@ This file contains notes about my learnings from using an AI Agent to help me bu
 - More IDE type warning fixes
 - Restructure project to use "src" folder
 
+## 11 June 2 hours
+- Copied wind changing code from AGL laptop which I couldn't commit
+- Style/sizing improvements on aiming tooltip and game info panel
+
 # Odd Agent Behaviour
 
 - Choosing technology and shaping the look of the game went very well. This is kind of like competitor analysis and market research for a product.
@@ -37,3 +41,4 @@ This file contains notes about my learnings from using an AI Agent to help me bu
 - Agent decided to use "Simple Browser" and Python http.server even though I already had "live server" installed and running. I pointed this out and Agent corrected this.
 - Agent tried to update this file! Fair enough, I have now added explicit instructions that tell it to leave this file for my own personal musings. Hopefully that is enough.
 - When first implementing projectiles, it went through the steps adding a code module and integrating it, and then iterated, telling me "it looks like the projectile.js" file already exists. let me check its current content". I think this is when it needs to clear its context by "Summarizing conversation history" in the middle of actioning a single prompt.
+- Without me realising it I found the same code (placement of the status panel) duplicated in 3 places, one of which was unused. I had to explicitly point this out and request refactoring to remove duplication.
