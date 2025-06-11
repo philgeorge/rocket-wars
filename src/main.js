@@ -2,7 +2,7 @@
 // Entry point for Rocket Wars game logic
 
 import { generateLandscapePoints, drawLandscape, drawWorldBoundaries } from './landscape.js';
-import { createGunTurret, placeTurretsOnBases } from './turret.js';
+import { placeTurretsOnBases } from './turret.js';
 import { createProjectile, updateProjectileTrail, drawProjectileTrail, createExplosion, checkProjectileCollisions, cleanupProjectile } from './projectile.js';
 import { createStatusPanel, createGameState, updateWindForNewTurn, applyDamage, positionStatusPanel } from './ui.js';
 import { initializeGameSetup } from './gameSetup.js';
@@ -269,7 +269,7 @@ function setupCameraAndInput(scene) {
             // Apply wind effect to projectile physics
             if (scene.gameState && projectile.body) {
                 const windForce = scene.gameState.wind.current / 100; // Normalize to -1 to +1
-                const windVelocityX = windForce * 100; // Scale wind effect (doubled from 50 to 100)
+                const windVelocityX = windForce * 200; // Scale wind effect (doubled again from 100 to 200)
                 projectile.body.velocity.x += windVelocityX;
                 console.log(`Applied wind force: ${scene.gameState.wind.current} (${windForce}), velocity adjustment: ${windVelocityX}`);
             }

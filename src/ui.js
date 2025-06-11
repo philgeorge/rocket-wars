@@ -162,15 +162,19 @@ export function createGameState(config = {}) {
 }
 
 /**
- * Update wind value for new turn (varies within variation range)
+ * Update wind value for new turn (changes by at most +/-10 units)
  * @param {Object} gameState - Game state object
  */
 export function updateWindForNewTurn(gameState) {
-    // Calculate max wind based on variation percentage
-    const maxWind = (gameState.wind.variation / 100) * 100; // Scale 0-100% to 0-100 wind units
-    
-    // Generate random wind from -maxWind to +maxWind
-    gameState.wind.current = Math.floor(Math.random() * (2 * maxWind + 1)) - maxWind;
+    // Wind can only change by up to +/-10 units per turn
+    const maxDelta = 10;
+    const maxWind = (gameState.wind.variation / 100) * 100; // Still use variation for clamping
+    // Generate random delta from -10 to +10
+    const delta = Math.floor(Math.random() * (2 * maxDelta + 1)) - maxDelta;
+    let newWind = gameState.wind.current + delta;
+    // Clamp to allowed wind range
+    newWind = Math.max(-maxWind, Math.min(maxWind, newWind));
+    gameState.wind.current = newWind;
 }
 
 /**

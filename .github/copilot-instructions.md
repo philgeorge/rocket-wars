@@ -14,4 +14,6 @@ This is a Phaser.js game, so always prefer Phaser conventions over generic web d
 
 Remember that changes we make should work in different browser window sizes and with different device input methods, e.g. mouse, track pad, touch.
 
+If you need to understand the principles or features of the game, refer to GameDesignDocument.md.
+
 Never modify AiAgentNotes.md or this file.
