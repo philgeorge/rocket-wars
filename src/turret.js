@@ -97,9 +97,21 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         }
         
         // Update tooltip content
-        const angleDegrees = Math.round(Phaser.Math.RadToDeg(angle));
+        const angleDegrees = Phaser.Math.RadToDeg(angle);
+        
+        // Convert to 0-90° where 90° is straight up and 0° is horizontal
+        let displayAngle;
+        
+        if (angleDegrees <= -90) {
+            // Left side: -180° to -90° maps to 0° to 90°
+            displayAngle = Math.round(angleDegrees + 180);
+        } else {
+            // Right side: -90° to 0° maps to 90° to 0°
+            displayAngle = Math.round(Math.abs(angleDegrees + 90));
+        }
+        
         const powerPercent = Math.round(power * 100);
-        this.aimTooltip.text.setText(`${Math.abs(angleDegrees)}°\n${powerPercent}%`);
+        this.aimTooltip.text.setText(`${displayAngle}°\n${powerPercent}%`);
         
         // Position tooltip near mouse cursor but offset to avoid blocking view
         const offsetX = 30;
@@ -255,8 +267,8 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         if (self.aimingLine) {
             self.aimingLine.clear();
         }
-        // Hide tooltip with 1 second delay then 1 second fade
-        self.hideTooltip(1000, 1000);
+        // delay then fade out tooltip
+        self.hideTooltip(2000, 2000);
         return {
             angle: self.barrel.rotation,
             power: self.currentPower || 0.5 // Default to 50% power if not set
