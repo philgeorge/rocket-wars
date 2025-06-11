@@ -70,6 +70,7 @@ export function createGunTurret(scene, x, y, team = 'player1') {
     turret.aimingLine = null;
     turret.currentPower = 0.5; // Default to 50% power
     turret.aimTooltip = null; // Add tooltip reference
+    turret.tooltipTimer = null; // Add timer reference for delayed tooltip hiding
 
     // Method to create or update the aiming tooltip
     turret.createOrUpdateTooltip = function(angle, power, mouseX, mouseY) {
@@ -110,10 +111,39 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         this.aimTooltip.setVisible(true);
     };
 
-    // Method to hide the tooltip
-    turret.hideTooltip = function() {
-        if (this.aimTooltip) {
-            this.aimTooltip.setVisible(false);
+    // Method to hide the tooltip with optional delay and fade
+    turret.hideTooltip = function(delayMs = 0, fadeMs = 0) {
+        /** @type {typeof turret} */
+        const self = this;
+        if (self.aimTooltip) {
+            if (delayMs === 0 && fadeMs === 0) {
+                // Immediate hide (for interruptions like clicking elsewhere)
+                self.aimTooltip.setVisible(false);
+                // Clear any existing timers
+                if (self.tooltipTimer) {
+                    self.tooltipTimer.destroy();
+                    self.tooltipTimer = null;
+                }
+            } else {
+                // Delayed hide with fade effect
+                self.tooltipTimer = scene.time.delayedCall(delayMs, () => {
+                    if (self.aimTooltip && self.aimTooltip.visible) {
+                        // Fade out over specified duration
+                        scene.tweens.add({
+                            targets: self.aimTooltip,
+                            alpha: 0,
+                            duration: fadeMs,
+                            ease: 'Power2',
+                            onComplete: () => {
+                                if (self.aimTooltip) {
+                                    self.aimTooltip.setVisible(false);
+                                    self.aimTooltip.setAlpha(1); // Reset alpha for next use
+                                }
+                            }
+                        });
+                    }
+                });
+            }
         }
     };
     
@@ -225,7 +255,8 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         if (self.aimingLine) {
             self.aimingLine.clear();
         }
-        self.hideTooltip(); // Hide tooltip on stop
+        // Hide tooltip with 1 second delay then 1 second fade
+        self.hideTooltip(1000, 1000);
         return {
             angle: self.barrel.rotation,
             power: self.currentPower || 0.5 // Default to 50% power if not set
