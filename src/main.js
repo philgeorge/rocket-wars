@@ -168,6 +168,25 @@ function update() {
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
             const projectile = this.projectiles[i];
             
+            // Apply continuous wind force to projectile during flight
+            if (this.gameState && projectile.body) {
+                const windForce = this.gameState.wind.current / 100; // Normalize to -1 to +1
+                const windAcceleration = windForce * 150; // Wind acceleration (pixels/sec²)
+                
+                // Apply wind as horizontal acceleration (accumulated over time)
+                projectile.body.acceleration.x = windAcceleration;
+                
+                // Optional: Add slight air resistance for more realistic physics
+                const airResistance = 0.99; // Slight velocity reduction each frame
+                projectile.body.velocity.x *= airResistance;
+                projectile.body.velocity.y *= airResistance;
+                
+                // Debug: Log wind effect periodically (every 30 frames ≈ 0.5 seconds)
+                if (Math.floor(this.time.now / 500) > Math.floor((this.time.now - 16) / 500)) {
+                    console.log(`Wind effect: ${this.gameState.wind.current} units, acceleration: ${windAcceleration.toFixed(1)} px/s²`);
+                }
+            }
+            
             // Update trail effect
             updateProjectileTrail(projectile);
             drawProjectileTrail(this, projectile);
@@ -266,13 +285,8 @@ function setupCameraAndInput(scene) {
             const tipPosition = scene.currentPlayerTurret.getGunTipPosition();
             const projectile = createProjectile(scene, tipPosition.x, tipPosition.y, shootData.angle, shootData.power);
             
-            // Apply wind effect to projectile physics
-            if (scene.gameState && projectile.body) {
-                const windForce = scene.gameState.wind.current / 100; // Normalize to -1 to +1
-                const windVelocityX = windForce * 200; // Scale wind effect (doubled again from 100 to 200)
-                projectile.body.velocity.x += windVelocityX;
-                console.log(`Applied wind force: ${scene.gameState.wind.current} (${windForce}), velocity adjustment: ${windVelocityX}`);
-            }
+            // Note: Wind effect is now applied continuously during flight in the update loop
+            console.log(`Projectile launched in aimed direction - wind will affect trajectory during flight`);
             
             // Add projectile to scene's projectile list for tracking
             if (!scene.projectiles) {
