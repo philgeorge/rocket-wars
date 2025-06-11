@@ -82,12 +82,12 @@ export function createGunTurret(scene, x, y, team = 'player1') {
             const bg = scene.add.graphics();
             bg.fillStyle(0x000000, 0.8);
             bg.lineStyle(1, 0xffffff, 0.6);
-            bg.fillRoundedRect(-40, -15, 80, 30, 5);
-            bg.strokeRoundedRect(-40, -15, 80, 30, 5);
+            bg.fillRoundedRect(-50, -18, 100, 36, 5);
+            bg.strokeRoundedRect(-50, -18, 100, 36, 5);
             
             // Create text
             const text = scene.add.text(0, 0, '', {
-                fontSize: '14px',
+                fontSize: '1rem',
                 color: '#ffffff',
                 align: 'center'
             }).setOrigin(0.5, 0.5);

@@ -96,7 +96,7 @@ function create() {
             
             // Reposition status panel to stay at top-right of new viewport
             if (this.statusPanel) {
-                this.statusPanel.x = newWidth - 220; // 220 = panel width + padding
+                this.statusPanel.x = newWidth - 230;
                 this.statusPanel.y = 20; // 20px from top
             }
         }, 100); // Throttle resize events
@@ -140,7 +140,7 @@ function create() {
     this.statusPanel = createStatusPanel(this, this.gameState);
     
     // Position status panel at fixed screen location (top-right)
-    this.statusPanel.x = this.cameras.main.width - 220; // 220 = panel width + padding
+    this.statusPanel.x = this.cameras.main.width - 230;
     this.statusPanel.y = 20; // 20px from top
     
     // Initialize status panel display

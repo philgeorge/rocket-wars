@@ -16,40 +16,32 @@ export function createStatusPanel(scene, gameState) {
     
     // Calculate panel height based on number of players
     const numPlayers = gameState.numPlayers || 2;
-    const baseHeight = 80; // Height for title and environment section
-    const playerHeight = 50; // Height per player section (increased to fit 3 lines of text)
-    const bottomPadding = 6;
+    const baseHeight = 60; // Height for environment section only (reduced from 80)
+    const playerHeight = 60; // Height per player section (increased to fit 3 lines of text)
+    const bottomPadding = 12;
     const totalHeight = baseHeight + (numPlayers * playerHeight) + bottomPadding;
     
     // Create background
     const bg = scene.add.graphics();
     bg.fillStyle(0x000000, 0.8);
     bg.lineStyle(2, 0xffffff, 0.6);
-    bg.fillRoundedRect(0, 0, 200, totalHeight, 8);
-    bg.strokeRoundedRect(0, 0, 200, totalHeight, 8);
-    
-    // Title
-    const title = scene.add.text(100, 15, 'GAME STATUS', {
-        fontSize: '16px',
-        color: '#ffffff',
-        fontStyle: 'bold',
-        align: 'center'
-    }).setOrigin(0.5, 0.5);
+    bg.fillRoundedRect(0, 0, 210, totalHeight, 8);
+    bg.strokeRoundedRect(0, 0, 210, totalHeight, 8);
     
     // Environment section
-    const envTitle = scene.add.text(10, 35, 'ENVIRONMENT', {
-        fontSize: '15px',
+    const envTitle = scene.add.text(10, 10, 'ENVIRONMENT', {
+        fontSize: '1rem',
         color: '#00ff00',
         fontStyle: 'bold'
     });
     
-    const windText = scene.add.text(10, 50, '', {
-        fontSize: '14px',
+    const windText = scene.add.text(10, 28, '', {
+        fontSize: '1rem',
         color: '#ffffff'
     });
     
-    const gravityText = scene.add.text(10, 65, '', {
-        fontSize: '14px',
+    const gravityText = scene.add.text(10, 46, '', {
+        fontSize: '1rem',
         color: '#ffffff'
     });
     
@@ -58,26 +50,26 @@ export function createStatusPanel(scene, gameState) {
     
     // Create player sections dynamically
     const playerElements = [];
-    const elements = [bg, title, envTitle, windText, gravityText];
+    const elements = [bg, envTitle, windText, gravityText];
     
     for (let i = 1; i <= numPlayers; i++) {
-        const yOffset = 80 + ((i - 1) * playerHeight);
+        const yOffset = baseHeight + 10 + ((i - 1) * playerHeight);
         const playerKey = `player${i}`;
         const playerColor = getTeamColorCSS(playerKey);
         
         const playerTitle = scene.add.text(10, yOffset, `PLAYER ${i}`, {
-            fontSize: '15px',
+            fontSize: '1rem',
             color: playerColor,
             fontStyle: 'bold'
         });
         
         const playerHealth = scene.add.text(10, yOffset + 18, '', {
-            fontSize: '14px',
+            fontSize: '1rem',
             color: '#ffffff'
         });
         
-        const playerStats = scene.add.text(10, yOffset + 34, '', {
-            fontSize: '14px',
+        const playerStats = scene.add.text(10, yOffset + 36, '', {
+            fontSize: '1rem',
             color: '#ffffff'
         });
         
