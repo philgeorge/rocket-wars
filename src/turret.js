@@ -3,6 +3,14 @@
 
 import { getTeamColorHex, PLAYER_TEAMS } from './constants.js';
 
+/**
+ * Create a gun turret with interactive aiming capabilities
+ * @param {Phaser.Scene} scene - The Phaser scene instance
+ * @param {number} x - X position for the turret
+ * @param {number} y - Y position for the turret
+ * @param {string} [team='player1'] - Team identifier (player1, player2, etc.)
+ * @returns {any} The turret container with attached methods and properties
+ */
 export function createGunTurret(scene, x, y, team = 'player1') {
     // Create a container to hold all turret parts
     const turret = scene.add.container(x, y);
@@ -82,8 +90,8 @@ export function createGunTurret(scene, x, y, team = 'player1') {
             const bg = scene.add.graphics();
             bg.fillStyle(0x000000, 0.8);
             bg.lineStyle(1, 0xffffff, 0.6);
-            bg.fillRoundedRect(-50, -18, 100, 36, 5);
-            bg.strokeRoundedRect(-50, -18, 100, 36, 5);
+            bg.fillRoundedRect(-30, -20, 60, 40, 5);
+            bg.strokeRoundedRect(-30, -20, 60, 40, 5);
             
             // Create text
             const text = scene.add.text(0, 0, '', {
@@ -281,6 +289,14 @@ export function createGunTurret(scene, x, y, team = 'player1') {
     return turret;
 }
 
+/**
+ * Place turrets randomly on flat bases in the landscape
+ * @param {Phaser.Scene} scene - The Phaser scene instance
+ * @param {Array<{start: number, end: number}>} flatBases - Array of flat base objects with start/end indices
+ * @param {Array<{x: number, y: number}>} points - Array of landscape points
+ * @param {number} [numPlayers=2] - Number of players/turrets to place
+ * @returns {Array<any>} Array of created turret objects
+ */
 export function placeTurretsOnBases(scene, flatBases, points, numPlayers = 2) {
     const turrets = [];
     

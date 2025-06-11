@@ -29,7 +29,7 @@ export function createProjectile(scene, startX, startY, angle, power) {
     // Calculate initial velocity based on angle and power
     // Power ranges from 0.2 to 1.0, let's scale it to reasonable velocity
     const baseVelocity = 100; // Base velocity (pixels per second)
-    const maxVelocity = 1200; // Maximum velocity at full power
+    const maxVelocity = 2000; // Maximum velocity at full power
     const velocity = baseVelocity + (maxVelocity - baseVelocity) * power;
     
     // Convert angle and power to velocity components
@@ -178,6 +178,14 @@ export function createExplosion(scene, x, y, radius = 20) {
     return null;
 }
 
+/**
+ * Check if projectile collides with terrain, turrets, or world bounds
+ * @param {Phaser.Scene} scene - The Phaser scene
+ * @param {Phaser.GameObjects.Graphics} projectile - The projectile object
+ * @param {{points: Array<{x: number, y: number}>, flatBases: Array}} landscapeData - Landscape collision data
+ * @param {Array<any>} turrets - Array of turret objects to check collision against
+ * @returns {{terrain: boolean, turret: any|null, worldBounds: boolean}} Collision results
+ */
 export function checkProjectileCollisions(scene, projectile, landscapeData, turrets) {
     const collisions = {
         terrain: false,
@@ -240,6 +248,11 @@ export function checkProjectileCollisions(scene, projectile, landscapeData, turr
     return collisions;
 }
 
+/**
+ * Clean up projectile and its associated graphics objects
+ * @param {Phaser.GameObjects.Graphics & {trail?: Array, trailGraphics?: Phaser.GameObjects.Graphics, body?: Phaser.Physics.Arcade.Body}} projectile - The projectile to clean up
+ * @returns {void}
+ */
 export function cleanupProjectile(projectile) {
     if (projectile.trailGraphics) {
         projectile.trailGraphics.destroy();

@@ -125,6 +125,7 @@ function initializeFormHandlers(onGameStart) {
 
 /**
  * Hide the configuration form and show the game container
+ * @returns {void}
  */
 export function hideFormShowGame() {
     const formContainer = document.getElementById('config-form-container');
@@ -141,6 +142,7 @@ export function hideFormShowGame() {
 
 /**
  * Show the configuration form and hide the game container (for returning to menu)
+ * @returns {void}
  */
 export function showFormHideGame() {
     const formContainer = document.getElementById('config-form-container');

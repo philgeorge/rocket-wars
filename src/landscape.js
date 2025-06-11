@@ -3,6 +3,14 @@
 
 import { WORLD_HEIGHT } from './constants.js';
 
+/**
+ * Generate landscape points with alternating flat and mountainous sections
+ * @param {number} width - World width in pixels
+ * @param {number} baseY - Base Y coordinate for the landscape
+ * @param {number} numPoints - Number of points to generate for the landscape
+ * @param {number} [numPlayers=2] - Number of players (determines number of sections)
+ * @returns {{points: Array<{x: number, y: number}>, flatBases: Array<{start: number, end: number}>}} Generated landscape data
+ */
 export function generateLandscapePoints(width, baseY, numPoints, numPlayers = 2) {
     const segment = width / (numPoints - 1);
     const points = [];
@@ -113,6 +121,15 @@ export function generateLandscapePoints(width, baseY, numPoints, numPlayers = 2)
     return { points, flatBases };
 }
 
+/**
+ * Draw the landscape using Phaser graphics
+ * @param {Phaser.GameObjects.Graphics} graphics - Phaser graphics object to draw with
+ * @param {Array<{x: number, y: number}>} points - Array of landscape points
+ * @param {number} worldWidth - World width in pixels
+ * @param {number} worldHeight - World height in pixels
+ * @param {Array<{start: number, end: number}>} flatBases - Array of flat base sections
+ * @returns {void}
+ */
 export function drawLandscape(graphics, points, worldWidth, worldHeight, flatBases) {
     // Draw green landscape
     graphics.beginPath();
@@ -162,6 +179,13 @@ export function drawLandscape(graphics, points, worldWidth, worldHeight, flatBas
     graphics.lineStyle(); // reset
 }
 
+/**
+ * Draw world boundaries (left and right edges)
+ * @param {Phaser.GameObjects.Graphics} graphics - Phaser graphics object to draw with
+ * @param {number} worldWidth - World width in pixels
+ * @param {number} worldHeight - World height in pixels
+ * @returns {void}
+ */
 export function drawWorldBoundaries(graphics, worldWidth, worldHeight) {
     // Mark the left and right edges of the world with vertical lines
     graphics.lineStyle(4, 0xff0000, 1); // Red, 4px
