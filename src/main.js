@@ -171,7 +171,7 @@ function update() {
             // Apply continuous wind force to projectile during flight
             if (this.gameState && projectile.body) {
                 const windForce = this.gameState.wind.current / 100; // Normalize to -1 to +1
-                const windAcceleration = windForce * 150; // Wind acceleration (pixels/sec²)
+                const windAcceleration = windForce * 220; // Wind acceleration (pixels/sec²)
                 
                 // Apply wind as horizontal acceleration (accumulated over time)
                 projectile.body.acceleration.x = windAcceleration;

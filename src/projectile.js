@@ -28,8 +28,8 @@ export function createProjectile(scene, startX, startY, angle, power) {
     
     // Calculate initial velocity based on angle and power
     // Power ranges from 0.2 to 1.0, let's scale it to reasonable velocity
-    const baseVelocity = 300; // Base velocity (pixels per second)
-    const maxVelocity = 800; // Maximum velocity at full power
+    const baseVelocity = 100; // Base velocity (pixels per second)
+    const maxVelocity = 1200; // Maximum velocity at full power
     const velocity = baseVelocity + (maxVelocity - baseVelocity) * power;
     
     // Convert angle and power to velocity components
