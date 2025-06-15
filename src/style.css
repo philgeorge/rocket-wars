@@ -109,7 +109,6 @@ button[type="submit"]:active {
 }
 
 #game-container {
-  margin-top: 20px;
   width: 100%;
   height: calc(100vh - 20px);
   display: flex;

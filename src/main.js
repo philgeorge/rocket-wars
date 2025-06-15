@@ -162,6 +162,46 @@ function update() {
     
     // Update projectiles
     if (this.projectiles) {
+        // Camera follows the projectile (smooth following for better mobile experience)
+        if (this.projectiles.length > 0) {
+            // Get the first (newest) projectile to follow
+            const activeProjectile = this.projectiles[0];
+            
+            // Smooth camera following with lerp for cinematic effect
+            const camera = this.cameras.main;
+            const lerpFactor = 0.08; // Adjust for smoothness (0.05-0.15 works well)
+            
+            // Calculate target position (slightly ahead of projectile based on velocity direction)
+            const body = activeProjectile.body;
+            const leadDistance = 100; // How far ahead to look
+            let targetX = activeProjectile.x;
+            let targetY = activeProjectile.y;
+            
+            // Add leading prediction based on velocity
+            if (body && body.velocity) {
+                const velocityMagnitude = Math.sqrt(body.velocity.x * body.velocity.x + body.velocity.y * body.velocity.y);
+                if (velocityMagnitude > 50) { // Only lead if moving fast enough
+                    const normalizedVelX = body.velocity.x / velocityMagnitude;
+                    const normalizedVelY = body.velocity.y / velocityMagnitude;
+                    targetX += normalizedVelX * leadDistance;
+                    targetY += normalizedVelY * leadDistance;
+                }
+            }
+            
+            // Smoothly move camera towards target
+            const currentX = camera.scrollX + camera.width / 2;
+            const currentY = camera.scrollY + camera.height / 2;
+            const newX = currentX + (targetX - currentX) * lerpFactor;
+            const newY = currentY + (targetY - currentY) * lerpFactor;
+            
+            camera.centerOn(newX, newY);
+            
+            // Enable following mode
+            if (this.cameraControls) {
+                this.cameraControls.followingProjectile = true;
+            }
+        }
+        
         // Update each projectile
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
             const projectile = this.projectiles[i];
@@ -226,12 +266,24 @@ function update() {
             if (shouldRemove) {
                 cleanupProjectile(projectile);
                 this.projectiles.splice(i, 1);
+                
+                // When last projectile is removed, disable camera following
+                if (this.projectiles.length === 1 && this.cameraControls && this.cameraControls.followingProjectile) {
+                    console.log('Last projectile removed - re-enabling camera controls');
+                    this.cameraControls.followingProjectile = false;
+                }
             }
+        }
+        
+        // Ensure camera following is disabled when no projectiles remain
+        if (this.projectiles.length === 0 && this.cameraControls && this.cameraControls.followingProjectile) {
+            console.log('No projectiles remaining - disabling camera following');
+            this.cameraControls.followingProjectile = false;
         }
     }
     
-    // Keyboard camera movement
-    if (this.cameraControls && !this.cameraControls.isDragging() && !this.cameraControls.isPanning() && !this.currentPlayerTurret) {
+    // Keyboard camera movement (disabled while following projectile)
+    if (this.cameraControls && !this.cameraControls.isDragging() && !this.cameraControls.isPanning() && !this.currentPlayerTurret && !this.cameraControls.followingProjectile) {
         const camera = this.cameras.main;
         const speed = 5;
         
@@ -317,6 +369,30 @@ function setupCameraAndInput(scene) {
     
     // Mouse/touch controls for camera panning
     scene.input.on('pointerdown', (pointer) => {
+        // Always allow turret clicking, even when following projectile
+        // Single touch/mouse: check if we clicked on a turret first
+        /** @type {any} */
+        let clickedTurret = null;
+        scene.turrets.forEach(turret => {
+            const distance = Phaser.Math.Distance.Between(pointer.worldX, pointer.worldY, turret.x, turret.y);
+            if (distance < 30) { // 30px radius
+                clickedTurret = turret;
+            }
+        });
+        
+        if (clickedTurret) {
+            // Start aiming
+            console.log(`Clicked on ${clickedTurret.team} turret`);
+            scene.currentPlayerTurret = clickedTurret;
+            clickedTurret.startAiming();
+            return; // Exit early if we clicked a turret
+        }
+        
+        // Skip camera controls if following projectile
+        if (scene.cameraControls && scene.cameraControls.followingProjectile) {
+            return;
+        }
+        
         // Track active pointers for multi-touch detection
         activePointers.add(pointer.id);
         
@@ -337,29 +413,12 @@ function setupCameraAndInput(scene) {
             return;
         }
         
-        // Single touch/mouse: check if we clicked on a turret first
-        /** @type {any} */
-        let clickedTurret = null;
-        scene.turrets.forEach(turret => {
-            const distance = Phaser.Math.Distance.Between(pointer.worldX, pointer.worldY, turret.x, turret.y);
-            if (distance < 30) { // 30px radius
-                clickedTurret = turret;
-            }
-        });
-        
-        if (clickedTurret) {
-            // Start aiming
-            console.log(`Clicked on ${clickedTurret.team} turret`);
-            scene.currentPlayerTurret = clickedTurret;
-            clickedTurret.startAiming();
-        } else {
-            // Start camera dragging (single touch/mouse)
-            isDragging = true;
-            dragStartX = pointer.x;
-            dragStartY = pointer.y;
-            cameraStartX = scene.cameras.main.scrollX;
-            cameraStartY = scene.cameras.main.scrollY;
-        }
+        // Start camera dragging (single touch/mouse)
+        isDragging = true;
+        dragStartX = pointer.x;
+        dragStartY = pointer.y;
+        cameraStartX = scene.cameras.main.scrollX;
+        cameraStartY = scene.cameras.main.scrollY;
     });
     
     scene.input.on('pointerup', (pointer) => {
@@ -379,6 +438,15 @@ function setupCameraAndInput(scene) {
     });
     
     scene.input.on('pointermove', (pointer) => {
+        // Skip camera controls if following projectile
+        if (scene.cameraControls && scene.cameraControls.followingProjectile) {
+            // Still allow aiming if player is actively aiming
+            if (scene.currentPlayerTurret && scene.currentPlayerTurret.isAiming && activePointers.size < 2) {
+                scene.currentPlayerTurret.updateAim(pointer.worldX, pointer.worldY);
+            }
+            return;
+        }
+        
         if (isPanning && activePointers.size >= 2) {
             // Multi-touch panning mode
             const deltaX = pointer.x - panStartX;
@@ -456,6 +524,7 @@ function setupCameraAndInput(scene) {
         cursors,
         wasd,
         isDragging: () => isDragging,
-        isPanning: () => isPanning
+        isPanning: () => isPanning,
+        followingProjectile: false  // Flag to disable manual camera controls during projectile flight
     };
 }
