@@ -104,77 +104,128 @@ export function drawProjectileTrail(scene, projectile) {
 }
 
 /**
- * Create explosion effect with debris
+ * Create explosion effect with concentric rings
  * @param {Phaser.Scene} scene - The Phaser scene
  * @param {number} x - Explosion X coordinate
  * @param {number} y - Explosion Y coordinate
- * @param {number} [radius=20] - Explosion radius
+ * @param {number} [radius=20] - Maximum explosion radius
  * @returns {null}
  */
 export function createExplosion(scene, x, y, radius = 20) {
-    // Define colors for debris
-    const colors = [0xff6b6b, 0xff9f43, 0xffc048, 0xfff3a0];
+    console.log(`💥 Creating explosion at (${Math.round(x)}, ${Math.round(y)}) with radius ${radius}`);
     
-    // Create debris that stays at impact point initially, then spreads outward
-    const debrisObjects = [];
+    // Define explosion ring colors (from center outward)
+    const ringColors = [
+        0xffffff, // White core
+        0xffff99, // Bright yellow
+        0xff9933, // Orange
+        0xff6666, // Red
+        0x996633  // Brown smoke
+    ];
     
-    for (let i = 0; i < 8; i++) {
-        // Create debris as simple graphics object
-        const debris = /** @type {Phaser.GameObjects.Graphics & {startX: number, startY: number, moveAngle: number, maxDistance: number, lifeTime: number, maxLife: number}} */ (scene.add.graphics());
-        debris.fillStyle(colors[i % colors.length], 0.9);
-        debris.fillRect(-2, -2, 4, 4); // Small square debris
-        
-        // Position debris exactly at explosion center
-        debris.x = x;
-        debris.y = y;
-        
-        // Calculate direction for spreading (but don't move yet)
-        const baseAngle = (Math.PI * 2 * i) / 8;
-        const angleVariation = (Math.random() - 0.5) * 0.3;
-        const debrisAngle = baseAngle + angleVariation;
-        
-        // Store movement data on debris object
-        debris.startX = x; // Remember starting position
-        debris.startY = y;
-        debris.moveAngle = debrisAngle;
-        debris.maxDistance = 20 + Math.random() * 30; // How far debris will travel
-        debris.lifeTime = 0;
-        debris.maxLife = 90; // 1.5 seconds at 60fps
-        
-        debrisObjects.push(debris);
-    }
+    // Create multiple concentric rings
+    const numRings = 4;
+    const maxRadius = radius * 1.5; // Explosion extends beyond projectile radius
+    const explosionDuration = 800; // 0.8 seconds
     
-    // Manual animation loop for debris
-    const debrisTimer = scene.time.addEvent({
-        delay: 16, // ~60fps
-        repeat: 90, // 1.5 seconds
-        callback: () => {
-            debrisObjects.forEach((debris, index) => {
-                if (!debris.active) return;
-                
-                debris.lifeTime++;
-                const progress = debris.lifeTime / debris.maxLife;
-                
-                // Calculate current position based on how much time has passed
-                // Debris spreads outward over time with gravity effect
-                const distance = debris.maxDistance * progress;
-                const gravityDrop = progress * progress * 15; // Quadratic gravity effect
-                
-                debris.x = debris.startX + Math.cos(debris.moveAngle) * distance;
-                debris.y = debris.startY + Math.sin(debris.moveAngle) * distance + gravityDrop;
-                
-                // Fade out over time
-                debris.alpha = 1 - progress;
-                
-                // Destroy when life is over
-                if (debris.lifeTime >= debris.maxLife) {
-                    debris.destroy();
+    for (let ringIndex = 0; ringIndex < numRings; ringIndex++) {
+        // Create graphics object for this ring
+        const ringGraphics = scene.add.graphics();
+        
+        // Calculate ring properties
+        const ringDelay = ringIndex * 80; // Stagger ring appearances
+        const ringColor = ringColors[ringIndex % ringColors.length];
+        const finalRadius = maxRadius * (1 - ringIndex * 0.15); // Smaller rings for inner ones
+        
+        // Position the ring at explosion center
+        ringGraphics.x = x;
+        ringGraphics.y = y;
+        
+        // Start ring animation after delay
+        scene.time.delayedCall(ringDelay, () => {
+            // Animate the ring expanding and fading
+            scene.tweens.add({
+                targets: ringGraphics,
+                scaleX: { from: 0.1, to: 2.0 },
+                scaleY: { from: 0.1, to: 2.0 },
+                alpha: { from: 0.9, to: 0.0 },
+                duration: explosionDuration - ringDelay,
+                ease: 'Power2',
+                onUpdate: (tween) => {
+                    // Redraw the ring with current scale and alpha
+                    const progress = tween.progress;
+                    const currentRadius = finalRadius * progress;
+                    const currentAlpha = ringGraphics.alpha;
+                    const lineWidth = Math.max(1, 6 - progress * 4); // Thicker lines at start
+                    
+                    ringGraphics.clear();
+                    ringGraphics.lineStyle(lineWidth, ringColor, currentAlpha);
+                    ringGraphics.strokeCircle(0, 0, currentRadius);
+                    
+                    // Add some fill for the inner rings
+                    if (ringIndex < 2) {
+                        const fillAlpha = currentAlpha * 0.3;
+                        ringGraphics.fillStyle(ringColor, fillAlpha);
+                        ringGraphics.fillCircle(0, 0, currentRadius);
+                    }
+                },
+                onComplete: () => {
+                    ringGraphics.destroy();
                 }
             });
-        }
+        });
+    }
+    
+    // Add screen shake effect for impact
+    if (scene.cameras && scene.cameras.main) {
+        const shakeIntensity = Math.min(0.02, radius / 1000); // Scale shake with explosion size
+        scene.cameras.main.shake(200, shakeIntensity);
+    }
+    
+    // Add initial flash effect
+    const flashGraphics = scene.add.graphics();
+    flashGraphics.x = x;
+    flashGraphics.y = y;
+    flashGraphics.fillStyle(0xffffff, 0.8);
+    flashGraphics.fillCircle(0, 0, radius * 0.3);
+    
+    // Flash fade out quickly
+    scene.tweens.add({
+        targets: flashGraphics,
+        alpha: { from: 0.8, to: 0 },
+        scaleX: { from: 1, to: 1.5 },
+        scaleY: { from: 1, to: 1.5 },
+        duration: 150,
+        ease: 'Power3',
+        onComplete: () => flashGraphics.destroy()
     });
     
-    // Return null since we removed the explosion graphics
+    // Add radiating sparks
+    const numSparks = 8;
+    for (let i = 0; i < numSparks; i++) {
+        const sparkGraphics = scene.add.graphics();
+        const sparkAngle = (Math.PI * 2 * i) / numSparks + (Math.random() - 0.5) * 0.4;
+        const sparkDistance = radius + Math.random() * radius;
+        
+        sparkGraphics.x = x;
+        sparkGraphics.y = y;
+        
+        // Draw small spark
+        sparkGraphics.fillStyle(0xffffff, 0.9);
+        sparkGraphics.fillCircle(0, 0, 2);
+        
+        // Animate spark flying outward
+        scene.tweens.add({
+            targets: sparkGraphics,
+            x: x + Math.cos(sparkAngle) * sparkDistance,
+            y: y + Math.sin(sparkAngle) * sparkDistance,
+            alpha: { from: 0.9, to: 0 },
+            duration: 400 + Math.random() * 200,
+            ease: 'Power2',
+            onComplete: () => sparkGraphics.destroy()
+        });
+    }
+    
     return null;
 }
 
