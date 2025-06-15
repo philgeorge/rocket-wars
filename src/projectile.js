@@ -108,10 +108,11 @@ export function drawProjectileTrail(scene, projectile) {
  * @param {Phaser.Scene} scene - The Phaser scene
  * @param {number} x - Explosion X coordinate
  * @param {number} y - Explosion Y coordinate
- * @param {number} [radius=20] - Maximum explosion radius
+ * @param {number} [radius=80] - Maximum explosion radius
+ * @param {string} [hitType='turret'] - Type of hit ('terrain' or 'turret') for shake intensity
  * @returns {null}
  */
-export function createExplosion(scene, x, y, radius = 20) {
+export function createExplosion(scene, x, y, radius = 80, hitType = 'turret') {
     console.log(`💥 Creating explosion at (${Math.round(x)}, ${Math.round(y)}) with radius ${radius}`);
     
     // Define explosion ring colors (from center outward)
@@ -178,7 +179,9 @@ export function createExplosion(scene, x, y, radius = 20) {
     
     // Add screen shake effect for impact
     if (scene.cameras && scene.cameras.main) {
-        const shakeIntensity = Math.min(0.02, radius / 1000); // Scale shake with explosion size
+        // Reduce shake intensity for terrain hits
+        const baseShakeIntensity = Math.min(0.02, radius / 1000); // Scale shake with explosion size
+        const shakeIntensity = hitType === 'terrain' ? baseShakeIntensity * 0.5 : baseShakeIntensity;
         scene.cameras.main.shake(200, shakeIntensity);
     }
     
@@ -227,6 +230,51 @@ export function createExplosion(scene, x, y, radius = 20) {
     }
     
     return null;
+}
+
+/**
+ * Calculate area-of-effect damage for turrets within explosion radius
+ * @param {number} explosionX - X coordinate of explosion center
+ * @param {number} explosionY - Y coordinate of explosion center
+ * @param {number} explosionRadius - Radius of the explosion
+ * @param {Array<any>} turrets - Array of turret objects
+ * @returns {Array<{turret: any, damage: number, distance: number}>} Array of affected turrets and damage info
+ */
+export function calculateAOEDamage(explosionX, explosionY, explosionRadius, turrets) {
+    const affectedTurrets = [];
+    
+    console.log(`🔍 AOE Check: Explosion at (${explosionX.toFixed(1)}, ${explosionY.toFixed(1)}) with radius ${explosionRadius}px`);
+    console.log(`🔍 Checking ${turrets.length} turrets for AOE damage:`);
+    
+    turrets.forEach((turret, index) => {
+        const distance = Phaser.Math.Distance.Between(explosionX, explosionY, turret.x, turret.y);
+        console.log(`  Turret ${index + 1} (${turret.team}): at (${turret.x.toFixed(1)}, ${turret.y.toFixed(1)}) - Distance: ${distance.toFixed(1)}px`);
+        
+        // Check if turret is within explosion radius
+        if (distance <= explosionRadius) {
+            // Calculate AOE damage based on distance from explosion center
+            // Damage falls off from center to edge of explosion
+            const maxAOEDamage = 15; // Maximum AOE damage (less than direct hit)
+            const minAOEDamage = 3;  // Minimum AOE damage at explosion edge
+            
+            // Linear falloff from center to edge
+            const distanceFactor = 1 - (distance / explosionRadius);
+            const aoeDamage = minAOEDamage + (maxAOEDamage - minAOEDamage) * distanceFactor;
+            
+            console.log(`    ✅ WITHIN RANGE! AOE damage to ${turret.team}: ${Math.round(aoeDamage)} (distance: ${distance.toFixed(1)}px from ${explosionRadius}px explosion)`);
+            
+            affectedTurrets.push({
+                turret: turret,
+                damage: Math.round(aoeDamage),
+                distance: distance
+            });
+        } else {
+            console.log(`    ❌ Too far away (${distance.toFixed(1)}px > ${explosionRadius}px)`);
+        }
+    });
+    
+    console.log(`🎯 AOE Result: ${affectedTurrets.length} turrets affected by explosion`);
+    return affectedTurrets;
 }
 
 /**

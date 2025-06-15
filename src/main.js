@@ -3,7 +3,7 @@
 
 import { generateLandscapePoints, drawLandscape, drawWorldBoundaries } from './landscape.js';
 import { placeTurretsOnBases } from './turret.js';
-import { createProjectile, updateProjectileTrail, drawProjectileTrail, createExplosion, checkProjectileCollisions, cleanupProjectile, calculateDamage } from './projectile.js';
+import { createProjectile, updateProjectileTrail, drawProjectileTrail, createExplosion, checkProjectileCollisions, cleanupProjectile, calculateDamage, calculateAOEDamage } from './projectile.js';
 import { createStatusPanel, createGameState, updateWindForNewTurn, applyDamage, positionStatusPanel } from './ui.js';
 import { initializeGameSetup } from './gameSetup.js';
 import { WORLD_HEIGHT, calculateWorldWidth } from './constants.js';
@@ -124,6 +124,16 @@ function create() {
     const turrets = placeTurretsOnBases(this, flatBases, points, gameConfig.numPlayers);
     console.log(`Created ${turrets.length} turrets:`, turrets.map(t => ({team: t.team, x: t.x, y: t.y})));
     
+    // Log turret distances for AOE debugging
+    if (turrets.length >= 2) {
+        for (let i = 0; i < turrets.length; i++) {
+            for (let j = i + 1; j < turrets.length; j++) {
+                const distance = Phaser.Math.Distance.Between(turrets[i].x, turrets[i].y, turrets[j].x, turrets[j].y);
+                console.log(`📏 Distance between ${turrets[i].team} and ${turrets[j].team}: ${distance.toFixed(1)}px`);
+            }
+        }
+    }
+    
     // Store turrets for access in input handlers
     this.turrets = turrets;
     this.currentPlayerTurret = null;
@@ -237,7 +247,25 @@ function update() {
             
             if (collisions.terrain) {
                 console.log('Projectile hit terrain!');
-                createExplosion(this, projectile.x, projectile.y, 25);
+                // Large explosion for terrain hits (80px for excellent AOE coverage)
+                const terrainExplosionSize = 80;
+                console.log(`🌍 Terrain explosion size: ${terrainExplosionSize}px`);
+                createExplosion(this, projectile.x, projectile.y, terrainExplosionSize, 'terrain');
+                
+                // Check for AOE damage to nearby turrets
+                const affectedTurrets = calculateAOEDamage(projectile.x, projectile.y, terrainExplosionSize, this.turrets);
+                
+                // Apply AOE damage to affected turrets
+                affectedTurrets.forEach(({turret, damage}) => {
+                    applyDamage(this.gameState, turret.team, damage);
+                    console.log(`🌊 ${turret.team} turret took ${damage} AOE damage from terrain explosion, health now: ${this.gameState[turret.team].health}%`);
+                });
+                
+                // Update status panel if any turrets were damaged
+                if (affectedTurrets.length > 0 && this.statusPanel && this.statusPanel.updateDisplay) {
+                    this.statusPanel.updateDisplay(this.gameState);
+                }
+                
                 shouldRemove = true;
             } else if (collisions.turret) {
                 console.log(`Projectile hit ${collisions.turret.team} turret!`);
@@ -245,13 +273,24 @@ function update() {
                 // Calculate dynamic damage based on accuracy and velocity
                 const damage = calculateDamage(projectile, collisions.turret, collisions.turretDistance || 0);
                 
-                // Create explosion with size based on damage
-                const explosionSize = 20 + (damage / 50) * 20; // 20-40px based on damage
-                createExplosion(this, projectile.x, projectile.y, explosionSize);
+                // Large explosion for turret hits (80px base)
+                const explosionSize = 80;
+                console.log(`🎯 Turret explosion size: ${explosionSize}px (damage: ${damage})`);
+                createExplosion(this, projectile.x, projectile.y, explosionSize, 'turret');
                 
-                // Apply damage
+                // Apply direct damage to hit turret
                 applyDamage(this.gameState, collisions.turret.team, damage);
-                console.log(`💥 ${collisions.turret.team} turret took ${damage} damage, health now: ${this.gameState[collisions.turret.team].health}%`);
+                console.log(`💥 ${collisions.turret.team} turret took ${damage} direct damage, health now: ${this.gameState[collisions.turret.team].health}%`);
+                
+                // Check for AOE damage to other nearby turrets (excluding the directly hit one)
+                const otherTurrets = this.turrets.filter(t => t !== collisions.turret);
+                const affectedTurrets = calculateAOEDamage(projectile.x, projectile.y, explosionSize, otherTurrets);
+                
+                // Apply AOE damage to affected turrets
+                affectedTurrets.forEach(({turret, damage: aoeDamage}) => {
+                    applyDamage(this.gameState, turret.team, aoeDamage);
+                    console.log(`🌊 ${turret.team} turret took ${aoeDamage} AOE damage from turret explosion, health now: ${this.gameState[turret.team].health}%`);
+                });
                 
                 // Update status panel display
                 if (this.statusPanel && this.statusPanel.updateDisplay) {

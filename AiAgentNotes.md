@@ -32,6 +32,11 @@ This file contains notes about my learnings from using an AI Agent to help me bu
 - Copied wind changing code from AGL laptop which I couldn't commit
 - Style/sizing improvements on aiming tooltip and game info panel
 
+## 15 June 2 hours
+- Deploying to Github Pages
+- Camera tracking of projectiles
+- Replace debris with explosions and variable damage
+
 # Odd Agent Behaviour
 
 - Choosing technology and shaping the look of the game went very well. This is kind of like competitor analysis and market research for a product.
@@ -42,3 +47,5 @@ This file contains notes about my learnings from using an AI Agent to help me bu
 - Agent tried to update this file! Fair enough, I have now added explicit instructions that tell it to leave this file for my own personal musings. Hopefully that is enough.
 - When first implementing projectiles, it went through the steps adding a code module and integrating it, and then iterated, telling me "it looks like the projectile.js" file already exists. let me check its current content". I think this is when it needs to clear its context by "Summarizing conversation history" in the middle of actioning a single prompt.
 - Without me realising it I found the same code (placement of the status panel) duplicated in 3 places, one of which was unused. I had to explicitly point this out and request refactoring to remove duplication.
+- Asking about Github Pages deployment was confusing. Copilot didn't properly understand the Github settings and pushed me down the wrong path (keeping static games file in a subfolder). Then when it realised the problem and gave me options to fix, some of them were redundant, and another seemed really bad (keepng the html file in 2 places). I basically had to tell it the right solution and then it did it for me.
+- Sometimes the agent corrupts files with its changes, identifies this, restores and tries again. I am wondering if this is more likely when I have the file open as it is editing?
