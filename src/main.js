@@ -3,7 +3,7 @@
 
 import { generateLandscapePoints, drawLandscape, drawWorldBoundaries } from './landscape.js';
 import { placeTurretsOnBases } from './turret.js';
-import { createProjectile, updateProjectileTrail, drawProjectileTrail, createExplosion, checkProjectileCollisions, cleanupProjectile } from './projectile.js';
+import { createProjectile, updateProjectileTrail, drawProjectileTrail, createExplosion, checkProjectileCollisions, cleanupProjectile, calculateDamage } from './projectile.js';
 import { createStatusPanel, createGameState, updateWindForNewTurn, applyDamage, positionStatusPanel } from './ui.js';
 import { initializeGameSetup } from './gameSetup.js';
 import { WORLD_HEIGHT, calculateWorldWidth } from './constants.js';
@@ -241,12 +241,17 @@ function update() {
                 shouldRemove = true;
             } else if (collisions.turret) {
                 console.log(`Projectile hit ${collisions.turret.team} turret!`);
-                createExplosion(this, projectile.x, projectile.y, 30);
                 
-                // Apply damage to the hit turret
-                const damage = 25; // Fixed damage per hit
+                // Calculate dynamic damage based on accuracy and velocity
+                const damage = calculateDamage(projectile, collisions.turret, collisions.turretDistance || 0);
+                
+                // Create explosion with size based on damage
+                const explosionSize = 20 + (damage / 50) * 20; // 20-40px based on damage
+                createExplosion(this, projectile.x, projectile.y, explosionSize);
+                
+                // Apply damage
                 applyDamage(this.gameState, collisions.turret.team, damage);
-                console.log(`${collisions.turret.team} turret took ${damage} damage, health now: ${this.gameState[collisions.turret.team].health}%`);
+                console.log(`💥 ${collisions.turret.team} turret took ${damage} damage, health now: ${this.gameState[collisions.turret.team].health}%`);
                 
                 // Update status panel display
                 if (this.statusPanel && this.statusPanel.updateDisplay) {

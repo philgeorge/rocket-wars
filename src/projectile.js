@@ -235,7 +235,7 @@ export function createExplosion(scene, x, y, radius = 20) {
  * @param {Phaser.GameObjects.Graphics} projectile - The projectile object
  * @param {{points: Array<{x: number, y: number}>, flatBases: Array}} landscapeData - Landscape collision data
  * @param {Array<any>} turrets - Array of turret objects to check collision against
- * @returns {{terrain: boolean, turret: any|null, worldBounds: boolean}} Collision results
+ * @returns {{terrain: boolean, turret: any|null, turretDistance?: number, worldBounds: boolean}} Collision results
  */
 export function checkProjectileCollisions(scene, projectile, landscapeData, turrets) {
     const collisions = {
@@ -257,6 +257,7 @@ export function checkProjectileCollisions(scene, projectile, landscapeData, turr
         const distance = Phaser.Math.Distance.Between(projectile.x, projectile.y, turret.x, turret.y);
         if (distance < 25) { // Turret collision radius
             collisions.turret = turret;
+            collisions.turretDistance = distance; // Store distance for damage calculation
         }
     });
 
@@ -312,4 +313,51 @@ export function cleanupProjectile(projectile) {
         projectile.body.destroy();
     }
     projectile.destroy();
+}
+
+/**
+ * Calculate damage based on impact accuracy and projectile velocity
+ * @param {Phaser.GameObjects.Graphics} projectile - The projectile object
+ * @param {any} turret - The turret that was hit
+ * @param {number} distance - Distance from projectile to turret center
+ * @returns {number} Calculated damage amount (0-50)
+ */
+export function calculateDamage(projectile, turret, distance) {
+    // Base damage parameters - more generous ranges
+    const MAX_DAMAGE = 50; // Maximum possible damage
+    const BASE_DAMAGE = 20; // Higher minimum damage for any hit
+    const TURRET_RADIUS = 25; // Turret collision radius
+    
+    // Calculate accuracy factor with more generous curve
+    // Use square root to make the falloff less harsh
+    const rawAccuracyFactor = Math.max(0, 1 - (distance / TURRET_RADIUS));
+    const accuracyFactor = Math.sqrt(rawAccuracyFactor); // More generous curve
+    
+    // Calculate velocity factor from projectile speed - more generous scaling
+    let velocityFactor = 0;
+    if (projectile.body && projectile.body.velocity) {
+        const speed = Math.sqrt(
+            projectile.body.velocity.x ** 2 + 
+            projectile.body.velocity.y ** 2
+        );
+        // More generous velocity scaling: 0-1500 px/s -> 0.0-1.0 factor
+        velocityFactor = Math.min(1.0, speed / 1500);
+    }
+    
+    // Adjust weighting to be more balanced: 60% accuracy, 40% velocity
+    const accuracyWeight = 0.6;
+    const velocityWeight = 0.4;
+    const combinedFactor = (accuracyWeight * accuracyFactor) + (velocityWeight * velocityFactor);
+    
+    // Calculate final damage
+    const damage = BASE_DAMAGE + (MAX_DAMAGE - BASE_DAMAGE) * combinedFactor;
+    
+    console.log(`🎯 Damage calculation (generous):
+    - Distance: ${distance.toFixed(1)}px from turret center (${TURRET_RADIUS}px radius)
+    - Raw accuracy: ${(rawAccuracyFactor * 100).toFixed(1)}% → Curved: ${(accuracyFactor * 100).toFixed(1)}%
+    - Velocity factor: ${(velocityFactor * 100).toFixed(1)}% (faster = more damage)
+    - Combined factor: ${(combinedFactor * 100).toFixed(1)}% (60% accuracy + 40% velocity)
+    - Final damage: ${Math.round(damage)} (range: ${BASE_DAMAGE}-${MAX_DAMAGE})`);
+    
+    return Math.round(damage);
 }
