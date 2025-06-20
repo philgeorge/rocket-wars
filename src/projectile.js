@@ -8,11 +8,11 @@
  * @param {number} startY - Starting Y position
  * @param {number} angle - Launch angle in radians
  * @param {number} power - Launch power (0.2 to 1.0)
- * @returns {Phaser.GameObjects.Graphics & {trail: Array<{x: number, y: number, time: number}>, maxTrailLength: number, isProjectile: boolean, startTime: number, maxFlightTime: number, trailGraphics?: Phaser.GameObjects.Graphics}}
+ * @returns {Phaser.GameObjects.Graphics & {trail: Array<{x: number, y: number, time: number}>, maxTrailLength: number, isProjectile: boolean, startTime: number, maxFlightTime: number, trailGraphics?: Phaser.GameObjects.Graphics, firingTurret?: any}}
  */
 export function createProjectile(scene, startX, startY, angle, power) {
     // Create projectile graphics (small rocket/bullet)
-    const projectile = /** @type {Phaser.GameObjects.Graphics & {trail: Array<{x: number, y: number, time: number}>, maxTrailLength: number, isProjectile: boolean, startTime: number, maxFlightTime: number, trailGraphics?: Phaser.GameObjects.Graphics}} */ (scene.add.graphics());
+    const projectile = /** @type {Phaser.GameObjects.Graphics & {trail: Array<{x: number, y: number, time: number}>, maxTrailLength: number, isProjectile: boolean, startTime: number, maxFlightTime: number, trailGraphics?: Phaser.GameObjects.Graphics, firingTurret?: any}} */ (scene.add.graphics());
     projectile.fillStyle(0xff6b6b, 1); // Reddish color for projectile
     projectile.fillCircle(0, 0, 3); // 3px radius circle
     projectile.lineStyle(1, 0xff4444, 1);

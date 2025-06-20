@@ -322,6 +322,11 @@ function update() {
             
             // Remove projectile if needed
             if (shouldRemove) {
+                // Trigger tooltip fade for the turret that fired this projectile
+                if (projectile.firingTurret && projectile.firingTurret.aimTooltip && projectile.firingTurret.aimTooltip.visible) {
+                    projectile.firingTurret.hideTooltip(500, 1500); // Shorter delay, faster fade
+                }
+                
                 cleanupProjectile(projectile);
                 this.projectiles.splice(i, 1);
                 
@@ -393,8 +398,8 @@ function setupCameraAndInput(scene) {
             const tipPosition = scene.currentPlayerTurret.getGunTipPosition();
             const projectile = createProjectile(scene, tipPosition.x, tipPosition.y, shootData.angle, shootData.power);
             
-            // Note: Wind effect is now applied continuously during flight in the update loop
-            console.log(`Projectile launched in aimed direction - wind will affect trajectory during flight`);
+            // Store reference to firing turret for tooltip management
+            projectile.firingTurret = scene.currentPlayerTurret;
             
             // Add projectile to scene's projectile list for tracking
             if (!scene.projectiles) {

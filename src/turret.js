@@ -292,10 +292,9 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         if (turret.aimingLine) {
             turret.aimingLine.clear();
         }
-        // Lock tooltip position to current screen coordinates before fade out
+        // Lock tooltip position to current screen coordinates but don't start fade timer yet
+        // Tooltip will fade when projectile finishes its flight
         turret.lockTooltipPosition();
-        // delay then fade out tooltip
-        turret.hideTooltip(2000, 2000);
         return {
             angle: turret.barrel.rotation,
             power: turret.currentPower || 0.5 // Default to 50% power if not set
