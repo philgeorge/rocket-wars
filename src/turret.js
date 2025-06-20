@@ -103,14 +103,14 @@ export function createGunTurret(scene, x, y, team = 'player1') {
             // Create tooltip container
             this.aimTooltip = scene.add.container(0, 0);
             
-            // Create background rectangle
+            // Create background rectangle to match status panel style
             const bg = scene.add.graphics();
             bg.fillStyle(0x000000, 0.8);
-            bg.lineStyle(1, 0xffffff, 0.6);
-            bg.fillRoundedRect(-30, -20, 60, 40, 5);
-            bg.strokeRoundedRect(-30, -20, 60, 40, 5);
+            bg.lineStyle(2, 0xffffff, 0.6);
+            bg.fillRoundedRect(-35, -25, 70, 50, 8);
+            bg.strokeRoundedRect(-35, -25, 70, 50, 8);
             
-            // Create text
+            // Create text to match status panel style
             const text = scene.add.text(0, 0, '', {
                 fontSize: '1rem',
                 color: '#ffffff',
