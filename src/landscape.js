@@ -176,7 +176,6 @@ export function drawLandscape(graphics, points, worldWidth, worldHeight, flatBas
             graphics.strokePath();
         }
     });
-    graphics.lineStyle(); // reset
 }
 
 /**
@@ -201,6 +200,4 @@ export function drawWorldBoundaries(graphics, worldWidth, worldHeight) {
     graphics.moveTo(worldWidth - 1, 0);
     graphics.lineTo(worldWidth - 1, worldHeight);
     graphics.strokePath();
-    
-    graphics.lineStyle(); // reset
 }
