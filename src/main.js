@@ -4,7 +4,7 @@
 import { generateLandscapePoints, drawLandscape, drawWorldBoundaries } from './landscape.js';
 import { placeTurretsOnBases } from './turret.js';
 import { createProjectile, updateProjectileTrail, drawProjectileTrail, createExplosion, checkProjectileCollisions, cleanupProjectile, calculateDamage, calculateAOEDamage } from './projectile.js';
-import { createStatusPanel, createGameState, updateWindForNewTurn, applyDamage, positionStatusPanel } from './ui.js';
+import { createEnvironmentPanel, createPlayerStatsPanel, createGameState, updateWindForNewTurn, applyDamage, positionEnvironmentPanel, positionPlayerStatsPanel } from './ui.js';
 import { initializeGameSetup } from './gameSetup.js';
 import { WORLD_HEIGHT, calculateWorldWidth } from './constants.js';
 
@@ -71,7 +71,7 @@ function preload() {
 
 /**
  * Create the game scene
- * @this {Phaser.Scene & {turrets: any[], currentPlayerTurret: any, projectiles: any[], landscapeData: any, gameState: any, statusPanel: any, cameraControls: any}}
+ * @this {Phaser.Scene & {turrets: any[], currentPlayerTurret: any, projectiles: any[], landscapeData: any, gameState: any, environmentPanel: any, playerStatsPanel: any, cameraControls: any}}
  */
 function create() {
     // Set camera bounds to the world size
@@ -94,9 +94,12 @@ function create() {
             // Update camera viewport size to show more/less of the world
             this.cameras.main.setSize(newWidth, newHeight);
             
-            // Reposition status panel to stay at top-right of new viewport
-            if (this.statusPanel) {
-                positionStatusPanel(this.statusPanel, newWidth);
+            // Reposition panels to stay at fixed screen locations
+            if (this.environmentPanel) {
+                positionEnvironmentPanel(this.environmentPanel);
+            }
+            if (this.playerStatsPanel) {
+                positionPlayerStatsPanel(this.playerStatsPanel, newWidth);
             }
         }, 100); // Throttle resize events
     };
@@ -146,13 +149,16 @@ function create() {
     
     // Initialize game state and UI
     this.gameState = createGameState(gameConfig);
-    this.statusPanel = createStatusPanel(this, this.gameState);
+    this.environmentPanel = createEnvironmentPanel(this, this.gameState);
+    this.playerStatsPanel = createPlayerStatsPanel(this, this.gameState);
     
-    // Position status panel at fixed screen location (top-right)
-    positionStatusPanel(this.statusPanel, this.cameras.main.width);
+    // Position panels at fixed screen locations
+    positionEnvironmentPanel(this.environmentPanel);
+    positionPlayerStatsPanel(this.playerStatsPanel, this.cameras.main.width);
     
-    // Initialize status panel display
-    this.statusPanel.updateDisplay(this.gameState);
+    // Initialize panel displays
+    this.environmentPanel.updateDisplay(this.gameState);
+    this.playerStatsPanel.updateDisplay(this.gameState);
     
     // Set up camera controls and input
     setupCameraAndInput(this);
@@ -165,7 +171,7 @@ function create() {
 
 /**
  * Update the game scene
- * @this {Phaser.Scene & {turrets: any[], currentPlayerTurret: any, projectiles: any[], landscapeData: any, gameState: any, statusPanel: any, cameraControls: any}}
+ * @this {Phaser.Scene & {turrets: any[], currentPlayerTurret: any, projectiles: any[], landscapeData: any, gameState: any, environmentPanel: any, playerStatsPanel: any, cameraControls: any}}
  */
 function update() {
     // Camera controls are handled in setupCameraAndInput
@@ -261,9 +267,14 @@ function update() {
                     console.log(`🌊 ${turret.team} turret took ${damage} AOE damage from terrain explosion, health now: ${this.gameState[turret.team].health}%`);
                 });
                 
-                // Update status panel if any turrets were damaged
-                if (affectedTurrets.length > 0 && this.statusPanel && this.statusPanel.updateDisplay) {
-                    this.statusPanel.updateDisplay(this.gameState);
+                // Update panels if any turrets were damaged
+                if (affectedTurrets.length > 0) {
+                    if (this.environmentPanel && this.environmentPanel.updateDisplay) {
+                        this.environmentPanel.updateDisplay(this.gameState);
+                    }
+                    if (this.playerStatsPanel && this.playerStatsPanel.updateDisplay) {
+                        this.playerStatsPanel.updateDisplay(this.gameState);
+                    }
                 }
                 
                 shouldRemove = true;
@@ -292,9 +303,12 @@ function update() {
                     console.log(`🌊 ${turret.team} turret took ${aoeDamage} AOE damage from turret explosion, health now: ${this.gameState[turret.team].health}%`);
                 });
                 
-                // Update status panel display
-                if (this.statusPanel && this.statusPanel.updateDisplay) {
-                    this.statusPanel.updateDisplay(this.gameState);
+                // Update panel displays
+                if (this.environmentPanel && this.environmentPanel.updateDisplay) {
+                    this.environmentPanel.updateDisplay(this.gameState);
+                }
+                if (this.playerStatsPanel && this.playerStatsPanel.updateDisplay) {
+                    this.playerStatsPanel.updateDisplay(this.gameState);
                 }
                 
                 shouldRemove = true;
@@ -390,12 +404,15 @@ function setupCameraAndInput(scene) {
             
             console.log(`Projectile launched from (${Math.round(tipPosition.x)}, ${Math.round(tipPosition.y)})`);
             
-            // Update wind for next turn and trigger status panel update
+            // Update wind for next turn and trigger panel updates
             if (scene.gameState) {
                 updateWindForNewTurn(scene.gameState);
-                // Update status panel display
-                if (scene.statusPanel && scene.statusPanel.updateDisplay) {
-                    scene.statusPanel.updateDisplay(scene.gameState);
+                // Update panel displays
+                if (scene.environmentPanel && scene.environmentPanel.updateDisplay) {
+                    scene.environmentPanel.updateDisplay(scene.gameState);
+                }
+                if (scene.playerStatsPanel && scene.playerStatsPanel.updateDisplay) {
+                    scene.playerStatsPanel.updateDisplay(scene.gameState);
                 }
             }
             

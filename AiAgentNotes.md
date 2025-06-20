@@ -37,12 +37,14 @@ This file contains notes about my learnings from using an AI Agent to help me bu
 - Camera tracking of projectiles
 - Replace debris with explosions and variable damage
 
-## 20 June 2 hours
+## 20 June 3 hours
 - got agent to create Refactors.md suggestions
 - asked to apply top priority items, but I didn't like how it did it
 - it removed logging and comments that were useful, not execessive
 - it extracted constants first to a separate file, then to the top of each module, I just wanted locally scoped "const" declarations
 - separating the things worth keeping from those I didn't want became impossible so I discarded everything using git; maybe will return to this later
+- split status panel into 2
+- move aiming panel into top center
 
 
 # Odd Agent Behaviour

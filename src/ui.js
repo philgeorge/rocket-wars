@@ -4,29 +4,25 @@
 import { getTeamColorCSS } from './constants.js';
 
 /**
- * Create a floating status panel showing game settings and player stats
+ * Create a floating environment panel showing wind and gravity
  * @param {Phaser.Scene} scene - The Phaser scene
- * @param {Object} gameState - Game state object containing wind, gravity, and player data
- * @returns {Phaser.GameObjects.Container & {updateDisplay: Function, windText: any, gravityText: any, playerElements: any[]}}
+ * @param {Object} gameState - Game state object containing wind and gravity data
+ * @returns {Phaser.GameObjects.Container & {updateDisplay: Function, windText: any, gravityText: any}}
  */
-export function createStatusPanel(scene, gameState) {
-    // Create main container positioned at top-right of screen
-    /** @type {Phaser.GameObjects.Container & {updateDisplay: Function, windText: any, gravityText: any, playerElements: any[]}} */
-    const statusPanel = /** @type {any} */ (scene.add.container(0, 0));
+export function createEnvironmentPanel(scene, gameState) {
+    // Create main container positioned at top-left of screen
+    /** @type {Phaser.GameObjects.Container & {updateDisplay: Function, windText: any, gravityText: any}} */
+    const envPanel = /** @type {any} */ (scene.add.container(0, 0));
     
-    // Calculate panel height based on number of players
-    const numPlayers = gameState.numPlayers || 2;
-    const baseHeight = 60; // Height for environment section only (reduced from 80)
-    const playerHeight = 60; // Height per player section (increased to fit 3 lines of text)
-    const bottomPadding = 12;
-    const totalHeight = baseHeight + (numPlayers * playerHeight) + bottomPadding;
+    const panelHeight = 80;
+    const panelWidth = 210;
     
     // Create background
     const bg = scene.add.graphics();
     bg.fillStyle(0x000000, 0.8);
     bg.lineStyle(2, 0xffffff, 0.6);
-    bg.fillRoundedRect(0, 0, 210, totalHeight, 8);
-    bg.strokeRoundedRect(0, 0, 210, totalHeight, 8);
+    bg.fillRoundedRect(0, 0, panelWidth, panelHeight, 8);
+    bg.strokeRoundedRect(0, 0, panelWidth, panelHeight, 8);
     
     // Environment section
     const envTitle = scene.add.text(10, 10, 'ENVIRONMENT', {
@@ -45,15 +41,62 @@ export function createStatusPanel(scene, gameState) {
         color: '#ffffff'
     });
     
-    // Player colors for 2-4 players - now using shared constants
-    // (Removed - using getTeamColorCSS function instead)
+    // Add all elements to container
+    envPanel.add([bg, envTitle, windText, gravityText]);
+    
+    // Store text references for updates
+    envPanel.windText = windText;
+    envPanel.gravityText = gravityText;
+    
+    // Method to update the display with current game state
+    envPanel.updateDisplay = function(gameState) {
+        const self = /** @type {typeof envPanel} */ (this);
+        // Update wind display with direction indicator
+        const windDirection = gameState.wind.current >= 0 ? '→' : '←';
+        const windSpeed = Math.abs(gameState.wind.current);
+        self.windText.setText(`Wind: ${windDirection} ${windSpeed} (±${gameState.wind.variation}%)`);
+        
+        // Update gravity display
+        self.gravityText.setText(`Gravity: ${gameState.gravity}`);
+    };
+    
+    // Position panel at top-left of screen (will be updated in scene)
+    envPanel.setScrollFactor(0); // Keep panel fixed on screen regardless of camera movement
+    
+    return envPanel;
+}
+
+/**
+ * Create a floating player stats panel showing all player information
+ * @param {Phaser.Scene} scene - The Phaser scene
+ * @param {Object} gameState - Game state object containing player data
+ * @returns {Phaser.GameObjects.Container & {updateDisplay: Function, playerElements: any[]}}
+ */
+export function createPlayerStatsPanel(scene, gameState) {
+    // Create main container positioned at top-right of screen
+    /** @type {Phaser.GameObjects.Container & {updateDisplay: Function, playerElements: any[]}} */
+    const playerPanel = /** @type {any} */ (scene.add.container(0, 0));
+    
+    // Calculate panel height based on number of players
+    const numPlayers = gameState.numPlayers || 2;
+    const playerHeight = 60; // Height per player section
+    const bottomPadding = 12;
+    const totalHeight = (numPlayers * playerHeight) + bottomPadding;
+    const panelWidth = 210;
+    
+    // Create background
+    const bg = scene.add.graphics();
+    bg.fillStyle(0x000000, 0.8);
+    bg.lineStyle(2, 0xffffff, 0.6);
+    bg.fillRoundedRect(0, 0, panelWidth, totalHeight, 8);
+    bg.strokeRoundedRect(0, 0, panelWidth, totalHeight, 8);
     
     // Create player sections dynamically
     const playerElements = [];
-    const elements = [bg, envTitle, windText, gravityText];
+    const elements = [bg];
     
     for (let i = 1; i <= numPlayers; i++) {
-        const yOffset = baseHeight + 10 + ((i - 1) * playerHeight);
+        const yOffset = 10 + ((i - 1) * playerHeight);
         const playerKey = `player${i}`;
         const playerColor = getTeamColorCSS(playerKey);
         
@@ -80,29 +123,18 @@ export function createStatusPanel(scene, gameState) {
             stats: playerStats
         });
         
-        elements.push(playerTitle, playerHealth, playerStats);
+        elements.push(/** @type {any} */ (playerTitle), /** @type {any} */ (playerHealth), /** @type {any} */ (playerStats));
     }
     
     // Add all elements to container
-    statusPanel.add(elements);
+    playerPanel.add(elements);
     
-    // Store text references for updates
-    statusPanel.windText = windText;
-    statusPanel.gravityText = gravityText;
-    statusPanel.playerElements = playerElements;
+    // Store references for updates
+    playerPanel.playerElements = playerElements;
     
     // Method to update the display with current game state
-    statusPanel.updateDisplay = function(gameState) {
-        /** @type {typeof statusPanel} */
-        const self = this;
-        // Update wind display with direction indicator
-        const windDirection = gameState.wind.current >= 0 ? '→' : '←';
-        const windSpeed = Math.abs(gameState.wind.current);
-        self.windText.setText(`Wind: ${windDirection} ${windSpeed} (±${gameState.wind.variation}%)`);
-        
-        // Update gravity display
-        self.gravityText.setText(`Gravity: ${gameState.gravity}`);
-        
+    playerPanel.updateDisplay = function(gameState) {
+        const self = /** @type {typeof playerPanel} */ (this);
         // Update all player stats
         self.playerElements.forEach(playerElement => {
             const player = gameState[playerElement.playerKey];
@@ -114,9 +146,9 @@ export function createStatusPanel(scene, gameState) {
     };
     
     // Position panel at top-right of screen (will be updated in scene)
-    statusPanel.setScrollFactor(0); // Keep panel fixed on screen regardless of camera movement
+    playerPanel.setScrollFactor(0); // Keep panel fixed on screen regardless of camera movement
     
-    return statusPanel;
+    return playerPanel;
 }
 
 /**
@@ -189,12 +221,22 @@ export function applyDamage(gameState, playerKey, damage) {
 }
 
 /**
- * Position status panel relative to viewport
- * @param {Phaser.GameObjects.Container} statusPanel - The status panel container
+ * Position environment panel relative to viewport (left side)
+ * @param {Phaser.GameObjects.Container} envPanel - The environment panel container
+ */
+export function positionEnvironmentPanel(envPanel) {
+    // Position at top-left of viewport with some padding
+    envPanel.x = 20; // 20px from left
+    envPanel.y = 20; // 20px from top
+}
+
+/**
+ * Position player stats panel relative to viewport (right side)
+ * @param {Phaser.GameObjects.Container} playerPanel - The player stats panel container
  * @param {number} viewportWidth - The viewport width
  */
-export function positionStatusPanel(statusPanel, viewportWidth) {
+export function positionPlayerStatsPanel(playerPanel, viewportWidth) {
     // Position at top-right of viewport with some padding
-    statusPanel.x = viewportWidth - 230; // 210px panel width + 20px padding
-    statusPanel.y = 20; // 20px from top
+    playerPanel.x = viewportWidth - 230; // 210px panel width + 20px padding
+    playerPanel.y = 20; // 20px from top
 }
