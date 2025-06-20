@@ -6,6 +6,7 @@ import { placeTurretsOnBases } from './turret.js';
 import { createProjectile, updateProjectileTrail, drawProjectileTrail, createExplosion, checkProjectileCollisions, cleanupProjectile, calculateDamage, calculateAOEDamage, calculateVelocityFactor } from './projectile.js';
 import { createEnvironmentPanel, createPlayerStatsPanel, createGameState, updateWindForNewTurn, applyDamage, positionEnvironmentPanel, positionPlayerStatsPanel } from './ui.js';
 import { initializeGameSetup } from './gameSetup.js';
+import { initializePlayerSetup } from './playerSetup.js';
 import { WORLD_HEIGHT, calculateWorldWidth } from './constants.js';
 
 // Game configuration and world dimensions will be set from form
@@ -123,50 +124,60 @@ function create() {
     // Mark the world boundaries
     drawWorldBoundaries(graphics, WORLD_WIDTH, WORLD_HEIGHT);
 
-    // Create and place gun turrets on the flat bases
-    const turrets = placeTurretsOnBases(this, flatBases, points, gameConfig.numPlayers);
-    console.log(`Created ${turrets.length} turrets:`, turrets.map(t => ({team: t.team, x: t.x, y: t.y})));
-    
-    // Log turret distances for AOE debugging
-    if (turrets.length >= 2) {
-        for (let i = 0; i < turrets.length; i++) {
-            for (let j = i + 1; j < turrets.length; j++) {
-                const distance = Phaser.Math.Distance.Between(turrets[i].x, turrets[i].y, turrets[j].x, turrets[j].y);
-                console.log(`📏 Distance between ${turrets[i].team} and ${turrets[j].team}: ${distance.toFixed(1)}px`);
-            }
-        }
-    }
-    
-    // Store turrets for access in input handlers
-    this.turrets = turrets;
-    this.currentPlayerTurret = null;
-    
-    // Store projectiles for physics updates
-    this.projectiles = [];
-    
     // Store landscape data for collision detection
     this.landscapeData = { points, flatBases };
     
-    // Initialize game state and UI
-    this.gameState = createGameState(gameConfig);
-    this.environmentPanel = createEnvironmentPanel(this, this.gameState);
-    this.playerStatsPanel = createPlayerStatsPanel(this, this.gameState);
+    // Initialize basic scene properties that will be needed
+    this.projectiles = [];
     
-    // Position panels at fixed screen locations
-    positionEnvironmentPanel(this.environmentPanel);
-    positionPlayerStatsPanel(this.playerStatsPanel, this.cameras.main.width);
-    
-    // Initialize panel displays
-    this.environmentPanel.updateDisplay(this.gameState);
-    this.playerStatsPanel.updateDisplay(this.gameState);
-    
-    // Set up camera controls and input
-    setupCameraAndInput(this);
+    // 🆕 NEW: Start player setup stage instead of immediately placing turrets
+    console.log('🎮 Starting player setup stage...');
+    initializePlayerSetup(this, gameConfig, flatBases).then((playerData) => {
+        console.log('✅ Player setup complete, starting combat phase...');
+        
+        // Now create turrets based on player choices (Phase 1: using default placement for now)
+        const turrets = placeTurretsOnBases(this, flatBases, points, gameConfig.numPlayers);
+        console.log(`Created ${turrets.length} turrets:`, turrets.map(t => ({team: t.team, x: t.x, y: t.y})));
+        
+        // Log turret distances for AOE debugging
+        if (turrets.length >= 2) {
+            for (let i = 0; i < turrets.length; i++) {
+                for (let j = i + 1; j < turrets.length; j++) {
+                    const distance = Phaser.Math.Distance.Between(turrets[i].x, turrets[i].y, turrets[j].x, turrets[j].y);
+                    console.log(`📏 Distance between ${turrets[i].team} and ${turrets[j].team}: ${distance.toFixed(1)}px`);
+                }
+            }
+        }
+        
+        // Store turrets for access in input handlers
+        this.turrets = turrets;
+        this.currentPlayerTurret = null;
+        
+        // Initialize game state and UI (moved here to happen after player setup)
+        this.gameState = createGameState(gameConfig);
+        this.environmentPanel = createEnvironmentPanel(this, this.gameState);
+        this.playerStatsPanel = createPlayerStatsPanel(this, this.gameState);
+        
+        // Position panels at fixed screen locations
+        positionEnvironmentPanel(this.environmentPanel);
+        positionPlayerStatsPanel(this.playerStatsPanel, this.cameras.main.width);
+        
+        // Initialize panel displays
+        this.environmentPanel.updateDisplay(this.gameState);
+        this.playerStatsPanel.updateDisplay(this.gameState);
+        
+        // Set up camera controls and input
+        setupCameraAndInput(this);
 
-    // Start camera focused on the left turret (player 1)
-    if (turrets.length > 0) {
-        this.cameras.main.centerOn(turrets[0].x, turrets[0].y);
-    }
+        // Start camera focused on the left turret (player 1)
+        if (turrets.length > 0) {
+            this.cameras.main.centerOn(turrets[0].x, turrets[0].y);
+        }
+        
+        console.log('🚀 Combat phase ready!');
+    }).catch((error) => {
+        console.error('❌ Player setup failed:', error);
+    });
 }
 
 /**
