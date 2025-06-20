@@ -9,11 +9,11 @@ import { getTeamColorHex, PLAYER_TEAMS } from './constants.js';
  * @param {number} x - X position for the turret
  * @param {number} y - Y position for the turret
  * @param {string} [team='player1'] - Team identifier (player1, player2, etc.)
- * @returns {any} The turret container with attached methods and properties
+ * @returns {TurretContainer} The turret container with attached methods and properties
  */
 export function createGunTurret(scene, x, y, team = 'player1') {
     // Create a container to hold all turret parts
-    const turret = scene.add.container(x, y);
+    const turret = /** @type {TurretContainer} */ (scene.add.container(x, y));
     
     // Get team color from shared constants
     const color = getTeamColorHex(team);
@@ -101,7 +101,7 @@ export function createGunTurret(scene, x, y, team = 'player1') {
             }).setOrigin(0.5, 0.5);
             
             this.aimTooltip.add([bg, text]);
-            this.aimTooltip.text = text; // Store reference for updates
+            /** @type {any} */ (this.aimTooltip).text = text; // Store reference for updates
         }
         
         // Update tooltip content
@@ -119,7 +119,7 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         }
         
         const powerPercent = Math.round(power * 100);
-        this.aimTooltip.text.setText(`${displayAngle}°\n${powerPercent}%`);
+        /** @type {any} */ (this.aimTooltip).text.setText(`${displayAngle}°\n${powerPercent}%`);
         
         // Position tooltip near mouse cursor but offset to avoid blocking view
         const offsetX = 30;
@@ -133,31 +133,30 @@ export function createGunTurret(scene, x, y, team = 'player1') {
 
     // Method to hide the tooltip with optional delay and fade
     turret.hideTooltip = function(delayMs = 0, fadeMs = 0) {
-        /** @type {typeof turret} */
-        const self = this;
-        if (self.aimTooltip) {
+        const turret = /** @type {TurretContainer} */ (this);
+        if (turret.aimTooltip) {
             if (delayMs === 0 && fadeMs === 0) {
                 // Immediate hide (for interruptions like clicking elsewhere)
-                self.aimTooltip.setVisible(false);
+                turret.aimTooltip.setVisible(false);
                 // Clear any existing timers
-                if (self.tooltipTimer) {
-                    self.tooltipTimer.destroy();
-                    self.tooltipTimer = null;
+                if (turret.tooltipTimer) {
+                    turret.tooltipTimer.destroy();
+                    turret.tooltipTimer = null;
                 }
             } else {
                 // Delayed hide with fade effect
-                self.tooltipTimer = scene.time.delayedCall(delayMs, () => {
-                    if (self.aimTooltip && self.aimTooltip.visible) {
+                turret.tooltipTimer = scene.time.delayedCall(delayMs, () => {
+                    if (turret.aimTooltip && turret.aimTooltip.visible) {
                         // Fade out over specified duration
                         scene.tweens.add({
-                            targets: self.aimTooltip,
+                            targets: turret.aimTooltip,
                             alpha: 0,
                             duration: fadeMs,
                             ease: 'Power2',
                             onComplete: () => {
-                                if (self.aimTooltip) {
-                                    self.aimTooltip.setVisible(false);
-                                    self.aimTooltip.setAlpha(1); // Reset alpha for next use
+                                if (turret.aimTooltip) {
+                                    turret.aimTooltip.setVisible(false);
+                                    turret.aimTooltip.setAlpha(1); // Reset alpha for next use
                                 }
                             }
                         });
@@ -195,13 +194,12 @@ export function createGunTurret(scene, x, y, team = 'player1') {
     
     // Method to update aim based on world coordinates
     turret.updateAim = function(worldX, worldY) {
-        /** @type {typeof turret} */  
-        const self = this;
-        if (!self.isAiming) return;
+        const turret = /** @type {TurretContainer} */ (this);
+        if (!turret.isAiming) return;
         
         // Calculate angle from turret to target point
-        const deltaX = worldX - self.x;
-        const deltaY = worldY - (self.y - 5); // -5 for barrel Y offset
+        const deltaX = worldX - turret.x;
+        const deltaY = worldY - (turret.y - 5); // -5 for barrel Y offset
         const angleInRadians = Math.atan2(deltaY, deltaX);
         let angleInDegrees = Phaser.Math.RadToDeg(angleInRadians);
         
@@ -217,7 +215,7 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         const power = minPower + (maxPower - minPower) * ((clampedDistance - minDistance) / (maxDistance - minDistance));
         
         // Store power for shooting
-        self.currentPower = power;
+        turret.currentPower = power;
         
         // Normalize angle to -180 to +180 range
         while (angleInDegrees > 180) angleInDegrees -= 360;
@@ -237,10 +235,10 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         }
         
         // Set gun angle (with clamping to -180° to 0° range)
-        const clampedAngle = self.setGunAngle(angleInDegrees);
+        const clampedAngle = turret.setGunAngle(angleInDegrees);
         
         // Draw aiming line with length based on power
-        self.aimingLine.clear();
+        turret.aimingLine.clear();
         
         // Color intensity based on power (more red = more power)
         const powerColor = Phaser.Display.Color.Interpolate.ColorWithColor(
@@ -251,9 +249,9 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         );
         const colorValue = Phaser.Display.Color.ObjectToColor(powerColor).color;
         
-        self.aimingLine.lineStyle(3, colorValue, 0.9);
+        turret.aimingLine.lineStyle(3, colorValue, 0.9);
         
-        const tipPos = self.getGunTipPosition();
+        const tipPos = turret.getGunTipPosition();
         const minLineLength = 50;
         const maxLineLength = 200;
         const lineLength = minLineLength + (maxLineLength - minLineLength) * power;
@@ -261,25 +259,24 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         const lineEndX = tipPos.x + Math.cos(Phaser.Math.DegToRad(clampedAngle)) * lineLength;
         const lineEndY = tipPos.y + Math.sin(Phaser.Math.DegToRad(clampedAngle)) * lineLength;
         
-        self.aimingLine.lineBetween(tipPos.x, tipPos.y, lineEndX, lineEndY);
+        turret.aimingLine.lineBetween(tipPos.x, tipPos.y, lineEndX, lineEndY);
         
         // Update tooltip with current angle and power (use clamped angle, same as aiming line)
-        self.createOrUpdateTooltip(Phaser.Math.DegToRad(clampedAngle), power, worldX, worldY);
+        turret.createOrUpdateTooltip(Phaser.Math.DegToRad(clampedAngle), power, worldX, worldY);
     };
     
     // Method to stop aiming
     turret.stopAiming = function() {
-        /** @type {typeof turret} */
-        const self = this;
-        self.isAiming = false;
-        if (self.aimingLine) {
-            self.aimingLine.clear();
+        const turret = /** @type {TurretContainer} */ (this);
+        turret.isAiming = false;
+        if (turret.aimingLine) {
+            turret.aimingLine.clear();
         }
         // delay then fade out tooltip
-        self.hideTooltip(2000, 2000);
+        turret.hideTooltip(2000, 2000);
         return {
-            angle: self.barrel.rotation,
-            power: self.currentPower || 0.5 // Default to 50% power if not set
+            angle: turret.barrel.rotation,
+            power: turret.currentPower || 0.5 // Default to 50% power if not set
         };
     };
     
@@ -295,7 +292,7 @@ export function createGunTurret(scene, x, y, team = 'player1') {
  * @param {Array<{start: number, end: number}>} flatBases - Array of flat base objects with start/end indices
  * @param {Array<{x: number, y: number}>} points - Array of landscape points
  * @param {number} [numPlayers=2] - Number of players/turrets to place
- * @returns {Array<any>} Array of created turret objects
+ * @returns {Array<TurretContainer>} Array of created turret objects
  */
 export function placeTurretsOnBases(scene, flatBases, points, numPlayers = 2) {
     const turrets = [];
