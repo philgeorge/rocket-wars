@@ -18,37 +18,21 @@ export function createGunTurret(scene, x, y, team = 'player1') {
     // Get team color from shared constants
     const color = getTeamColorHex(team);
     
-    // Create the base (flat-bottomed platform)
+    // Create slightly darker version of team color for fills
+    const colorObj = Phaser.Display.Color.ValueToColor(color);
+    const darkerColor = Phaser.Display.Color.ObjectToColor({
+        r: Math.max(0, colorObj.red - 40),
+        g: Math.max(0, colorObj.green - 40), 
+        b: Math.max(0, colorObj.blue - 40)
+    }).color;
+    
+    // Create the base (flat-bottomed platform)  
     const base = scene.add.graphics();
-    base.fillStyle(0x5d6d7e, 1); // Medium gray (lighter for better contrast)
-    
-    // Draw the top semicircle (arc from -PI to 0)
-    base.beginPath();
-    base.arc(0, 0, 20, -Math.PI, 0, false);
-    base.lineTo(-20, 0);
-    base.closePath();
-    base.fillPath();
-    
-    // Draw a rectangular block to fill the bottom gap
-    base.fillRect(-20, 0, 40, 20); // 40px wide, 20px tall
-    
-    // Draw the outline
-    base.lineStyle(3, color, 1);
-    base.beginPath();
-    base.arc(0, 0, 20, -Math.PI, 0, false);
-    base.lineTo(-20, 0);
-    base.lineTo(-20, 20);
-    base.lineTo(20, 20);
-    base.lineTo(20, 0);
-    base.closePath();
-    base.strokePath();
+    drawTurretBase(base, darkerColor, 1, color);
     
     // Create the turret body (smaller circle on top)
     const turretBody = scene.add.graphics();
-    turretBody.fillStyle(color, 1);
-    turretBody.fillCircle(0, -5, 12);
-    turretBody.lineStyle(2, 0x5d6d7e, 1); // Use same medium gray for outline
-    turretBody.strokeCircle(0, -5, 12);
+    drawTurretBody(turretBody, darkerColor, 1, color);
     
     // Create the gun barrel (rectangle that will rotate)
     const barrel = scene.add.graphics();
@@ -301,6 +285,16 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         };
     };
     
+    // Method to update health visual indicator
+    turret.updateHealthDisplay = function(healthPercent) {
+        // Convert health percentage (0-100) to alpha value (0.0-1.0)
+        const alpha = Math.max(0, Math.min(1, healthPercent / 100));
+        
+        // Redraw base and turret body with new alpha
+        drawTurretBase(this.base, darkerColor, alpha, color);
+        drawTurretBody(this.turretBody, darkerColor, alpha, color);
+    };
+
     // Set initial angle (pointing slightly upward)
     turret.setGunAngle(-15);
     
@@ -364,4 +358,58 @@ export function placeTurretsOnBases(scene, flatBases, points, numPlayers = 2) {
     
     console.log(`Placed ${turrets.length} turrets for ${actualPlayers} players on random bases`);
     return turrets;
+}
+
+/**
+ * Draw the turret base shape with specified fill and outline
+ * @param {Phaser.GameObjects.Graphics} graphics - The graphics object to draw on
+ * @param {number} fillColor - The fill color
+ * @param {number} fillAlpha - The fill alpha (0.0-1.0)
+ * @param {number} outlineColor - The outline color
+ */
+function drawTurretBase(graphics, fillColor, fillAlpha, outlineColor) {
+    graphics.clear();
+    
+    // Fill the base shape
+    graphics.fillStyle(fillColor, fillAlpha);
+    
+    // Draw the top semicircle (arc from -PI to 0)
+    graphics.beginPath();
+    graphics.arc(0, 0, 20, -Math.PI, 0, false);
+    graphics.lineTo(-20, 0);
+    graphics.closePath();
+    graphics.fillPath();
+    
+    // Draw a rectangular block to fill the bottom gap
+    graphics.fillRect(-20, 0, 40, 20); // 40px wide, 20px tall
+    
+    // Draw the outline
+    graphics.lineStyle(3, outlineColor, 1);
+    graphics.beginPath();
+    graphics.arc(0, 0, 20, -Math.PI, 0, false);
+    graphics.lineTo(-20, 0);
+    graphics.lineTo(-20, 20);
+    graphics.lineTo(20, 20);
+    graphics.lineTo(20, 0);
+    graphics.closePath();
+    graphics.strokePath();
+}
+
+/**
+ * Draw the turret body circle with specified fill and outline
+ * @param {Phaser.GameObjects.Graphics} graphics - The graphics object to draw on
+ * @param {number} fillColor - The fill color
+ * @param {number} fillAlpha - The fill alpha (0.0-1.0)
+ * @param {number} outlineColor - The outline color
+ */
+function drawTurretBody(graphics, fillColor, fillAlpha, outlineColor) {
+    graphics.clear();
+    
+    // Fill the turret body circle
+    graphics.fillStyle(fillColor, fillAlpha);
+    graphics.fillCircle(0, -5, 12);
+    
+    // Draw the outline
+    graphics.lineStyle(2, outlineColor, 1);
+    graphics.strokeCircle(0, -5, 12);
 }

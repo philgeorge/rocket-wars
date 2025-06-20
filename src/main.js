@@ -269,6 +269,10 @@ function update() {
                 // Apply AOE damage to affected turrets
                 affectedTurrets.forEach(({turret, damage}) => {
                     applyDamage(this.gameState, turret.team, damage);
+                    // Update turret visual health indicator
+                    if (turret.updateHealthDisplay) {
+                        turret.updateHealthDisplay(this.gameState[turret.team].health);
+                    }
                     console.log(`🌊 ${turret.team} turret took ${damage} AOE damage from terrain explosion, health now: ${this.gameState[turret.team].health}%`);
                 });
                 
@@ -300,6 +304,10 @@ function update() {
                 
                 // Apply direct damage to hit turret
                 applyDamage(this.gameState, collisions.turret.team, damage);
+                // Update turret visual health indicator
+                if (collisions.turret.updateHealthDisplay) {
+                    collisions.turret.updateHealthDisplay(this.gameState[collisions.turret.team].health);
+                }
                 console.log(`💥 ${collisions.turret.team} turret took ${damage} direct damage, health now: ${this.gameState[collisions.turret.team].health}%`);
                 
                 // Check for AOE damage to other nearby turrets (excluding the directly hit one)
@@ -309,6 +317,10 @@ function update() {
                 // Apply AOE damage to affected turrets
                 affectedTurrets.forEach(({turret, damage: aoeDamage}) => {
                     applyDamage(this.gameState, turret.team, aoeDamage);
+                    // Update turret visual health indicator
+                    if (turret.updateHealthDisplay) {
+                        turret.updateHealthDisplay(this.gameState[turret.team].health);
+                    }
                     console.log(`🌊 ${turret.team} turret took ${aoeDamage} AOE damage from turret explosion, health now: ${this.gameState[turret.team].health}%`);
                 });
                 

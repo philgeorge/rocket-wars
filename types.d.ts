@@ -31,6 +31,7 @@ declare global {
     startAiming(): void;
     updateAim(worldX: number, worldY: number): void;
     stopAiming(): { angle: number; power: number };
+    updateHealthDisplay(healthPercent: number): void;
   }
 }
 
