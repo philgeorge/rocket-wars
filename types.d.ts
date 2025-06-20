@@ -25,6 +25,7 @@ declare global {
     // Custom methods
     createOrUpdateTooltip(angle: number, power: number, mouseX: number, mouseY: number): void;
     hideTooltip(delayMs?: number, fadeMs?: number): void;
+    lockTooltipPosition(): void;
     setGunAngle(angleInDegrees: number): number;
     getGunTipPosition(): { x: number; y: number };
     startAiming(): void;

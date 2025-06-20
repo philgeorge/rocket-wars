@@ -80,6 +80,23 @@ export function createGunTurret(scene, x, y, team = 'player1') {
     turret.aimTooltip = null; // Add tooltip reference
     turret.tooltipTimer = null; // Add timer reference for delayed tooltip hiding
 
+    // Method to lock tooltip position to current screen coordinates
+    turret.lockTooltipPosition = function() {
+        if (this.aimTooltip && this.aimTooltip.visible) {
+            // Get current screen position before changing scroll factor
+            const camera = scene.cameras.main;
+            const currentScreenX = this.aimTooltip.x - camera.scrollX;
+            const currentScreenY = this.aimTooltip.y - camera.scrollY;
+            
+            // Make tooltip stay fixed on screen regardless of camera movement
+            this.aimTooltip.setScrollFactor(0);
+            
+            // Set position to maintain the same visual location on screen
+            this.aimTooltip.x = currentScreenX;
+            this.aimTooltip.y = currentScreenY;
+        }
+    };
+
     // Method to create or update the aiming tooltip
     turret.createOrUpdateTooltip = function(angle, power, mouseX, mouseY) {
         if (!this.aimTooltip) {
@@ -103,6 +120,9 @@ export function createGunTurret(scene, x, y, team = 'player1') {
             this.aimTooltip.add([bg, text]);
             /** @type {any} */ (this.aimTooltip).text = text; // Store reference for updates
         }
+        
+        // Reset scroll factor to follow world coordinates (mouse position) while aiming
+        this.aimTooltip.setScrollFactor(1);
         
         // Update tooltip content
         const angleDegrees = Phaser.Math.RadToDeg(angle);
@@ -272,6 +292,8 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         if (turret.aimingLine) {
             turret.aimingLine.clear();
         }
+        // Lock tooltip position to current screen coordinates before fade out
+        turret.lockTooltipPosition();
         // delay then fade out tooltip
         turret.hideTooltip(2000, 2000);
         return {
