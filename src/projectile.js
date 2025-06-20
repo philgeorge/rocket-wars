@@ -126,7 +126,6 @@ export function createExplosion(scene, x, y, radius = 80, hitType = 'turret') {
     
     // Create multiple concentric rings
     const numRings = 4;
-    const maxRadius = radius * 1.5; // Explosion extends beyond projectile radius
     const explosionDuration = 800; // 0.8 seconds
     
     for (let ringIndex = 0; ringIndex < numRings; ringIndex++) {
@@ -136,7 +135,7 @@ export function createExplosion(scene, x, y, radius = 80, hitType = 'turret') {
         // Calculate ring properties
         const ringDelay = ringIndex * 80; // Stagger ring appearances
         const ringColor = ringColors[ringIndex % ringColors.length];
-        const finalRadius = maxRadius * (1 - ringIndex * 0.15); // Smaller rings for inner ones
+        const finalRadius = radius * (1 - ringIndex * 0.15); // Smaller rings for inner ones
         
         // Position the ring at explosion center
         ringGraphics.x = x;
@@ -382,15 +381,7 @@ export function calculateDamage(projectile, turret, distance) {
     const accuracyFactor = Math.sqrt(rawAccuracyFactor); // More generous curve
     
     // Calculate velocity factor from projectile speed - more generous scaling
-    let velocityFactor = 0;
-    if (projectile.body && projectile.body.velocity) {
-        const speed = Math.sqrt(
-            projectile.body.velocity.x ** 2 + 
-            projectile.body.velocity.y ** 2
-        );
-        // More generous velocity scaling: 0-1500 px/s -> 0.0-1.0 factor
-        velocityFactor = Math.min(1.0, speed / 1500);
-    }
+    const velocityFactor = calculateVelocityFactor(projectile);
     
     // Adjust weighting to be more balanced: 60% accuracy, 40% velocity
     const accuracyWeight = 0.6;
@@ -408,4 +399,22 @@ export function calculateDamage(projectile, turret, distance) {
     - Final damage: ${Math.round(damage)} (range: ${BASE_DAMAGE}-${MAX_DAMAGE})`);
     
     return Math.round(damage);
+}
+
+/**
+ * Calculate velocity factor from projectile speed
+ * @param {Phaser.GameObjects.Graphics} projectile - The projectile object
+ * @returns {number} Velocity factor (0.0-1.0)
+ */
+export function calculateVelocityFactor(projectile) {
+    let velocityFactor = 0;
+    if (projectile.body && projectile.body.velocity) {
+        const speed = Math.sqrt(
+            projectile.body.velocity.x ** 2 + 
+            projectile.body.velocity.y ** 2
+        );
+        // More generous velocity scaling: 0-1500 px/s -> 0.0-1.0 factor
+        velocityFactor = Math.min(1.0, speed / 1500);
+    }
+    return velocityFactor;
 }

@@ -3,7 +3,7 @@
 
 import { generateLandscapePoints, drawLandscape, drawWorldBoundaries } from './landscape.js';
 import { placeTurretsOnBases } from './turret.js';
-import { createProjectile, updateProjectileTrail, drawProjectileTrail, createExplosion, checkProjectileCollisions, cleanupProjectile, calculateDamage, calculateAOEDamage } from './projectile.js';
+import { createProjectile, updateProjectileTrail, drawProjectileTrail, createExplosion, checkProjectileCollisions, cleanupProjectile, calculateDamage, calculateAOEDamage, calculateVelocityFactor } from './projectile.js';
 import { createEnvironmentPanel, createPlayerStatsPanel, createGameState, updateWindForNewTurn, applyDamage, positionEnvironmentPanel, positionPlayerStatsPanel } from './ui.js';
 import { initializeGameSetup } from './gameSetup.js';
 import { WORLD_HEIGHT, calculateWorldWidth } from './constants.js';
@@ -253,9 +253,14 @@ function update() {
             
             if (collisions.terrain) {
                 console.log('Projectile hit terrain!');
-                // Large explosion for terrain hits (80px for excellent AOE coverage)
-                const terrainExplosionSize = 80;
-                console.log(`🌍 Terrain explosion size: ${terrainExplosionSize}px`);
+                
+                // Calculate velocity-based explosion size (includes visual scaling)
+                const velocityFactor = calculateVelocityFactor(projectile);
+                const baseExplosionSize = 75; // Minimum explosion size
+                const maxExplosionSize = 150; // Maximum explosion size
+                const terrainExplosionSize = baseExplosionSize + (maxExplosionSize - baseExplosionSize) * velocityFactor;
+                
+                console.log(`🌍 Terrain explosion: velocity factor ${(velocityFactor * 100).toFixed(1)}%, size: ${terrainExplosionSize.toFixed(1)}px`);
                 createExplosion(this, projectile.x, projectile.y, terrainExplosionSize, 'terrain');
                 
                 // Check for AOE damage to nearby turrets
@@ -284,9 +289,13 @@ function update() {
                 // Calculate dynamic damage based on accuracy and velocity
                 const damage = calculateDamage(projectile, collisions.turret, collisions.turretDistance || 0);
                 
-                // Large explosion for turret hits (80px base)
-                const explosionSize = 80;
-                console.log(`🎯 Turret explosion size: ${explosionSize}px (damage: ${damage})`);
+                // Calculate velocity-based explosion size
+                const velocityFactor = calculateVelocityFactor(projectile);
+                const baseExplosionSize = 90; // Minimum explosion size for turret hits
+                const maxExplosionSize = 180; // Maximum explosion size for turret hits
+                const explosionSize = baseExplosionSize + (maxExplosionSize - baseExplosionSize) * velocityFactor;
+                
+                console.log(`🎯 Turret explosion: velocity factor ${(velocityFactor * 100).toFixed(1)}%, size: ${explosionSize.toFixed(1)}px (damage: ${damage})`);
                 createExplosion(this, projectile.x, projectile.y, explosionSize, 'turret');
                 
                 // Apply direct damage to hit turret
