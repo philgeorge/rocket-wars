@@ -33,10 +33,10 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
     const progressElement = document.getElementById('setup-progress');
     const nameSection = document.getElementById('name-section');
     const baseSection = document.getElementById('base-section');
-    let nameInput = /** @type {HTMLInputElement} */ (document.getElementById('player-name-input'));
-    let nameReadyButton = document.getElementById('name-ready-button');
+    const nameInput = /** @type {HTMLInputElement} */ (document.getElementById('player-name-input'));
+    const nameReadyButton = document.getElementById('name-ready-button');
     const baseInstructions = document.getElementById('base-instructions');
-    let backButton = document.getElementById('back-button');
+    const backButton = document.getElementById('back-button');
     const baseHelpText = document.getElementById('base-help-text');
     
     if (!panel || !titleElement || !subtitleElement || !progressElement || 
@@ -58,7 +58,7 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
         panel.style.display = 'block';
         
         updatePanelContent(player, playerIndex);
-        setupEventHandlers(player, playerIndex);
+        focusNameInput();
     }
     
     function updatePanelContent(player, playerIndex) {
@@ -104,113 +104,101 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
         }
     }
     
-    function setupEventHandlers(player, playerIndex) {
-        if (currentPlayerState === 'name') {
-            // Clear any existing event listeners by removing and re-adding the button
-            const newNameReadyButton = nameReadyButton.cloneNode(true);
-            nameReadyButton.parentNode.replaceChild(newNameReadyButton, nameReadyButton);
-            // Update our reference to the new button
-            nameReadyButton = document.getElementById('name-ready-button');
-            
-            // Focus management for name input
-            setTimeout(() => {
-                // Remove focus from any Phaser canvas elements
-                const canvasElements = document.querySelectorAll('canvas');
-                canvasElements.forEach(canvas => {
-                    if (canvas.tabIndex >= 0) {
-                        canvas.tabIndex = -1; // Make canvas non-focusable temporarily
-                    }
-                });
-                
-                // Focus the input field (use our existing reference)
-                nameInput.focus();
-                nameInput.select(); // Also select any existing text
-                
-                console.log('🎯 Input focused, activeElement:', document.activeElement);
-            }, 200);
-            
-            // Clear any existing input event listeners by cloning the input
-            const newNameInput = nameInput.cloneNode(true);
-            nameInput.parentNode.replaceChild(newNameInput, nameInput);
-            // Update our reference
-            nameInput = /** @type {HTMLInputElement} */ (document.getElementById('player-name-input'));
-            
-            // Input event handlers
-            nameInput.addEventListener('input', (e) => {
-                const target = /** @type {HTMLInputElement} */ (e.target);
-                console.log('📝 Input event - current value:', target.value);
-            });
-            
-            nameInput.addEventListener('keydown', (e) => {
-                const keyEvent = /** @type {KeyboardEvent} */ (e);
-                console.log('🔤 Key pressed in name input:', keyEvent.key);
-                e.stopPropagation();
-                
-                if (keyEvent.key === 'Enter') {
-                    e.preventDefault();
-                    handleNameComplete();
+    function focusNameInput() {
+        setTimeout(() => {
+            // Remove focus from any Phaser canvas elements
+            const canvasElements = document.querySelectorAll('canvas');
+            canvasElements.forEach(canvas => {
+                if (canvas.tabIndex >= 0) {
+                    canvas.tabIndex = -1; // Make canvas non-focusable temporarily
                 }
             });
             
-            nameInput.addEventListener('keyup', (e) => {
-                e.stopPropagation();
-            });
+            // Focus the input field
+            nameInput.focus();
+            nameInput.select(); // Also select any existing text
             
-            nameReadyButton.addEventListener('click', handleNameComplete);
+            console.log('🎯 Input focused, activeElement:', document.activeElement);
+        }, 200);
+    }
+    
+    // Set up event handlers once at initialization
+    function setupEventHandlers() {
+        // Name input handlers
+        nameInput.addEventListener('input', (e) => {
+            const target = /** @type {HTMLInputElement} */ (e.target);
+            console.log('📝 Input event - current value:', target.value);
+        });
+        
+        nameInput.addEventListener('keydown', (e) => {
+            const keyEvent = /** @type {KeyboardEvent} */ (e);
+            console.log('🔤 Key pressed in name input:', keyEvent.key);
+            e.stopPropagation();
             
-            function handleNameComplete() {
-                const enteredName = nameInput.value.trim();
-                if (enteredName.length === 0) {
-                    player.name = `Player ${playerIndex + 1}`;
-                } else {
-                    player.name = enteredName;
-                    // Save the entered name to localStorage
-                    savePlayerName(player.id, enteredName);
-                    console.log(`💾 Saved name "${enteredName}" for ${player.id}`);
-                }
-                
-                console.log(`✅ Player ${playerIndex + 1} name set to: "${player.name}"`);
-                
-                // Re-enable camera controls for base selection phase
-                const sceneAny = /** @type {any} */ (scene);
-                if (sceneAny.cameraControls && sceneAny.cameraControls.enable) {
-                    sceneAny.cameraControls.enable();
-                    console.log('🎮 Camera controls enabled for base selection');
-                }
-                
-                // Move to base selection phase
-                currentPlayerState = 'base';
-                updatePanelContent(player, playerIndex);
-                setupEventHandlers(player, playerIndex);
-                
-                // Show base highlights and enable base selection
-                showBaseHighlights();
-                setupBaseSelection(player, playerIndex);
+            if (keyEvent.key === 'Enter') {
+                e.preventDefault();
+                handleNameComplete();
             }
-            
-        } else if (currentPlayerState === 'base') {
-            // Clear any existing event listeners by cloning the back button
-            const newBackButton = backButton.cloneNode(true);
-            backButton.parentNode.replaceChild(newBackButton, backButton);
-            backButton = document.getElementById('back-button');
-            
-            backButton.addEventListener('click', () => {
-                // Disable camera controls when going back to name input
-                const sceneAny = /** @type {any} */ (scene);
-                if (sceneAny.cameraControls && sceneAny.cameraControls.disable) {
-                    sceneAny.cameraControls.disable();
-                    console.log('🎮 Camera controls disabled for name input');
-                }
-                
-                // Go back to name input
-                currentPlayerState = 'name';
-                updatePanelContent(player, playerIndex);
-                setupEventHandlers(player, playerIndex);
-                
-                // Hide base highlights
-                hideBaseHighlights();
-            });
+        });
+        
+        nameInput.addEventListener('keyup', (e) => {
+            e.stopPropagation();
+        });
+        
+        // Name ready button handler
+        nameReadyButton.addEventListener('click', handleNameComplete);
+        
+        // Back button handler
+        backButton.addEventListener('click', handleBackToName);
+    }
+    
+    function handleNameComplete() {
+        const player = playerData[currentPlayerIndex];
+        const enteredName = nameInput.value.trim();
+        
+        if (enteredName.length === 0) {
+            player.name = `Player ${currentPlayerIndex + 1}`;
+        } else {
+            player.name = enteredName;
+            // Save the entered name to localStorage
+            savePlayerName(player.id, enteredName);
+            console.log(`💾 Saved name "${enteredName}" for ${player.id}`);
         }
+        
+        console.log(`✅ Player ${currentPlayerIndex + 1} name set to: "${player.name}"`);
+        
+        // Re-enable camera controls for base selection phase
+        const sceneAny = /** @type {any} */ (scene);
+        if (sceneAny.cameraControls && sceneAny.cameraControls.enable) {
+            sceneAny.cameraControls.enable();
+            console.log('🎮 Camera controls enabled for base selection');
+        }
+        
+        // Move to base selection phase
+        currentPlayerState = 'base';
+        updatePanelContent(player, currentPlayerIndex);
+        
+        // Show base highlights and enable base selection
+        showBaseHighlights();
+        setupBaseSelection(player, currentPlayerIndex);
+    }
+    
+    function handleBackToName() {
+        // Disable camera controls when going back to name input
+        const sceneAny = /** @type {any} */ (scene);
+        if (sceneAny.cameraControls && sceneAny.cameraControls.disable) {
+            sceneAny.cameraControls.disable();
+            console.log('🎮 Camera controls disabled for name input');
+        }
+        
+        // Go back to name input
+        currentPlayerState = 'name';
+        const player = playerData[currentPlayerIndex];
+        updatePanelContent(player, currentPlayerIndex);
+        focusNameInput();
+        
+        // Hide base highlights
+        hideBaseHighlights();
     }
     
     // Store base highlights for cleanup
@@ -365,6 +353,9 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
         // Call completion callback with player data and existing turrets
         onComplete(playerData, setupTurrets);
     }
+    
+    // Set up event handlers once
+    setupEventHandlers();
     
     // Start with first player
     showPlayerSetup(0);

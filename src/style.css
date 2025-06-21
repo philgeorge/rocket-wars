@@ -150,7 +150,7 @@ body::after {
 
 #setup-title {
   color: #00ff00; /* Default color, will be updated dynamically */
-  margin-bottom: 15px;
+  margin: 0px;
   font-size: 1.2rem;
   font-weight: bold;
 }
