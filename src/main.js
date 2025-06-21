@@ -140,7 +140,8 @@ function create() {
         
         // Now create turrets based on player choices using their setup data
         const turrets = placeTurretsOnBases(this, flatBases, points, playerData);
-        console.log(`Created ${turrets.length} turrets:`, turrets.map(t => ({team: t.team, name: t.playerName, x: t.x, y: t.y})));
+        const turretAny = /** @type {any} */ (turrets);
+        console.log(`Created ${turrets.length} turrets:`, turretAny.map(t => ({team: t.team, name: t.playerName, x: t.x, y: t.y})));
         
         // Log turret distances for AOE debugging
         if (turrets.length >= 2) {
@@ -157,7 +158,7 @@ function create() {
         this.currentPlayerTurret = null;
         
         // Store player data on scene for game-wide access
-        this.playerData = playerData;
+        /** @type {any} */ (this).playerData = playerData;
         
         // Initialize game state and UI (moved here to happen after player setup)
         this.gameState = createGameState(gameConfig);

@@ -34,8 +34,9 @@ export function initializePlayerSetup(scene, gameConfig, flatBases) {
     console.log('🎮 Starting DOM-based player setup stage...');
     
     // Disable camera controls to free up WASD keys for name input
-    if (scene.cameraControls && scene.cameraControls.disable) {
-        scene.cameraControls.disable();
+    const sceneAny = /** @type {any} */ (scene);
+    if (sceneAny.cameraControls && sceneAny.cameraControls.disable) {
+        sceneAny.cameraControls.disable();
     }
     
     return new Promise((resolve) => {
@@ -55,7 +56,7 @@ export function initializePlayerSetup(scene, gameConfig, flatBases) {
         }
         
         // Create DOM-based setup overlay
-        createDOMPlayerSetupOverlay(players, (completedPlayers) => {
+        createDOMPlayerSetupOverlay(players, flatBases, scene, (completedPlayers) => {
             console.log('🎯 Player setup complete! All players configured:', completedPlayers.map(p => ({
                 id: p.id,
                 name: p.name,
@@ -63,8 +64,8 @@ export function initializePlayerSetup(scene, gameConfig, flatBases) {
             })));
             
             // Re-enable camera controls after setup
-            if (scene.cameraControls && scene.cameraControls.enable) {
-                scene.cameraControls.enable();
+            if (sceneAny.cameraControls && sceneAny.cameraControls.enable) {
+                sceneAny.cameraControls.enable();
             }
             
             // Resolve the promise with player data
