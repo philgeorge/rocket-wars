@@ -12,7 +12,7 @@ import { loadPlayerNames, savePlayerName } from './storage.js';
  * @param {Function} onComplete - Callback when setup is complete
  */
 export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComplete) {
-    console.log('🖼️ Creating DOM-based player setup overlay...');
+    console.log('🖼️ Creating DOM-based player setup panel...');
     
     // Get landscape points from scene - cast scene to any to avoid TypeScript errors
     const sceneAny = /** @type {any} */ (scene);
@@ -25,26 +25,11 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
     // Array to store turrets created during setup
     let setupTurrets = [];
     
-    // Create overlay container - make it transparent to mouse events except for the panel
-    const overlay = document.createElement('div');
-    overlay.id = 'player-setup-overlay';
-    overlay.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.3);
-        z-index: 1000;
-        pointer-events: none;
-        font-family: 'Courier New', monospace;
-        color: white;
-    `;
-    
-    // Create setup panel - positioned at top, allows pointer events
+    // Create setup panel directly in the DOM - no overlay needed!
     const panel = document.createElement('div');
+    panel.id = 'player-setup-panel';
     panel.style.cssText = `
-        position: absolute;
+        position: fixed;
         top: 20px;
         left: 50%;
         transform: translateX(-50%);
@@ -54,8 +39,11 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
         padding: 20px;
         width: 400px;
         text-align: center;
-        pointer-events: auto;
+        z-index: 1000;
+        font-family: 'Courier New', monospace;
+        color: white;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+        pointer-events: auto;
     `;
     
     let currentPlayerIndex = 0;
@@ -121,7 +109,8 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
                     Player ${playerIndex + 1} of ${playerData.length}
                 </p>
                 <p style="color: #99ccff; font-size: 12px; margin-bottom: 15px; font-style: italic;">
-                    Use mouse/WASD to scroll and find a good position
+                    📱 Touch/drag the landscape to scroll and explore<br>
+                    💻 Use mouse/WASD to navigate and find a good position
                 </p>
                 <button id="back-button" style="
                            background: #666;
@@ -382,16 +371,15 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
         });
         console.log('✅ Canvas elements restored to focusable');
         
-        // Remove overlay
-        document.body.removeChild(overlay);
+        // Remove panel from DOM
+        document.body.removeChild(panel);
         
         // Call completion callback with player data and existing turrets
         onComplete(playerData, setupTurrets);
     }
     
-    // Add panel to overlay and overlay to document
-    overlay.appendChild(panel);
-    document.body.appendChild(overlay);
+    // Add panel directly to document body
+    document.body.appendChild(panel);
     
     // Start with first player
     showPlayerSetup(0);
