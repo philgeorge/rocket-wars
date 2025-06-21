@@ -1,50 +1,7 @@
 // gameSetup.js
 // Game startup and configuration form handling for Rocket Wars
 
-/**
- * Default game configuration
- */
-export const defaultGameConfig = {
-    numPlayers: 2,
-    windVariation: 50,
-    gravity: 60
-};
-
-/**
- * Load game configuration from localStorage
- * @returns {Object} Saved config or default config
- */
-function loadGameConfig() {
-    try {
-        const savedConfig = localStorage.getItem('gameConfig');
-        if (savedConfig) {
-            const config = JSON.parse(savedConfig);
-            console.log('Loaded saved game config:', config);
-            // Merge with defaults to ensure all properties exist
-            return {
-                ...defaultGameConfig,
-                ...config
-            };
-        }
-    } catch (error) {
-        console.warn('Failed to load saved game config:', error);
-    }
-    console.log('Using default game config');
-    return { ...defaultGameConfig };
-}
-
-/**
- * Save game configuration to localStorage
- * @param {Object} config - Game configuration to save
- */
-function saveGameConfig(config) {
-    try {
-        localStorage.setItem('gameConfig', JSON.stringify(config));
-        console.log('Saved game config to localStorage:', config);
-    } catch (error) {
-        console.warn('Failed to save game config:', error);
-    }
-}
+import { loadGameConfig, saveGameConfig } from './storage.js';
 
 /**
  * Initialize the game setup form and return a promise that resolves with game config
@@ -103,8 +60,12 @@ function initializeFormHandlers(onGameStart) {
     form.addEventListener('submit', (e) => {
         e.preventDefault();
         
-        // Get form values
+        // Get current config to preserve player names
+        const currentConfig = loadGameConfig();
+        
+        // Update only the form values, preserving player names
         const gameConfig = {
+            ...currentConfig,
             numPlayers: parseInt(numPlayersSelect.value),
             windVariation: parseInt(windVariationSlider.value),
             gravity: parseInt(gravitySlider.value)
@@ -112,7 +73,7 @@ function initializeFormHandlers(onGameStart) {
         
         console.log('Starting game with config:', gameConfig);
         
-        // Save configuration to localStorage
+        // Save updated configuration to localStorage (preserves player names)
         saveGameConfig(gameConfig);
         
         // Hide form and show game container

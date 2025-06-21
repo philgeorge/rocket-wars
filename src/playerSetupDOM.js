@@ -2,6 +2,7 @@
 // DOM-based player setup UI to avoid Phaser input conflicts
 
 import { createGunTurret } from './turret.js';
+import { loadPlayerNames, savePlayerName } from './storage.js';
 
 /**
  * Create a DOM-based player setup overlay with base selection
@@ -71,6 +72,10 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
     
     function updatePanelContent(player, playerIndex) {
         if (currentPlayerState === 'name') {
+            // Load saved player names
+            const savedNames = loadPlayerNames();
+            const savedName = savedNames[player.id] || '';
+            
             panel.innerHTML = `
                 <h2 style="color: #00ff00; margin-bottom: 15px;">PLAYER SETUP</h2>
                 <p style="color: #ffffff; margin-bottom: 15px;">
@@ -81,6 +86,7 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
                 </p>
                 <input type="text" id="player-name-input" 
                        placeholder="Enter name (max 10 chars)" 
+                       value="${savedName}"
                        maxlength="10"
                        style="
                            width: 200px;
@@ -184,6 +190,9 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
                     player.name = `Player ${playerIndex + 1}`;
                 } else {
                     player.name = enteredName;
+                    // Save the entered name to localStorage
+                    savePlayerName(player.id, enteredName);
+                    console.log(`💾 Saved name "${enteredName}" for ${player.id}`);
                 }
                 
                 console.log(`✅ Player ${playerIndex + 1} name set to: "${player.name}"`);
