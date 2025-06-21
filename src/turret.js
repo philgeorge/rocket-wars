@@ -82,7 +82,7 @@ export function createGunTurret(scene, x, y, team = 'player1') {
     };
 
     // Method to create or update the aiming tooltip
-    turret.createOrUpdateTooltip = function(angle, power, mouseX, mouseY) {
+    turret.createOrUpdateTooltip = function(angle, power, aimLineEndX, aimLineEndY) {
         if (!this.aimTooltip) {
             // Create tooltip container
             this.aimTooltip = scene.add.container(0, 0);
@@ -105,7 +105,7 @@ export function createGunTurret(scene, x, y, team = 'player1') {
             /** @type {any} */ (this.aimTooltip).text = text; // Store reference for updates
         }
         
-        // Reset scroll factor to follow world coordinates (mouse position) while aiming
+        // Reset scroll factor to follow world coordinates (aiming line tip position) while aiming
         this.aimTooltip.setScrollFactor(1);
         
         // Update tooltip content
@@ -125,11 +125,11 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         const powerPercent = Math.round(power * 100);
         /** @type {any} */ (this.aimTooltip).text.setText(`${displayAngle}°\n${powerPercent}%`);
         
-        // Position tooltip near mouse cursor but offset to avoid blocking view
-        const offsetX = 30;
-        const offsetY = -30;
-        this.aimTooltip.x = mouseX + offsetX;
-        this.aimTooltip.y = mouseY + offsetY;
+        // Position tooltip at the tip of the aiming line with a small offset to avoid overlapping
+        const offsetX = 15;  // Smaller offset since we're at the line tip
+        const offsetY = -15; // Smaller offset since we're at the line tip
+        this.aimTooltip.x = aimLineEndX + offsetX;
+        this.aimTooltip.y = aimLineEndY + offsetY;
         
         // Make sure tooltip stays visible
         this.aimTooltip.setVisible(true);
@@ -265,8 +265,8 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         
         turret.aimingLine.lineBetween(tipPos.x, tipPos.y, lineEndX, lineEndY);
         
-        // Update tooltip with current angle and power (use clamped angle, same as aiming line)
-        turret.createOrUpdateTooltip(Phaser.Math.DegToRad(clampedAngle), power, worldX, worldY);
+        // Update tooltip with current angle and power positioned at the tip of the aiming line
+        turret.createOrUpdateTooltip(Phaser.Math.DegToRad(clampedAngle), power, lineEndX, lineEndY);
     };
     
     // Method to stop aiming
