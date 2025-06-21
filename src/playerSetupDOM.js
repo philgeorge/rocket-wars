@@ -99,8 +99,8 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
             nameSection.style.display = 'none';
             baseSection.style.display = 'block';
             
-            // Update help text
-            baseHelpText.textContent = 'or click a highlighted base';
+            // Update help text with player's color name
+            baseHelpText.textContent = `or click a ${playerColorName.toLowerCase()} highlighted base`;
         }
     }
     
@@ -211,6 +211,12 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
         // Clear any existing highlights
         hideBaseHighlights();
         
+        // Get current player's color
+        const currentPlayer = playerData[currentPlayerIndex];
+        const playerColor = getTeamColorCSS(currentPlayer.team);
+        // Convert CSS color to hex number for Phaser
+        const playerColorHex = parseInt(playerColor.replace('#', ''), 16);
+        
         // Create highlights for each available base
         availableBases.forEach(baseIndex => {
             const base = flatBases[baseIndex];
@@ -219,10 +225,10 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
             // Calculate base center position from landscape points
             const baseCenter = calculateBaseCenter(base);
             
-            // Create a highlight circle
+            // Create a highlight circle using the player's color
             const highlight = scene.add.graphics();
-            highlight.lineStyle(4, 0x00ff00, 0.8);
-            highlight.fillStyle(0x00ff00, 0.2);
+            highlight.lineStyle(4, playerColorHex, 0.8);
+            highlight.fillStyle(playerColorHex, 0.2);
             highlight.fillCircle(baseCenter.x, baseCenter.y - 25, 30);
             highlight.strokeCircle(baseCenter.x, baseCenter.y - 25, 30);
             
@@ -233,7 +239,7 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
             // Store reference to the highlight
             baseHighlights.push(highlight);
             
-            console.log(`✨ Created highlight for base ${baseIndex} at (${baseCenter.x}, ${baseCenter.y})`);
+            console.log(`✨ Created ${playerColor} highlight for base ${baseIndex} at (${baseCenter.x}, ${baseCenter.y})`);
         });
     }
     
