@@ -13,6 +13,29 @@ body {
   background: #181818;
   color: #fff;
   font-family: 'Courier New', Courier, monospace;
+  line-height: 1.4;
+}
+
+button {
+  padding: 15px;
+  background: #007acc;
+  border: none;
+  border-radius: 5px;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin-top: 20px;
+}
+
+button:hover {
+  background: #005a99;
+  opacity: 0.8;
+}
+
+button:active {
+  background: #004577;
 }
 
 /* Configuration Form Styles */
@@ -34,12 +57,19 @@ body {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
-#game-config-form h1 {
+h1 {
   text-align: center;
-  margin-bottom: 30px;
+  margin: 0px 0px 20px 0px;
   color: #fff;
   font-size: 1.5rem;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+h2 {
+  color: #00ff00; /* Default color, will be updated dynamically */
+  margin: 0px 0px 10px 0px;
+  font-size: 1rem;
+  font-weight: bold;
 }
 
 .form-group {
@@ -61,7 +91,6 @@ body {
   border: 1px solid #555;
   border-radius: 5px;
   color: #fff;
-  font-family: 'Courier New', Courier, monospace;
   font-size: 1rem;
 }
 
@@ -87,25 +116,6 @@ body {
 
 button[type="submit"] {
   width: 100%;
-  padding: 15px;
-  background: #007acc;
-  border: none;
-  border-radius: 5px;
-  color: #fff;
-  font-size: 1rem;
-  font-weight: bold;
-  font-family: 'Courier New', Courier, monospace;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  margin-top: 20px;
-}
-
-button[type="submit"]:hover {
-  background: #005a99;
-}
-
-button[type="submit"]:active {
-  background: #004577;
 }
 
 /* Game version info in config form */
@@ -114,7 +124,6 @@ button[type="submit"]:active {
   margin-top: 15px;
   font-size: 0.7rem;
   color: #888;
-  font-family: 'Courier New', Courier, monospace;
 }
 
 #game-container {
@@ -148,20 +157,11 @@ body::after {
   border: 3px solid #00ff00; /* Default color, will be updated dynamically */
   border-radius: 12px;
   padding: 20px;
-  width: 400px;
   text-align: center;
   z-index: 1000;
-  font-family: 'Courier New', monospace;
   color: white;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
   pointer-events: auto;
-}
-
-#setup-title {
-  color: #00ff00; /* Default color, will be updated dynamically */
-  margin: 0px;
-  font-size: 1.2rem;
-  font-weight: bold;
 }
 
 #setup-subtitle {
@@ -179,63 +179,13 @@ body::after {
 #player-name-input {
   width: 200px;
   padding: 8px;
-  margin-bottom: 15px;
   border: 2px solid #00ff00; /* Default color, will be updated dynamically */
   border-radius: 4px;
   background: white;
   color: black;
-  font-family: 'Courier New', monospace;
-  font-size: 14px;
 }
 
 #player-name-input:focus {
   outline: none;
   box-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
-}
-
-#name-ready-button {
-  background: #00ff00; /* Default color, will be updated dynamically */
-  color: white;
-  border: 2px solid #00ff00; /* Default color, will be updated dynamically */
-  border-radius: 4px;
-  padding: 8px 16px;
-  font-family: 'Courier New', monospace;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-top: 10px;
-}
-
-#name-ready-button:hover {
-  opacity: 0.8;
-}
-
-#base-instructions {
-  color: #99ccff;
-  font-size: 12px;
-  margin-bottom: 15px;
-  font-style: italic;
-  line-height: 1.4;
-}
-
-#back-button {
-  background: #666;
-  color: white;
-  border: 2px solid #888;
-  border-radius: 4px;
-  padding: 6px 12px;
-  font-family: 'Courier New', monospace;
-  font-size: 11px;
-  cursor: pointer;
-  margin-right: 10px;
-  transition: all 0.2s ease;
-}
-
-#back-button:hover {
-  opacity: 0.8;
-}
-
-#base-help-text {
-  color: #99ccff;
-  font-size: 11px;
 }

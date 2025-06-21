@@ -29,19 +29,16 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
     // Get references to the existing HTML elements
     const panel = document.getElementById('player-setup-panel');
     const titleElement = document.getElementById('setup-title');
-    const subtitleElement = document.getElementById('setup-subtitle');
     const progressElement = document.getElementById('setup-progress');
     const nameSection = document.getElementById('name-section');
     const baseSection = document.getElementById('base-section');
     const nameInput = /** @type {HTMLInputElement} */ (document.getElementById('player-name-input'));
     const nameReadyButton = document.getElementById('name-ready-button');
-    const baseInstructions = document.getElementById('base-instructions');
-    const backButton = document.getElementById('back-button');
-    const baseHelpText = document.getElementById('base-help-text');
+    const baseColourText = document.getElementById('base-colour');
     
-    if (!panel || !titleElement || !subtitleElement || !progressElement || 
+    if (!panel || !titleElement || !progressElement || 
         !nameSection || !baseSection || !nameInput || !nameReadyButton || 
-        !baseInstructions || !backButton || !baseHelpText) {
+        !baseColourText) {
         console.error('❌ Required setup panel elements not found in DOM');
         return;
     }
@@ -73,6 +70,7 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
         nameReadyButton.style.background = playerColor;
         nameReadyButton.style.borderColor = playerColor;
         
+        const progressText = `(${playerIndex + 1} of ${playerData.length})`;
         // Update content based on current state
         if (currentPlayerState === 'name') {
             // Load saved player names
@@ -80,9 +78,8 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
             const savedName = savedNames[player.id] || '';
             
             // Update text content
-            titleElement.textContent = 'PLAYER SETUP';
-            subtitleElement.textContent = `${playerColorName.toUpperCase()} PLAYER: Enter your name`;
-            progressElement.textContent = `Player ${playerIndex + 1} of ${playerData.length}`;
+            titleElement.textContent = `${progressText} ${playerColorName.toUpperCase()} PLAYER SETUP`;
+            progressElement.textContent = `Name:`;
             
             // Set input value and show name section
             nameInput.value = savedName;
@@ -91,16 +88,14 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
             
         } else if (currentPlayerState === 'base') {
             // Update text content
-            titleElement.textContent = 'BASE SELECTION';
-            subtitleElement.textContent = `${player.name} (${playerColorName}): Click a highlighted base to place your turret`;
-            progressElement.textContent = `Player ${playerIndex + 1} of ${playerData.length}`;
+            titleElement.textContent = `${progressText} ${playerColorName.toUpperCase()} BASE SELECTION`;
             
             // Show base section and hide name section
             nameSection.style.display = 'none';
             baseSection.style.display = 'block';
             
             // Update help text with player's color name
-            baseHelpText.textContent = `or click a ${playerColorName.toLowerCase()} highlighted base`;
+            baseColourText.textContent = playerColorName.toLowerCase();
         }
     }
     
@@ -147,9 +142,6 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
         
         // Name ready button handler
         nameReadyButton.addEventListener('click', handleNameComplete);
-        
-        // Back button handler
-        backButton.addEventListener('click', handleBackToName);
     }
     
     function handleNameComplete() {
@@ -181,24 +173,6 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
         // Show base highlights and enable base selection
         showBaseHighlights();
         setupBaseSelection(player, currentPlayerIndex);
-    }
-    
-    function handleBackToName() {
-        // Disable camera controls when going back to name input
-        const sceneAny = /** @type {any} */ (scene);
-        if (sceneAny.cameraControls && sceneAny.cameraControls.disable) {
-            sceneAny.cameraControls.disable();
-            console.log('🎮 Camera controls disabled for name input');
-        }
-        
-        // Go back to name input
-        currentPlayerState = 'name';
-        const player = playerData[currentPlayerIndex];
-        updatePanelContent(player, currentPlayerIndex);
-        focusNameInput();
-        
-        // Hide base highlights
-        hideBaseHighlights();
     }
     
     // Store base highlights for cleanup
