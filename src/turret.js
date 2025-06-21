@@ -209,7 +209,7 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         
         // Calculate power based on distance from turret
         const distanceFromTurret = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-        const minPower = 0.2; // Minimum power (20%)
+        const minPower = 0.1; // Minimum power (10%)
         const maxPower = 1.0; // Maximum power (100%)
         const minDistance = 50; // Minimum distance for minimum power
         const maxDistance = 300; // Distance for maximum power

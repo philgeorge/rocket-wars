@@ -7,7 +7,7 @@
  * @param {number} startX - Starting X position
  * @param {number} startY - Starting Y position
  * @param {number} angle - Launch angle in radians
- * @param {number} power - Launch power (0.2 to 1.0)
+ * @param {number} power - Launch power (0.1 to 1.0)
  * @returns {Phaser.GameObjects.Graphics & {trail: Array<{x: number, y: number, time: number}>, maxTrailLength: number, isProjectile: boolean, startTime: number, maxFlightTime: number, trailGraphics?: Phaser.GameObjects.Graphics, firingTurret?: any}}
  */
 export function createProjectile(scene, startX, startY, angle, power) {
@@ -27,7 +27,7 @@ export function createProjectile(scene, startX, startY, angle, power) {
     /** @type {Phaser.Physics.Arcade.Body} */ (projectile.body).setCircle(3); // Set physics body to match visual circle
     
     // Calculate initial velocity based on angle and power
-    // Power ranges from 0.2 to 1.0, let's scale it to reasonable velocity
+    // Power ranges from 0.1 to 1.0, let's scale it to reasonable velocity
     const baseVelocity = 100; // Base velocity (pixels per second)
     const maxVelocity = 2000; // Maximum velocity at full power
     const velocity = baseVelocity + (maxVelocity - baseVelocity) * power;
