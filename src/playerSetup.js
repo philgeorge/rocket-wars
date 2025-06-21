@@ -28,7 +28,7 @@ import { createDOMPlayerSetupOverlay } from './playerSetupDOM.js';
  * @param {Phaser.Scene} scene - The Phaser scene instance
  * @param {Object} gameConfig - Game configuration from form
  * @param {Array} flatBases - Array of available flat base locations
- * @returns {Promise<Array<PlayerData>>} Promise that resolves with player data when setup is complete
+ * @returns {Promise<{players: Array<PlayerData>, turrets: Array}>} Promise that resolves with player data and turrets when setup is complete
  */
 export function initializePlayerSetup(scene, gameConfig, flatBases) {
     console.log('🎮 Starting DOM-based player setup stage...');
@@ -56,19 +56,21 @@ export function initializePlayerSetup(scene, gameConfig, flatBases) {
         }
         
         // Create DOM-based setup overlay
-        createDOMPlayerSetupOverlay(players, flatBases, scene, (completedPlayers) => {
+        createDOMPlayerSetupOverlay(players, flatBases, scene, (completedPlayers, existingTurrets = []) => {
             console.log('🎯 Player setup complete! All players configured:', completedPlayers.map(p => ({
                 id: p.id,
                 name: p.name,
                 baseIndex: p.baseIndex
             })));
             
+            console.log('🏭 Turrets already created during setup:', existingTurrets.length);
+            
             // Camera controls should already be enabled from the last base selection
             // No need to explicitly enable them here
             console.log('🎮 Camera controls should already be enabled for combat');
             
-            // Resolve the promise with player data
-            resolve(completedPlayers);
+            // Resolve the promise with player data and existing turrets
+            resolve({ players: completedPlayers, turrets: existingTurrets });
         });
     });
 }

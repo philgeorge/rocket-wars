@@ -1,6 +1,8 @@
 // playerSetupDOM.js
 // DOM-based player setup UI to avoid Phaser input conflicts
 
+import { createGunTurret } from './turret.js';
+
 /**
  * Create a DOM-based player setup overlay with base selection
  * @param {Array} playerData - Array of player data objects
@@ -18,6 +20,9 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
         console.error('❌ No landscape points available in scene');
         return;
     }
+    
+    // Array to store turrets created during setup
+    let setupTurrets = [];
     
     // Create overlay container - make it transparent to mouse events except for the panel
     const overlay = document.createElement('div');
@@ -307,6 +312,17 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
                 player.baseIndex = baseIndex;  // Use baseIndex to match turret placement expectations
                 player.basePosition = calculateBaseCenter(flatBases[baseIndex]);
                 
+                // ✨ NEW: Create turret immediately so next players can see it
+                const turretX = player.basePosition.x;
+                const turretY = player.basePosition.y - 20; // Position so bottom of turret sits on base surface
+                const turret = createGunTurret(scene, turretX, turretY, player.team);
+                
+                // Store turret reference and add to setup list
+                player.turret = turret;
+                setupTurrets.push(turret);
+                
+                console.log(`🏭 Placed turret for ${player.name} at (${turretX}, ${turretY})`);
+                
                 // Remove this base from available list
                 availableBases = availableBases.filter(index => index !== baseIndex);
                 
@@ -345,6 +361,7 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
     
     function completeSetup() {
         console.log('🎯 DOM-based player setup complete!', playerData);
+        console.log('🏭 Turrets created during setup:', setupTurrets.length);
         
         // Cleanup any remaining highlights
         hideBaseHighlights();
@@ -359,8 +376,8 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
         // Remove overlay
         document.body.removeChild(overlay);
         
-        // Call completion callback
-        onComplete(playerData);
+        // Call completion callback with player data and existing turrets
+        onComplete(playerData, setupTurrets);
     }
     
     // Add panel to overlay and overlay to document

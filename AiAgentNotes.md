@@ -46,6 +46,9 @@ This file contains notes about my learnings from using an AI Agent to help me bu
 - split status panel into 2
 - move aiming panel into top center
 
+## 21 June 2 hours
+- player naming and base positioning
+
 
 # Odd Agent Behaviour
 

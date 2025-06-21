@@ -135,13 +135,23 @@ function create() {
     
     // 🆕 NEW: Start player setup stage instead of immediately placing turrets
     console.log('🎮 Starting player setup stage...');
-    initializePlayerSetup(this, gameConfig, flatBases).then((playerData) => {
+    initializePlayerSetup(this, gameConfig, flatBases).then((setupResult) => {
         console.log('✅ Player setup complete, starting combat phase...');
         
-        // Now create turrets based on player choices using their setup data
-        const turrets = placeTurretsOnBases(this, flatBases, points, playerData);
+        const { players: playerData, turrets: existingTurrets } = setupResult;
+        
+        // Use existing turrets if they were created during setup, otherwise create them
+        let turrets;
+        if (existingTurrets && existingTurrets.length > 0) {
+            console.log(`🏭 Using ${existingTurrets.length} turrets created during setup`);
+            turrets = existingTurrets;
+        } else {
+            console.log('🏭 Creating turrets from player data...');
+            turrets = placeTurretsOnBases(this, flatBases, points, playerData);
+        }
+        
         const turretAny = /** @type {any} */ (turrets);
-        console.log(`Created ${turrets.length} turrets:`, turretAny.map(t => ({team: t.team, name: t.playerName, x: t.x, y: t.y})));
+        console.log(`Using ${turrets.length} turrets:`, turretAny.map(t => ({team: t.team, x: t.x, y: t.y})));
         
         // Log turret distances for AOE debugging
         if (turrets.length >= 2) {
