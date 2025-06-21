@@ -72,6 +72,10 @@ h2 {
   font-weight: bold;
 }
 
+input, select {
+    font-size: 1rem;
+}
+
 .form-group {
   margin-bottom: 20px;
 }
@@ -91,7 +95,6 @@ h2 {
   border: 1px solid #555;
   border-radius: 5px;
   color: #fff;
-  font-size: 1rem;
 }
 
 .form-group select:focus {
@@ -173,7 +176,6 @@ body::after {
 #setup-progress {
   color: #cccccc;
   margin-bottom: 15px;
-  font-size: 0.9rem;
 }
 
 #player-name-input {
