@@ -2,6 +2,7 @@
 // Game startup and configuration form handling for Rocket Wars
 
 import { loadGameConfig, saveGameConfig } from './storage.js';
+import { GAME_VERSION } from './constants.js';
 
 /**
  * Initialize the game setup form and return a promise that resolves with game config
@@ -29,10 +30,16 @@ function initializeFormHandlers(onGameStart) {
     const gravitySlider = /** @type {HTMLInputElement} */ (document.getElementById('gravity'));
     const gravityValue = document.getElementById('gravity-value');
     const numPlayersSelect = /** @type {HTMLSelectElement} */ (document.getElementById('num-players'));
+    const gameVersionInfo = document.getElementById('game-version-info');
     
     if (!form || !windVariationSlider || !windVariationValue || !gravitySlider || !gravityValue || !numPlayersSelect) {
         console.error('Could not find required form elements');
         return;
+    }
+    
+    // Display game version
+    if (gameVersionInfo) {
+        gameVersionInfo.textContent = `v${GAME_VERSION}`;
     }
     
     // Load saved configuration and set form values
