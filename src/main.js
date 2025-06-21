@@ -483,35 +483,20 @@ function setupCameraAndInput(scene) {
     
     // Mouse/touch controls for camera panning
     scene.input.on('pointerdown', (pointer) => {
-        console.log('🎮 Global pointerdown handler triggered');
-        
-        // TEMPORARY DEBUG: Add more detailed logging
+        console.log('🎮 Global pointerdown handler triggered');        
         console.log('Turrets exist:', !!scene.turrets, 'Turrets length:', scene.turrets ? scene.turrets.length : 'N/A');
-        console.log('Player setup state:', !!scene.playerSetupState);
         
         // Only handle turret interactions if turrets exist (after player setup)
-        if (!scene.turrets || scene.turrets.length === 0) {
-            // During setup phase, let other handlers manage the input
-            console.log('🎮 Click during setup phase - delegating to setup handlers');
-            console.log('Pointer details:', {
-                worldX: pointer.worldX,
-                worldY: pointer.worldY,
-                x: pointer.x,
-                y: pointer.y
-            });
-            return;
-        }
-        
-        // Always allow turret clicking, even when following projectile
-        // Single touch/mouse: check if we clicked on a turret first
         /** @type {any} */
         let clickedTurret = null;
-        scene.turrets.forEach(turret => {
-            const distance = Phaser.Math.Distance.Between(pointer.worldX, pointer.worldY, turret.x, turret.y);
-            if (distance < 30) { // 30px radius
-                clickedTurret = turret;
-            }
-        });
+        if (scene.turrets) {
+            scene.turrets.forEach(turret => {
+                const distance = Phaser.Math.Distance.Between(pointer.worldX, pointer.worldY, turret.x, turret.y);
+                if (distance < 30) { // 30px radius
+                    clickedTurret = turret;
+                }
+            });
+        }
         
         if (clickedTurret) {
             // Start aiming
