@@ -63,10 +63,9 @@ export function initializePlayerSetup(scene, gameConfig, flatBases) {
                 baseIndex: p.baseIndex
             })));
             
-            // Re-enable camera controls after setup
-            if (sceneAny.cameraControls && sceneAny.cameraControls.enable) {
-                sceneAny.cameraControls.enable();
-            }
+            // Camera controls should already be enabled from the last base selection
+            // No need to explicitly enable them here
+            console.log('🎮 Camera controls should already be enabled for combat');
             
             // Resolve the promise with player data
             resolve(completedPlayers);

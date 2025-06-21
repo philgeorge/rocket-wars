@@ -183,6 +183,13 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
                 
                 console.log(`✅ Player ${playerIndex + 1} name set to: "${player.name}"`);
                 
+                // Re-enable camera controls for base selection phase
+                const sceneAny = /** @type {any} */ (scene);
+                if (sceneAny.cameraControls && sceneAny.cameraControls.enable) {
+                    sceneAny.cameraControls.enable();
+                    console.log('🎮 Camera controls enabled for base selection');
+                }
+                
                 // Move to base selection phase
                 currentPlayerState = 'base';
                 updatePanelContent(player, playerIndex);
@@ -197,6 +204,13 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
             const backButton = panel.querySelector('#back-button');
             
             backButton.addEventListener('click', () => {
+                // Disable camera controls when going back to name input
+                const sceneAny = /** @type {any} */ (scene);
+                if (sceneAny.cameraControls && sceneAny.cameraControls.disable) {
+                    sceneAny.cameraControls.disable();
+                    console.log('🎮 Camera controls disabled for name input');
+                }
+                
                 // Go back to name input
                 currentPlayerState = 'name';
                 updatePanelContent(player, playerIndex);
@@ -302,10 +316,18 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
                 // Move to next player or complete setup
                 currentPlayerIndex++;
                 if (currentPlayerIndex < playerData.length) {
+                    // Disable camera controls for next player's name input
+                    const sceneAny = /** @type {any} */ (scene);
+                    if (sceneAny.cameraControls && sceneAny.cameraControls.disable) {
+                        sceneAny.cameraControls.disable();
+                        console.log('🎮 Camera controls disabled for next player name input');
+                    }
+                    
                     // Setup next player
                     showPlayerSetup(currentPlayerIndex);
                 } else {
-                    // All players done
+                    // All players done - keep camera controls enabled for combat
+                    console.log('🎮 Keeping camera controls enabled for combat phase');
                     completeSetup();
                 }
             };
