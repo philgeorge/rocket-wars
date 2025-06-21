@@ -3,6 +3,7 @@
 
 import { createGunTurret } from './turret.js';
 import { loadPlayerNames, savePlayerName } from './storage.js';
+import { getTeamColorCSS, getTeamColorName } from './constants.js';
 
 /**
  * Create a DOM-based player setup overlay with base selection
@@ -59,15 +60,22 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
     }
     
     function updatePanelContent(player, playerIndex) {
+        // Get the player's assigned color
+        const playerColor = getTeamColorCSS(player.team);
+        const playerColorName = getTeamColorName(player.team);
+        
+        // Update panel border color to match player
+        panel.style.borderColor = playerColor;
+        
         if (currentPlayerState === 'name') {
             // Load saved player names
             const savedNames = loadPlayerNames();
             const savedName = savedNames[player.id] || '';
             
             panel.innerHTML = `
-                <h2 style="color: #00ff00; margin-bottom: 15px;">PLAYER SETUP</h2>
+                <h2 style="color: ${playerColor}; margin-bottom: 15px;">PLAYER SETUP</h2>
                 <p style="color: #ffffff; margin-bottom: 15px;">
-                    ${player.team.toUpperCase()}: Enter your name
+                    ${playerColorName.toUpperCase()} PLAYER: Enter your name
                 </p>
                 <p style="color: #cccccc; margin-bottom: 15px;">
                     Player ${playerIndex + 1} of ${playerData.length}
@@ -80,7 +88,7 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
                            width: 200px;
                            padding: 8px;
                            margin-bottom: 15px;
-                           border: 2px solid #00ff00;
+                           border: 2px solid ${playerColor};
                            border-radius: 4px;
                            background: white;
                            color: black;
@@ -89,21 +97,24 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
                        ">
                 <br>
                 <button id="name-ready-button" style="
-                           background: #4CAF50;
+                           background: ${playerColor};
                            color: white;
-                           border: 2px solid #66BB6A;
+                           border: 2px solid ${playerColor};
                            border-radius: 4px;
                            padding: 8px 16px;
                            font-family: 'Courier New', monospace;
                            font-size: 12px;
                            cursor: pointer;
-                       ">Continue to Base Selection</button>
+                           transition: all 0.2s ease;
+                       " 
+                       onmouseover="this.style.opacity='0.8'" 
+                       onmouseout="this.style.opacity='1'">Continue to Base Selection</button>
             `;
         } else if (currentPlayerState === 'base') {
             panel.innerHTML = `
-                <h2 style="color: #00ff00; margin-bottom: 15px;">BASE SELECTION</h2>
+                <h2 style="color: ${playerColor}; margin-bottom: 15px;">BASE SELECTION</h2>
                 <p style="color: #ffffff; margin-bottom: 10px;">
-                    ${player.name}: Click a highlighted base to place your turret
+                    ${player.name} (${playerColorName}): Click a highlighted base to place your turret
                 </p>
                 <p style="color: #cccccc; margin-bottom: 10px;">
                     Player ${playerIndex + 1} of ${playerData.length}
@@ -122,8 +133,11 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
                            font-size: 11px;
                            cursor: pointer;
                            margin-right: 10px;
-                       ">Back to Name</button>
-                <span style="color: #99ccff; font-size: 11px;">or click a green highlighted base</span>
+                           transition: all 0.2s ease;
+                       " 
+                       onmouseover="this.style.opacity='0.8'" 
+                       onmouseout="this.style.opacity='1'">Back to Name</button>
+                <span style="color: #99ccff; font-size: 11px;">or click a ${playerColor === '#00ff00' ? 'green' : 'colored'} highlighted base</span>
             `;
         }
     }
