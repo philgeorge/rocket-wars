@@ -130,14 +130,17 @@ function create() {
     // Initialize basic scene properties that will be needed
     this.projectiles = [];
     
+    // 🆕 Set up camera controls and input BEFORE player setup so scrolling works during setup
+    setupCameraAndInput(this);
+    
     // 🆕 NEW: Start player setup stage instead of immediately placing turrets
     console.log('🎮 Starting player setup stage...');
     initializePlayerSetup(this, gameConfig, flatBases).then((playerData) => {
         console.log('✅ Player setup complete, starting combat phase...');
         
-        // Now create turrets based on player choices (Phase 1: using default placement for now)
-        const turrets = placeTurretsOnBases(this, flatBases, points, gameConfig.numPlayers);
-        console.log(`Created ${turrets.length} turrets:`, turrets.map(t => ({team: t.team, x: t.x, y: t.y})));
+        // Now create turrets based on player choices using their setup data
+        const turrets = placeTurretsOnBases(this, flatBases, points, playerData);
+        console.log(`Created ${turrets.length} turrets:`, turrets.map(t => ({team: t.team, name: t.playerName, x: t.x, y: t.y})));
         
         // Log turret distances for AOE debugging
         if (turrets.length >= 2) {
@@ -153,10 +156,13 @@ function create() {
         this.turrets = turrets;
         this.currentPlayerTurret = null;
         
+        // Store player data on scene for game-wide access
+        this.playerData = playerData;
+        
         // Initialize game state and UI (moved here to happen after player setup)
         this.gameState = createGameState(gameConfig);
         this.environmentPanel = createEnvironmentPanel(this, this.gameState);
-        this.playerStatsPanel = createPlayerStatsPanel(this, this.gameState);
+        this.playerStatsPanel = createPlayerStatsPanel(this, this.gameState, playerData);
         
         // Position panels at fixed screen locations
         positionEnvironmentPanel(this.environmentPanel);
@@ -166,8 +172,7 @@ function create() {
         this.environmentPanel.updateDisplay(this.gameState);
         this.playerStatsPanel.updateDisplay(this.gameState);
         
-        // Set up camera controls and input
-        setupCameraAndInput(this);
+        // Camera controls already set up before player setup
 
         // Start camera focused on the left turret (player 1)
         if (turrets.length > 0) {
@@ -377,21 +382,21 @@ function update() {
         }
     }
     
-    // Keyboard camera movement (disabled while following projectile)
-    if (this.cameraControls && !this.cameraControls.isDragging() && !this.cameraControls.isPanning() && !this.currentPlayerTurret && !this.cameraControls.followingProjectile) {
+    // Keyboard camera movement (disabled while following projectile or when keyboard is disabled)
+    if (this.cameraControls && this.input.keyboard.enabled && !this.cameraControls.isDragging() && !this.cameraControls.isPanning() && !this.currentPlayerTurret && !this.cameraControls.followingProjectile) {
         const camera = this.cameras.main;
         const speed = 5;
         
-        if (this.cameraControls.cursors.left.isDown || this.cameraControls.wasd.A.isDown) {
+        if (this.cameraControls.cursors.left.isDown || (this.cameraControls.wasd && this.cameraControls.wasd.A.isDown)) {
             camera.scrollX -= speed;
         }
-        if (this.cameraControls.cursors.right.isDown || this.cameraControls.wasd.D.isDown) {
+        if (this.cameraControls.cursors.right.isDown || (this.cameraControls.wasd && this.cameraControls.wasd.D.isDown)) {
             camera.scrollX += speed;
         }
-        if (this.cameraControls.cursors.up.isDown || this.cameraControls.wasd.W.isDown) {
+        if (this.cameraControls.cursors.up.isDown || (this.cameraControls.wasd && this.cameraControls.wasd.W.isDown)) {
             camera.scrollY -= speed;
         }
-        if (this.cameraControls.cursors.down.isDown || this.cameraControls.wasd.S.isDown) {
+        if (this.cameraControls.cursors.down.isDown || (this.cameraControls.wasd && this.cameraControls.wasd.S.isDown)) {
             camera.scrollY += speed;
         }
     }
@@ -467,6 +472,25 @@ function setupCameraAndInput(scene) {
     
     // Mouse/touch controls for camera panning
     scene.input.on('pointerdown', (pointer) => {
+        console.log('🎮 Global pointerdown handler triggered');
+        
+        // TEMPORARY DEBUG: Add more detailed logging
+        console.log('Turrets exist:', !!scene.turrets, 'Turrets length:', scene.turrets ? scene.turrets.length : 'N/A');
+        console.log('Player setup state:', !!scene.playerSetupState);
+        
+        // Only handle turret interactions if turrets exist (after player setup)
+        if (!scene.turrets || scene.turrets.length === 0) {
+            // During setup phase, let other handlers manage the input
+            console.log('🎮 Click during setup phase - delegating to setup handlers');
+            console.log('Pointer details:', {
+                worldX: pointer.worldX,
+                worldY: pointer.worldY,
+                x: pointer.x,
+                y: pointer.y
+            });
+            return;
+        }
+        
         // Always allow turret clicking, even when following projectile
         // Single touch/mouse: check if we clicked on a turret first
         /** @type {any} */
@@ -623,6 +647,31 @@ function setupCameraAndInput(scene) {
         wasd,
         isDragging: () => isDragging,
         isPanning: () => isPanning,
-        followingProjectile: false  // Flag to disable manual camera controls during projectile flight
+        followingProjectile: false,  // Flag to disable manual camera controls during projectile flight
+        
+        // Methods to enable/disable camera controls during setup
+        disable: () => {
+            console.log('🚫 Disabling camera controls for player setup');
+            // Disable WASD keys by removing them from the keyboard manager
+            scene.input.keyboard.removeKey('W');
+            scene.input.keyboard.removeKey('A');
+            scene.input.keyboard.removeKey('S');
+            scene.input.keyboard.removeKey('D');
+            // Clear the wasd object
+            scene.cameraControls.wasd = null;
+            
+            // Also disable global keyboard capture to prevent interference with DOM inputs
+            scene.input.keyboard.enabled = false;
+            console.log('🚫 Disabled Phaser keyboard input entirely');
+        },
+        
+        enable: () => {
+            console.log('✅ Re-enabling camera controls after player setup');
+            // Re-enable global keyboard capture
+            scene.input.keyboard.enabled = true;
+            // Re-add WASD keys
+            scene.cameraControls.wasd = scene.input.keyboard.addKeys('W,S,A,D');
+            console.log('✅ Re-enabled Phaser keyboard input');
+        }
     };
 }

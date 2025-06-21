@@ -302,61 +302,61 @@ export function createGunTurret(scene, x, y, team = 'player1') {
 }
 
 /**
- * Place turrets randomly on flat bases in the landscape
+ * Place turrets on specified bases using player setup data
  * @param {Phaser.Scene} scene - The Phaser scene instance
  * @param {Array<{start: number, end: number}>} flatBases - Array of flat base objects with start/end indices
  * @param {Array<{x: number, y: number}>} points - Array of landscape points
- * @param {number} [numPlayers=2] - Number of players/turrets to place
+ * @param {Array} playerData - Array of player data from setup stage (default: empty array)
  * @returns {Array<TurretContainer>} Array of created turret objects
  */
-export function placeTurretsOnBases(scene, flatBases, points, numPlayers = 2) {
+export function placeTurretsOnBases(scene, flatBases, points, playerData = []) {
     const turrets = [];
     
-    // Ensure we don't try to place more turrets than we have bases or more than 4 players max
-    const actualPlayers = Math.min(numPlayers, flatBases.length, 4);
+    console.log(`🎯 Placing turrets for ${playerData.length} players using setup data...`);
     
-    // Use shared player teams array
-    const playerTeams = PLAYER_TEAMS;
-    
-    if (actualPlayers > 0 && flatBases.length > 0) {
-        // Create a shuffled copy of flat bases for random selection
-        const shuffledBases = [...flatBases];
-        
-        // Fisher-Yates shuffle algorithm
-        for (let i = shuffledBases.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffledBases[i], shuffledBases[j]] = [shuffledBases[j], shuffledBases[i]];
-        }
-        
-        // Place turrets on randomly selected bases
-        for (let playerIndex = 0; playerIndex < actualPlayers; playerIndex++) {
-            const base = shuffledBases[playerIndex];
-            const team = playerTeams[playerIndex] || `player${playerIndex + 1}`;
-            
-            // Calculate turret position at the center of the flat base
-            const startPoint = points[base.start];
-            const endPoint = points[base.end];
-            const baseCenterX = (startPoint.x + endPoint.x) / 2;
-            const baseCenterY = startPoint.y; // All points in flat base should have same Y
-            
-            // Add slight random offset within the base for visual variety
-            const baseWidth = endPoint.x - startPoint.x;
-            const offsetRange = Math.min(20, baseWidth * 0.3); // Max 20px or 30% of base width
-            const randomOffset = (Math.random() - 0.5) * offsetRange;
-            
-            const turret = createGunTurret(scene, baseCenterX + randomOffset, baseCenterY - 25, team);
-            
-            // Set random initial gun angle for variety
-            const randomAngle = -180 + Math.random() * 180; // -180° to 0°
-            turret.setGunAngle(randomAngle);
-            
-            turrets.push(turret);
-            
-            console.log(`Placed ${team} turret on base ${flatBases.indexOf(base) + 1} at (${Math.round(baseCenterX + randomOffset)}, ${Math.round(baseCenterY - 25)})`);
-        }
+    if (playerData.length > 0 && flatBases.length > 0) {
+        // Place turrets based on player setup data
+        playerData.forEach((player, playerIndex) => {
+            if (player.baseIndex !== null && player.baseIndex < flatBases.length) {
+                const base = flatBases[player.baseIndex];
+                
+                // Calculate turret position at the center of the selected base
+                const startPoint = points[base.start];
+                const endPoint = points[base.end];
+                const baseCenterX = (startPoint.x + endPoint.x) / 2;
+                const baseCenterY = startPoint.y; // All points in flat base should have same Y
+                
+                // Add slight random offset within the base for visual variety
+                const baseWidth = endPoint.x - startPoint.x;
+                const offsetRange = Math.min(20, baseWidth * 0.3); // Max 20px or 30% of base width
+                const randomOffset = (Math.random() - 0.5) * offsetRange;
+                
+                const turret = createGunTurret(scene, baseCenterX + randomOffset, baseCenterY - 25, player.team);
+                
+                // Store player name and data reference on turret
+                turret.playerName = player.name;
+                turret.playerId = player.id;
+                turret.playerData = player;
+                
+                // Set random initial gun angle for variety
+                const randomAngle = -180 + Math.random() * 180; // -180° to 0°
+                turret.setGunAngle(randomAngle);
+                
+                // Update player data with turret reference
+                player.turret = turret;
+                
+                turrets.push(turret);
+                
+                console.log(`✅ Placed ${player.name}'s (${player.team}) turret on base ${player.baseIndex} at (${Math.round(baseCenterX + randomOffset)}, ${Math.round(baseCenterY - 25)})`);
+            } else {
+                console.warn(`⚠️ Player ${player.name} has invalid base index: ${player.baseIndex}`);
+            }
+        });
+    } else {
+        console.warn(`⚠️ No player data provided or no flat bases available`);
     }
     
-    console.log(`Placed ${turrets.length} turrets for ${actualPlayers} players on random bases`);
+    console.log(`🏁 Placed ${turrets.length} turrets for ${playerData.length} players using their selected bases`);
     return turrets;
 }
 

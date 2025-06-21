@@ -72,7 +72,7 @@ export function createEnvironmentPanel(scene, gameState) {
  * @param {Object} gameState - Game state object containing player data
  * @returns {Phaser.GameObjects.Container & {updateDisplay: Function, playerElements: any[]}}
  */
-export function createPlayerStatsPanel(scene, gameState) {
+export function createPlayerStatsPanel(scene, gameState, playerData = null) {
     // Create main container positioned at top-right of screen
     /** @type {Phaser.GameObjects.Container & {updateDisplay: Function, playerElements: any[]}} */
     const playerPanel = /** @type {any} */ (scene.add.container(0, 0));
@@ -100,7 +100,13 @@ export function createPlayerStatsPanel(scene, gameState) {
         const playerKey = `player${i}`;
         const playerColor = getTeamColorCSS(playerKey);
         
-        const playerTitle = scene.add.text(10, yOffset, `PLAYER ${i}`, {
+        // Use player name from playerData if available, otherwise default
+        let playerName = `PLAYER ${i}`;
+        if (playerData && playerData[i - 1] && playerData[i - 1].name) {
+            playerName = playerData[i - 1].name.toUpperCase();
+        }
+        
+        const playerTitle = scene.add.text(10, yOffset, playerName, {
             fontSize: '1rem',
             color: playerColor,
             fontStyle: 'bold'
