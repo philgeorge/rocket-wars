@@ -128,3 +128,105 @@ body::after {
   display: block;
   height: 200px;
 }
+
+/* Player Setup Panel Styles */
+#player-setup-panel {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.95);
+  border: 3px solid #00ff00; /* Default color, will be updated dynamically */
+  border-radius: 12px;
+  padding: 20px;
+  width: 400px;
+  text-align: center;
+  z-index: 1000;
+  font-family: 'Courier New', monospace;
+  color: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+  pointer-events: auto;
+}
+
+#setup-title {
+  color: #00ff00; /* Default color, will be updated dynamically */
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+#setup-subtitle {
+  color: #ffffff;
+  margin-bottom: 15px;
+  font-size: 1rem;
+}
+
+#setup-progress {
+  color: #cccccc;
+  margin-bottom: 15px;
+  font-size: 0.9rem;
+}
+
+#player-name-input {
+  width: 200px;
+  padding: 8px;
+  margin-bottom: 15px;
+  border: 2px solid #00ff00; /* Default color, will be updated dynamically */
+  border-radius: 4px;
+  background: white;
+  color: black;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+}
+
+#player-name-input:focus {
+  outline: none;
+  box-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+}
+
+#name-ready-button {
+  background: #00ff00; /* Default color, will be updated dynamically */
+  color: white;
+  border: 2px solid #00ff00; /* Default color, will be updated dynamically */
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 10px;
+}
+
+#name-ready-button:hover {
+  opacity: 0.8;
+}
+
+#base-instructions {
+  color: #99ccff;
+  font-size: 12px;
+  margin-bottom: 15px;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+#back-button {
+  background: #666;
+  color: white;
+  border: 2px solid #888;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  cursor: pointer;
+  margin-right: 10px;
+  transition: all 0.2s ease;
+}
+
+#back-button:hover {
+  opacity: 0.8;
+}
+
+#base-help-text {
+  color: #99ccff;
+  font-size: 11px;
+}

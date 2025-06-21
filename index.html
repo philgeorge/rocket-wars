@@ -52,6 +52,27 @@
     <!-- Canvas will be inserted here by Phaser -->
   </div>
   
+  <!-- Player Setup Panel - hidden by default -->
+  <div id="player-setup-panel" style="display: none;">
+    <h2 id="setup-title">PLAYER SETUP</h2>
+    <p id="setup-subtitle">Enter your name</p>
+    <p id="setup-progress">Player 1 of 2</p>
+    
+    <!-- Name input section -->
+    <div id="name-section">
+      <input type="text" id="player-name-input" placeholder="Enter name (max 10 chars)" maxlength="10">
+      <br>
+      <button id="name-ready-button">Continue to Base Selection</button>
+    </div>
+    
+    <!-- Base selection section -->
+    <div id="base-section" style="display: none;">
+      <p id="base-instructions">📱 Touch/drag the landscape to scroll and explore<br>💻 Use mouse/WASD to navigate and find a good position</p>
+      <button id="back-button">Back to Name</button>
+      <span id="base-help-text">or click a highlighted base</span>
+    </div>
+  </div>
+  
   <script type="module" src="src/main.js?v=20250621-1714"></script>
 </body>
 </html>

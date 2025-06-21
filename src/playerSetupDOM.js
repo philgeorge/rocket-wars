@@ -13,7 +13,7 @@ import { getTeamColorCSS, getTeamColorName } from './constants.js';
  * @param {Function} onComplete - Callback when setup is complete
  */
 export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComplete) {
-    console.log('🖼️ Creating DOM-based player setup panel...');
+    console.log('🖼️ Setting up DOM-based player setup panel...');
     
     // Get landscape points from scene - cast scene to any to avoid TypeScript errors
     const sceneAny = /** @type {any} */ (scene);
@@ -26,26 +26,25 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
     // Array to store turrets created during setup
     let setupTurrets = [];
     
-    // Create setup panel directly in the DOM - no overlay needed!
-    const panel = document.createElement('div');
-    panel.id = 'player-setup-panel';
-    panel.style.cssText = `
-        position: fixed;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0, 0, 0, 0.95);
-        border: 3px solid #00ff00;
-        border-radius: 12px;
-        padding: 20px;
-        width: 400px;
-        text-align: center;
-        z-index: 1000;
-        font-family: 'Courier New', monospace;
-        color: white;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
-        pointer-events: auto;
-    `;
+    // Get references to the existing HTML elements
+    const panel = document.getElementById('player-setup-panel');
+    const titleElement = document.getElementById('setup-title');
+    const subtitleElement = document.getElementById('setup-subtitle');
+    const progressElement = document.getElementById('setup-progress');
+    const nameSection = document.getElementById('name-section');
+    const baseSection = document.getElementById('base-section');
+    let nameInput = /** @type {HTMLInputElement} */ (document.getElementById('player-name-input'));
+    let nameReadyButton = document.getElementById('name-ready-button');
+    const baseInstructions = document.getElementById('base-instructions');
+    let backButton = document.getElementById('back-button');
+    const baseHelpText = document.getElementById('base-help-text');
+    
+    if (!panel || !titleElement || !subtitleElement || !progressElement || 
+        !nameSection || !baseSection || !nameInput || !nameReadyButton || 
+        !baseInstructions || !backButton || !baseHelpText) {
+        console.error('❌ Required setup panel elements not found in DOM');
+        return;
+    }
     
     let currentPlayerIndex = 0;
     let availableBases = flatBases.map((_, index) => index); // Track available base indices
@@ -54,6 +53,9 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
     function showPlayerSetup(playerIndex) {
         const player = playerData[playerIndex];
         currentPlayerState = 'name';
+        
+        // Show the panel
+        panel.style.display = 'block';
         
         updatePanelContent(player, playerIndex);
         setupEventHandlers(player, playerIndex);
@@ -64,88 +66,51 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
         const playerColor = getTeamColorCSS(player.team);
         const playerColorName = getTeamColorName(player.team);
         
-        // Update panel border color to match player
+        // Update panel styling to match player color
         panel.style.borderColor = playerColor;
+        titleElement.style.color = playerColor;
+        nameInput.style.borderColor = playerColor;
+        nameReadyButton.style.background = playerColor;
+        nameReadyButton.style.borderColor = playerColor;
         
+        // Update content based on current state
         if (currentPlayerState === 'name') {
             // Load saved player names
             const savedNames = loadPlayerNames();
             const savedName = savedNames[player.id] || '';
             
-            panel.innerHTML = `
-                <h2 style="color: ${playerColor}; margin-bottom: 15px;">PLAYER SETUP</h2>
-                <p style="color: #ffffff; margin-bottom: 15px;">
-                    ${playerColorName.toUpperCase()} PLAYER: Enter your name
-                </p>
-                <p style="color: #cccccc; margin-bottom: 15px;">
-                    Player ${playerIndex + 1} of ${playerData.length}
-                </p>
-                <input type="text" id="player-name-input" 
-                       placeholder="Enter name (max 10 chars)" 
-                       value="${savedName}"
-                       maxlength="10"
-                       style="
-                           width: 200px;
-                           padding: 8px;
-                           margin-bottom: 15px;
-                           border: 2px solid ${playerColor};
-                           border-radius: 4px;
-                           background: white;
-                           color: black;
-                           font-family: 'Courier New', monospace;
-                           font-size: 14px;
-                       ">
-                <br>
-                <button id="name-ready-button" style="
-                           background: ${playerColor};
-                           color: white;
-                           border: 2px solid ${playerColor};
-                           border-radius: 4px;
-                           padding: 8px 16px;
-                           font-family: 'Courier New', monospace;
-                           font-size: 12px;
-                           cursor: pointer;
-                           transition: all 0.2s ease;
-                       " 
-                       onmouseover="this.style.opacity='0.8'" 
-                       onmouseout="this.style.opacity='1'">Continue to Base Selection</button>
-            `;
+            // Update text content
+            titleElement.textContent = 'PLAYER SETUP';
+            subtitleElement.textContent = `${playerColorName.toUpperCase()} PLAYER: Enter your name`;
+            progressElement.textContent = `Player ${playerIndex + 1} of ${playerData.length}`;
+            
+            // Set input value and show name section
+            nameInput.value = savedName;
+            nameSection.style.display = 'block';
+            baseSection.style.display = 'none';
+            
         } else if (currentPlayerState === 'base') {
-            panel.innerHTML = `
-                <h2 style="color: ${playerColor}; margin-bottom: 15px;">BASE SELECTION</h2>
-                <p style="color: #ffffff; margin-bottom: 10px;">
-                    ${player.name} (${playerColorName}): Click a highlighted base to place your turret
-                </p>
-                <p style="color: #cccccc; margin-bottom: 10px;">
-                    Player ${playerIndex + 1} of ${playerData.length}
-                </p>
-                <p style="color: #99ccff; font-size: 12px; margin-bottom: 15px; font-style: italic;">
-                    📱 Touch/drag the landscape to scroll and explore<br>
-                    💻 Use mouse/WASD to navigate and find a good position
-                </p>
-                <button id="back-button" style="
-                           background: #666;
-                           color: white;
-                           border: 2px solid #888;
-                           border-radius: 4px;
-                           padding: 6px 12px;
-                           font-family: 'Courier New', monospace;
-                           font-size: 11px;
-                           cursor: pointer;
-                           margin-right: 10px;
-                           transition: all 0.2s ease;
-                       " 
-                       onmouseover="this.style.opacity='0.8'" 
-                       onmouseout="this.style.opacity='1'">Back to Name</button>
-                <span style="color: #99ccff; font-size: 11px;">or click a ${playerColor === '#00ff00' ? 'green' : 'colored'} highlighted base</span>
-            `;
+            // Update text content
+            titleElement.textContent = 'BASE SELECTION';
+            subtitleElement.textContent = `${player.name} (${playerColorName}): Click a highlighted base to place your turret`;
+            progressElement.textContent = `Player ${playerIndex + 1} of ${playerData.length}`;
+            
+            // Show base section and hide name section
+            nameSection.style.display = 'none';
+            baseSection.style.display = 'block';
+            
+            // Update help text
+            baseHelpText.textContent = 'or click a highlighted base';
         }
     }
     
     function setupEventHandlers(player, playerIndex) {
         if (currentPlayerState === 'name') {
-            const nameInput = /** @type {HTMLInputElement} */ (panel.querySelector('#player-name-input'));
-            const nameReadyButton = panel.querySelector('#name-ready-button');
+            // Clear any existing event listeners by removing and re-adding the button
+            const newNameReadyButton = nameReadyButton.cloneNode(true);
+            nameReadyButton.parentNode.replaceChild(newNameReadyButton, nameReadyButton);
+            // Update our reference to the new button
+            nameReadyButton = document.getElementById('name-ready-button');
             
             // Focus management for name input
             setTimeout(() => {
@@ -157,12 +122,18 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
                     }
                 });
                 
-                // Focus the input field
+                // Focus the input field (use our existing reference)
                 nameInput.focus();
                 nameInput.select(); // Also select any existing text
                 
                 console.log('🎯 Input focused, activeElement:', document.activeElement);
             }, 200);
+            
+            // Clear any existing input event listeners by cloning the input
+            const newNameInput = nameInput.cloneNode(true);
+            nameInput.parentNode.replaceChild(newNameInput, nameInput);
+            // Update our reference
+            nameInput = /** @type {HTMLInputElement} */ (document.getElementById('player-name-input'));
             
             // Input event handlers
             nameInput.addEventListener('input', (e) => {
@@ -218,7 +189,10 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
             }
             
         } else if (currentPlayerState === 'base') {
-            const backButton = panel.querySelector('#back-button');
+            // Clear any existing event listeners by cloning the back button
+            const newBackButton = backButton.cloneNode(true);
+            backButton.parentNode.replaceChild(newBackButton, backButton);
+            backButton = document.getElementById('back-button');
             
             backButton.addEventListener('click', () => {
                 // Disable camera controls when going back to name input
@@ -385,15 +359,12 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
         });
         console.log('✅ Canvas elements restored to focusable');
         
-        // Remove panel from DOM
-        document.body.removeChild(panel);
+        // Hide panel instead of removing it
+        panel.style.display = 'none';
         
         // Call completion callback with player data and existing turrets
         onComplete(playerData, setupTurrets);
     }
-    
-    // Add panel directly to document body
-    document.body.appendChild(panel);
     
     // Start with first player
     showPlayerSetup(0);

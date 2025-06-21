@@ -46,9 +46,9 @@ This file contains notes about my learnings from using an AI Agent to help me bu
 - split status panel into 2
 - move aiming panel into top center
 
-## 21 June 2 hours
+## 21 June 4 hours
 - player naming and base positioning
-
+- finally gave up on the "vibe" had to fix a bug myself
 
 # Odd Agent Behaviour
 
@@ -62,3 +62,4 @@ This file contains notes about my learnings from using an AI Agent to help me bu
 - Without me realising it I found the same code (placement of the status panel) duplicated in 3 places, one of which was unused. I had to explicitly point this out and request refactoring to remove duplication.
 - Asking about Github Pages deployment was confusing. Copilot didn't properly understand the Github settings and pushed me down the wrong path (keeping static games file in a subfolder). Then when it realised the problem and gave me options to fix, some of them were redundant, and another seemed really bad (keepng the html file in 2 places). I basically had to tell it the right solution and then it did it for me.
 - Sometimes the agent corrupts files with its changes, identifies this, restores and tries again. I am wondering if this is more likely when I have the file open as it is editing?
+- Eventually found a bug that the Agent couldn't fix. Scrolling the landscape during player setup wouldn't work by drag-drop, only by keyboard or mouse wheel. Agent kept trying elaborate things like overlays and adding extra event handlers. When I studied the code I could see that the `scene.input.on('pointerdown',...` handler was exiting early if the game was in setup mode. I just had to remove this check. 
