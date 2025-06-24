@@ -50,6 +50,10 @@ This file contains notes about my learnings from using an AI Agent to help me bu
 - player naming and base positioning
 - finally gave up on the "vibe" had to fix a bug myself
 
+## 24 June 2 hours
+- extracted camera.js from main.js
+- removed unused file
+
 # Odd Agent Behaviour
 
 - Choosing technology and shaping the look of the game went very well. This is kind of like competitor analysis and market research for a product.
@@ -62,4 +66,6 @@ This file contains notes about my learnings from using an AI Agent to help me bu
 - Without me realising it I found the same code (placement of the status panel) duplicated in 3 places, one of which was unused. I had to explicitly point this out and request refactoring to remove duplication.
 - Asking about Github Pages deployment was confusing. Copilot didn't properly understand the Github settings and pushed me down the wrong path (keeping static games file in a subfolder). Then when it realised the problem and gave me options to fix, some of them were redundant, and another seemed really bad (keepng the html file in 2 places). I basically had to tell it the right solution and then it did it for me.
 - Sometimes the agent corrupts files with its changes, identifies this, restores and tries again. I am wondering if this is more likely when I have the file open as it is editing?
-- Eventually found a bug that the Agent couldn't fix. Scrolling the landscape during player setup wouldn't work by drag-drop, only by keyboard or mouse wheel. Agent kept trying elaborate things like overlays and adding extra event handlers. When I studied the code I could see that the `scene.input.on('pointerdown',...` handler was exiting early if the game was in setup mode. I just had to remove this check. 
+- Eventually found a bug that the Agent couldn't fix. Scrolling the landscape during player setup wouldn't work by drag-drop, only by keyboard or mouse wheel. Agent kept trying elaborate things like overlays and adding extra event handlers. When I studied the code I could see that the `scene.input.on('pointerdown',...` handler was exiting early if the game was in setup mode. I just had to remove this check.
+- Got Agent to confirm that all code in a file was unused and delete it. Although I had to ask it to check that - initially it was happy just to refactor the unused code, e.g. removing commented out stuff and unused parameters. The chat window listed "3 files changed", one of which was the deleted file. Out of habit, I clicked "Keep" indicating I want to retain all changes its made, and stop viewing differences. Unfortunately, the "Keep" action restored the deleted file to my project! So I had to manually delete again, then commit that with git.
+
