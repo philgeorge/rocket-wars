@@ -150,7 +150,7 @@ function showPlayerNamesForm(gameConfig, onGameStart) {
     
     // Hide config form and show player names form
     configFormContainer.style.display = 'none';
-    playerNamesFormContainer.style.display = 'block';
+    playerNamesFormContainer.style.display = 'flex';
     
     // Load saved player names
     const savedConfig = loadGameConfig();
@@ -197,6 +197,16 @@ function showPlayerNamesForm(gameConfig, onGameStart) {
         inputGroup.appendChild(label);
         inputGroup.appendChild(input);
         playerNameInputsContainer.appendChild(inputGroup);
+    }
+    
+    // Handle back button click
+    const backButton = document.getElementById('back-to-config-button');
+    if (backButton) {
+        backButton.addEventListener('click', () => {
+            // Show config form and hide player names form
+            configFormContainer.style.display = 'flex';
+            playerNamesFormContainer.style.display = 'none';
+        });
     }
     
     // Handle player names form submission

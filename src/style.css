@@ -123,10 +123,6 @@ input, select {
   display: inline-block;
 }
 
-button[type="submit"] {
-  width: 100%;
-}
-
 /* Game version info in config form */
 #game-version-info {
   text-align: center;
@@ -180,6 +176,32 @@ button[type="submit"] {
   outline: none;
   border-color: #007acc;
   box-shadow: 0 0 5px rgba(0, 122, 204, 0.5);
+}
+
+/* Form buttons container */
+.form-buttons {
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.form-buttons button {
+  flex: 1;
+  margin-top: 0; /* Override default button margin */
+}
+
+/* Secondary button style */
+.secondary-button {
+  background: #666 !important;
+  border-color: #666 !important;
+}
+
+.secondary-button:hover {
+  background: #555 !important;
+}
+
+.secondary-button:active {
+  background: #444 !important;
 }
 
 #game-container {

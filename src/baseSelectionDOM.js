@@ -66,7 +66,7 @@ export function createDOMBaseSelectionOverlay(playerData, flatBases, scene, onCo
         const progressText = `(${playerIndex + 1} of ${playerData.length})`;
         
         // Update text content for base selection
-        titleElement.textContent = `${progressText} ${player.name.toUpperCase()} - ${playerColorName.toUpperCase()} BASE SELECTION`;
+        titleElement.textContent = `${progressText} ${player.name.toUpperCase()} - ${playerColorName.toUpperCase()} BASE`;
         
         // Show base section (name section is no longer used)
         baseSection.style.display = 'block';
