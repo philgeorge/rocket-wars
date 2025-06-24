@@ -203,8 +203,8 @@ body::after {
   height: 200px;
 }
 
-/* Player Setup Panel Styles */
-#player-setup-panel {
+/* Base Selection Panel Styles */
+#base-selection-panel {
   position: fixed;
   top: 20px;
   left: 50%;
@@ -218,29 +218,4 @@ body::after {
   color: white;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
   pointer-events: auto;
-}
-
-#setup-subtitle {
-  color: #ffffff;
-  margin-bottom: 15px;
-  font-size: 1rem;
-}
-
-#setup-progress {
-  color: #cccccc;
-  margin-bottom: 15px;
-}
-
-#player-name-input {
-  width: 200px;
-  padding: 8px;
-  border: 2px solid #00ff00; /* Default color, will be updated dynamically */
-  border-radius: 4px;
-  background: white;
-  color: black;
-}
-
-#player-name-input:focus {
-  outline: none;
-  box-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
 }

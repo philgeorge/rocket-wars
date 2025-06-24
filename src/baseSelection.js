@@ -1,15 +1,15 @@
-// playerSetup.js
-// Player setup stage logic for Rocket Wars
+// baseSelection.js
+// Base selection stage logic for Rocket Wars
 
-import { createDOMPlayerSetupOverlay } from './playerSetupDOM.js';
+import { createDOMBaseSelectionOverlay } from './baseSelectionDOM.js';
 
 /**
- * Setup stage state management
+ * Base selection stage state management
  * @typedef {Object} SetupState
  * @property {number} currentPlayerIndex - Current player being processed (0-based)
  * @property {Array} players - Array of player data objects
  * @property {Array<number>} availableBases - Array of unused flat base indices
- * @property {boolean} isComplete - Whether all players have completed setup
+ * @property {boolean} isComplete - Whether all players have completed base selection
  */
 
 /**
@@ -24,14 +24,14 @@ import { createDOMPlayerSetupOverlay } from './playerSetupDOM.js';
  */
 
 /**
- * Initialize the player setup stage using DOM overlay
+ * Initialize the base selection stage using DOM overlay
  * @param {Phaser.Scene} scene - The Phaser scene instance
  * @param {Object} gameConfig - Game configuration from form
  * @param {Array} flatBases - Array of available flat base locations
- * @returns {Promise<{players: Array<PlayerData>, turrets: Array}>} Promise that resolves with player data and turrets when setup is complete
+ * @returns {Promise<{players: Array<PlayerData>, turrets: Array}>} Promise that resolves with player data and turrets when base selection is complete
  */
-export function initializePlayerSetup(scene, gameConfig, flatBases) {
-    console.log('🎮 Starting DOM-based player setup stage...');
+export function initializeBaseSelection(scene, gameConfig, flatBases) {
+    console.log('🎮 Starting DOM-based base selection stage...');
     
     // Camera controls can remain enabled since we're only doing base selection now
     console.log('🎮 Camera controls remain enabled for base selection');
@@ -55,15 +55,15 @@ export function initializePlayerSetup(scene, gameConfig, flatBases) {
         
         console.log('🎮 Player data initialized with names from game config:', players.map(p => ({ id: p.id, name: p.name })));
         
-        // Create DOM-based setup overlay
-        createDOMPlayerSetupOverlay(players, flatBases, scene, (completedPlayers, existingTurrets = []) => {
-            console.log('🎯 Player setup complete! All players configured:', completedPlayers.map(p => ({
+        // Create DOM-based base selection overlay
+        createDOMBaseSelectionOverlay(players, flatBases, scene, (completedPlayers, existingTurrets = []) => {
+            console.log('🎯 Base selection complete! All players configured:', completedPlayers.map(p => ({
                 id: p.id,
                 name: p.name,
                 baseIndex: p.baseIndex
             })));
             
-            console.log('🏭 Turrets already created during setup:', existingTurrets.length);
+            console.log('🏭 Turrets already created during base selection:', existingTurrets.length);
             
             // Camera controls should already be enabled from the last base selection
             // No need to explicitly enable them here

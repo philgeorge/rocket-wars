@@ -1,18 +1,18 @@
-// playerSetupDOM.js
-// DOM-based player setup UI to avoid Phaser input conflicts
+// baseSelectionDOM.js
+// DOM-based base selection UI to avoid Phaser input conflicts
 
 import { createGunTurret } from './turret.js';
 import { getTeamColorCSS, getTeamColorName } from './constants.js';
 
 /**
- * Create a DOM-based player setup overlay with base selection
+ * Create a DOM-based base selection overlay
  * @param {Array} playerData - Array of player data objects
  * @param {Array} flatBases - Array of available flat base locations
  * @param {Phaser.Scene} scene - The Phaser scene for base highlighting
- * @param {Function} onComplete - Callback when setup is complete
+ * @param {Function} onComplete - Callback when base selection is complete
  */
-export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComplete) {
-    console.log('🖼️ Setting up DOM-based player setup panel...');
+export function createDOMBaseSelectionOverlay(playerData, flatBases, scene, onComplete) {
+    console.log('🖼️ Setting up DOM-based base selection panel...');
     
     // Get landscape points from scene - cast scene to any to avoid TypeScript errors
     const sceneAny = /** @type {any} */ (scene);
@@ -22,17 +22,17 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
         return;
     }
     
-    // Array to store turrets created during setup
+    // Array to store turrets created during base selection
     let setupTurrets = [];
     
     // Get references to the existing HTML elements
-    const panel = document.getElementById('player-setup-panel');
-    const titleElement = document.getElementById('setup-title');
+    const panel = document.getElementById('base-selection-panel');
+    const titleElement = document.getElementById('base-selection-title');
     const baseSection = document.getElementById('base-section');
     const baseColourText = document.getElementById('base-colour');
     
     if (!panel || !titleElement || !baseSection || !baseColourText) {
-        console.error('❌ Required setup panel elements not found in DOM');
+        console.error('❌ Required base selection panel elements not found in DOM');
         return;
     }
     
@@ -40,7 +40,7 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
     let availableBases = flatBases.map((_, index) => index); // Track available base indices
     let currentPlayerState = 'name'; // 'name' or 'base'
     
-    function showPlayerSetup(playerIndex) {
+    function showBaseSelection(playerIndex) {
         const player = playerData[playerIndex];
         currentPlayerState = 'base'; // Skip name entry, go straight to base selection
         
@@ -189,7 +189,7 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
                 // Hide all highlights
                 hideBaseHighlights();
                 
-                // Move to next player or complete setup
+                // Move to next player or complete base selection
                 currentPlayerIndex++;
                 if (currentPlayerIndex < playerData.length) {
                     // Disable camera controls for next player's name input
@@ -199,8 +199,8 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
                         console.log('🎮 Camera controls disabled for next player name input');
                     }
                     
-                    // Setup next player
-                    showPlayerSetup(currentPlayerIndex);
+                    // Select base for next player
+                    showBaseSelection(currentPlayerIndex);
                 } else {
                     // All players done - keep camera controls enabled for combat
                     console.log('🎮 Keeping camera controls enabled for combat phase');
@@ -220,8 +220,8 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
     }
     
     function completeSetup() {
-        console.log('🎯 DOM-based player setup complete!', playerData);
-        console.log('🏭 Turrets created during setup:', setupTurrets.length);
+        console.log('🎯 DOM-based base selection complete!', playerData);
+        console.log('🏭 Turrets created during base selection:', setupTurrets.length);
         
         // Cleanup any remaining highlights
         hideBaseHighlights();
@@ -244,5 +244,5 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
     setupEventHandlers();
     
     // Start with first player
-    showPlayerSetup(0);
+    showBaseSelection(0);
 }

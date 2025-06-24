@@ -6,7 +6,7 @@ import { placeTurretsOnBases } from './turret.js';
 import { createProjectile, updateProjectileTrail, drawProjectileTrail, createExplosion, checkProjectileCollisions, cleanupProjectile, calculateDamage, calculateAOEDamage, calculateVelocityFactor } from './projectile.js';
 import { createEnvironmentPanel, createPlayerStatsPanel, createGameState, updateWindForNewTurn, applyDamage, positionEnvironmentPanel, positionPlayerStatsPanel } from './ui.js';
 import { initializeGameSetup } from './gameSetup.js';
-import { initializePlayerSetup } from './playerSetup.js';
+import { initializeBaseSelection } from './baseSelection.js';
 import { WORLD_HEIGHT, calculateWorldWidth } from './constants.js';
 import { setupCameraAndInput, updateProjectileCamera, updateKeyboardCamera } from './camera.js';
 
@@ -171,10 +171,10 @@ function create() {
         shootFromTurret(this, turret, shootData);
     });
     
-    // 🆕 NEW: Start player setup stage instead of immediately placing turrets
-    console.log('🎮 Starting player setup stage...');
-    initializePlayerSetup(this, gameConfig, flatBases).then((setupResult) => {
-        console.log('✅ Player setup complete, starting combat phase...');
+    // 🆕 NEW: Start base selection stage instead of immediately placing turrets
+    console.log('🎮 Starting base selection stage...');
+    initializeBaseSelection(this, gameConfig, flatBases).then((setupResult) => {
+        console.log('✅ Base selection complete, starting combat phase...');
         
         const { players: playerData, turrets: existingTurrets } = setupResult;
         
