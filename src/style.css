@@ -15,6 +15,12 @@ body {
   font-family: 'Courier New', Courier, monospace;
   line-height: 1.4;
 }
+p {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #ccc;
+  font-size: 0.9rem;
+}
 
 button {
   padding: 15px;
@@ -127,6 +133,53 @@ button[type="submit"] {
   margin-top: 15px;
   font-size: 0.7rem;
   color: #888;
+}
+
+/* Player Names Form Styles */
+#player-names-form-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+#player-names-form {
+  background: #2a2a2a;
+  border: 2px solid #4a4a4a;
+  border-radius: 10px;
+  padding: 30px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+#player-name-inputs .form-group {
+  margin-bottom: 20px;
+}
+
+#player-name-inputs .form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #ccc;
+}
+
+#player-name-inputs .form-group input {
+  width: 100%;
+  padding: 12px;
+  background: #1a1a1a;
+  border: 1px solid #555;
+  border-radius: 5px;
+  color: #fff;
+  box-sizing: border-box;
+}
+
+#player-name-inputs .form-group input:focus {
+  outline: none;
+  border-color: #007acc;
+  box-shadow: 0 0 5px rgba(0, 122, 204, 0.5);
 }
 
 #game-container {

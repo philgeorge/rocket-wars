@@ -51,6 +51,20 @@
     </form>
   </div>
   
+  <!-- Player name entry form - shown after config form -->
+  <div id="player-names-form-container" style="display: none;">
+    <form id="player-names-form">
+      <h1>Player Names</h1>
+      <p>Enter names for each player (leave blank for default names):</p>
+      
+      <div id="player-name-inputs">
+        <!-- Player name inputs will be dynamically generated -->
+      </div>
+      
+      <button type="submit">Start Game</button>
+    </form>
+  </div>
+  
   <div id="game-container" style="display: none;">
     <!-- Canvas will be inserted here by Phaser -->
   </div>
@@ -58,17 +72,9 @@
   <!-- Player Setup Panel - hidden by default -->
   <div id="player-setup-panel" style="display: none;">
     <h2 id="setup-title">PLAYER SETUP</h2>
-
-    <!-- Name input section -->
-    <div id="name-section">
-      <label id="setup-progress" for="player-name-input">Name:</label>
-      <input type="text" id="player-name-input" placeholder="Enter name (max 10 chars)" maxlength="10">
-      <br>
-      <button id="name-ready-button">Continue to Base Selection</button>
-    </div>
     
     <!-- Base selection section -->
-    <div id="base-section" style="display: none;">
+    <div id="base-section">
         Find a position for your base.<br>
         <strong>Click a <span id="base-colour">coloured</span> circle to select.</strong>
     </div>

@@ -78,16 +78,13 @@ function initializeFormHandlers(onGameStart) {
             gravity: parseInt(gravitySlider.value)
         };
         
-        console.log('Starting game with config:', gameConfig);
+        console.log('Starting player name entry with config:', gameConfig);
         
         // Save updated configuration to localStorage (preserves player names)
         saveGameConfig(gameConfig);
         
-        // Hide form and show game container
-        hideFormShowGame();
-        
-        // Call the game start callback with the configuration
-        onGameStart(gameConfig);
+        // Hide initial form and show player names form
+        showPlayerNamesForm(gameConfig, onGameStart);
     });
 }
 
@@ -97,10 +94,15 @@ function initializeFormHandlers(onGameStart) {
  */
 export function hideFormShowGame() {
     const formContainer = document.getElementById('config-form-container');
+    const playerNamesFormContainer = document.getElementById('player-names-form-container');
     const gameContainer = document.getElementById('game-container');
     
     if (formContainer) {
         formContainer.style.display = 'none';
+    }
+    
+    if (playerNamesFormContainer) {
+        playerNamesFormContainer.style.display = 'none';
     }
     
     if (gameContainer) {
@@ -114,13 +116,122 @@ export function hideFormShowGame() {
  */
 export function showFormHideGame() {
     const formContainer = document.getElementById('config-form-container');
+    const playerNamesFormContainer = document.getElementById('player-names-form-container');
     const gameContainer = document.getElementById('game-container');
     
     if (formContainer) {
         formContainer.style.display = 'flex';
     }
     
+    if (playerNamesFormContainer) {
+        playerNamesFormContainer.style.display = 'none';
+    }
+    
     if (gameContainer) {
         gameContainer.style.display = 'none';
     }
+}
+
+/**
+ * Show the player names form and handle player name entry
+ * @param {Object} gameConfig - Game configuration from the initial form
+ * @param {Function} onGameStart - Callback function called when player names are set
+ */
+function showPlayerNamesForm(gameConfig, onGameStart) {
+    const configFormContainer = document.getElementById('config-form-container');
+    const playerNamesFormContainer = document.getElementById('player-names-form-container');
+    const playerNamesForm = document.getElementById('player-names-form');
+    const playerNameInputsContainer = document.getElementById('player-name-inputs');
+    
+    if (!configFormContainer || !playerNamesFormContainer || !playerNamesForm || !playerNameInputsContainer) {
+        console.error('Could not find required player names form elements');
+        return;
+    }
+    
+    // Hide config form and show player names form
+    configFormContainer.style.display = 'none';
+    playerNamesFormContainer.style.display = 'block';
+    
+    // Load saved player names
+    const savedConfig = loadGameConfig();
+    const savedPlayerNames = savedConfig.playerNames || {};
+    
+    // Clear existing inputs and create new ones based on number of players
+    playerNameInputsContainer.innerHTML = '';
+    
+    for (let i = 1; i <= gameConfig.numPlayers; i++) {
+        const playerKey = `player${i}`;
+        const defaultName = `Player ${i}`;
+        const savedName = savedPlayerNames[playerKey] || '';
+        
+        const inputGroup = document.createElement('div');
+        inputGroup.className = 'form-group';
+        
+        const label = document.createElement('label');
+        label.textContent = `${defaultName} Name:`;
+        label.setAttribute('for', `player-${i}-name`);
+        
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = `player-${i}-name`;
+        input.name = playerKey;
+        input.placeholder = `Enter name (max 10 chars) or leave blank for "${defaultName}"`;
+        input.maxLength = 10;
+        input.value = savedName;
+        
+        // Add Enter key handler for better usability
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                // Focus next input or submit if this is the last one
+                const nextInput = document.getElementById(`player-${i + 1}-name`);
+                if (nextInput) {
+                    nextInput.focus();
+                } else {
+                    // This is the last input, submit the form
+                    playerNamesForm.dispatchEvent(new Event('submit'));
+                }
+            }
+        });
+        
+        inputGroup.appendChild(label);
+        inputGroup.appendChild(input);
+        playerNameInputsContainer.appendChild(inputGroup);
+    }
+    
+    // Handle player names form submission
+    playerNamesForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        // Collect player names from form
+        const playerNames = {};
+        for (let i = 1; i <= gameConfig.numPlayers; i++) {
+            const playerKey = `player${i}`;
+            const input = /** @type {HTMLInputElement} */ (document.getElementById(`player-${i}-name`));
+            const enteredName = input.value.trim();
+            
+            // Use entered name or fall back to default
+            playerNames[playerKey] = enteredName || `Player ${i}`;
+        }
+        
+        // Update game config with player names
+        const finalGameConfig = {
+            ...gameConfig,
+            playerNames: {
+                ...savedConfig.playerNames,
+                ...playerNames
+            }
+        };
+        
+        console.log('Final game config with player names:', finalGameConfig);
+        
+        // Save the complete configuration
+        saveGameConfig(finalGameConfig);
+        
+        // Hide player names form and show game container
+        hideFormShowGame();
+        
+        // Call the game start callback with the final configuration
+        onGameStart(finalGameConfig);
+    });
 }

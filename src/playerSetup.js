@@ -33,27 +33,27 @@ import { createDOMPlayerSetupOverlay } from './playerSetupDOM.js';
 export function initializePlayerSetup(scene, gameConfig, flatBases) {
     console.log('🎮 Starting DOM-based player setup stage...');
     
-    // Disable camera controls to free up WASD keys for name input
-    const sceneAny = /** @type {any} */ (scene);
-    if (sceneAny.cameraControls && sceneAny.cameraControls.disable) {
-        sceneAny.cameraControls.disable();
-    }
+    // Camera controls can remain enabled since we're only doing base selection now
+    console.log('🎮 Camera controls remain enabled for base selection');
     
     return new Promise((resolve) => {
         // Initialize player data structures
         const players = [];
         for (let i = 1; i <= gameConfig.numPlayers; i++) {
+            const playerKey = `player${i}`;
             /** @type {PlayerData} */
             const playerData = {
-                id: `player${i}`,
-                name: `Player ${i}`, // Default name, will be updated by user input
-                team: `player${i}`,
+                id: playerKey,
+                name: gameConfig.playerNames?.[playerKey] || `Player ${i}`, // Use name from game config
+                team: playerKey,
                 baseIndex: null,
                 health: 100,
                 turret: null
             };
             players.push(playerData);
         }
+        
+        console.log('🎮 Player data initialized with names from game config:', players.map(p => ({ id: p.id, name: p.name })));
         
         // Create DOM-based setup overlay
         createDOMPlayerSetupOverlay(players, flatBases, scene, (completedPlayers, existingTurrets = []) => {

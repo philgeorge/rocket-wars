@@ -2,7 +2,6 @@
 // DOM-based player setup UI to avoid Phaser input conflicts
 
 import { createGunTurret } from './turret.js';
-import { loadPlayerNames, savePlayerName } from './storage.js';
 import { getTeamColorCSS, getTeamColorName } from './constants.js';
 
 /**
@@ -29,16 +28,10 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
     // Get references to the existing HTML elements
     const panel = document.getElementById('player-setup-panel');
     const titleElement = document.getElementById('setup-title');
-    const progressElement = document.getElementById('setup-progress');
-    const nameSection = document.getElementById('name-section');
     const baseSection = document.getElementById('base-section');
-    const nameInput = /** @type {HTMLInputElement} */ (document.getElementById('player-name-input'));
-    const nameReadyButton = document.getElementById('name-ready-button');
     const baseColourText = document.getElementById('base-colour');
     
-    if (!panel || !titleElement || !progressElement || 
-        !nameSection || !baseSection || !nameInput || !nameReadyButton || 
-        !baseColourText) {
+    if (!panel || !titleElement || !baseSection || !baseColourText) {
         console.error('❌ Required setup panel elements not found in DOM');
         return;
     }
@@ -49,13 +42,16 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
     
     function showPlayerSetup(playerIndex) {
         const player = playerData[playerIndex];
-        currentPlayerState = 'name';
+        currentPlayerState = 'base'; // Skip name entry, go straight to base selection
         
         // Show the panel
         panel.style.display = 'block';
         
         updatePanelContent(player, playerIndex);
-        focusNameInput();
+        
+        // Show base highlights and enable base selection immediately
+        showBaseHighlights();
+        setupBaseSelection(player, playerIndex);
     }
     
     function updatePanelContent(player, playerIndex) {
@@ -66,113 +62,23 @@ export function createDOMPlayerSetupOverlay(playerData, flatBases, scene, onComp
         // Update panel styling to match player color
         panel.style.borderColor = playerColor;
         titleElement.style.color = playerColor;
-        nameInput.style.borderColor = playerColor;
-        nameReadyButton.style.background = playerColor;
-        nameReadyButton.style.borderColor = playerColor;
         
         const progressText = `(${playerIndex + 1} of ${playerData.length})`;
-        // Update content based on current state
-        if (currentPlayerState === 'name') {
-            // Load saved player names
-            const savedNames = loadPlayerNames();
-            const savedName = savedNames[player.id] || '';
-            
-            // Update text content
-            titleElement.textContent = `${progressText} ${playerColorName.toUpperCase()} PLAYER SETUP`;
-            progressElement.textContent = `Name:`;
-            
-            // Set input value and show name section
-            nameInput.value = savedName;
-            nameSection.style.display = 'block';
-            baseSection.style.display = 'none';
-            
-        } else if (currentPlayerState === 'base') {
-            // Update text content
-            titleElement.textContent = `${progressText} ${playerColorName.toUpperCase()} BASE SELECTION`;
-            
-            // Show base section and hide name section
-            nameSection.style.display = 'none';
-            baseSection.style.display = 'block';
-            
-            // Update help text with player's color name
-            baseColourText.textContent = playerColorName.toLowerCase();
-        }
-    }
-    
-    function focusNameInput() {
-        setTimeout(() => {
-            // Remove focus from any Phaser canvas elements
-            const canvasElements = document.querySelectorAll('canvas');
-            canvasElements.forEach(canvas => {
-                if (canvas.tabIndex >= 0) {
-                    canvas.tabIndex = -1; // Make canvas non-focusable temporarily
-                }
-            });
-            
-            // Focus the input field
-            nameInput.focus();
-            nameInput.select(); // Also select any existing text
-            
-            console.log('🎯 Input focused, activeElement:', document.activeElement);
-        }, 200);
+        
+        // Update text content for base selection
+        titleElement.textContent = `${progressText} ${player.name.toUpperCase()} - ${playerColorName.toUpperCase()} BASE SELECTION`;
+        
+        // Show base section (name section is no longer used)
+        baseSection.style.display = 'block';
+        
+        // Update help text with player's color name
+        baseColourText.textContent = playerColorName.toLowerCase();
     }
     
     // Set up event handlers once at initialization
     function setupEventHandlers() {
-        // Name input handlers
-        nameInput.addEventListener('input', (e) => {
-            const target = /** @type {HTMLInputElement} */ (e.target);
-            console.log('📝 Input event - current value:', target.value);
-        });
-        
-        nameInput.addEventListener('keydown', (e) => {
-            const keyEvent = /** @type {KeyboardEvent} */ (e);
-            console.log('🔤 Key pressed in name input:', keyEvent.key);
-            e.stopPropagation();
-            
-            if (keyEvent.key === 'Enter') {
-                e.preventDefault();
-                handleNameComplete();
-            }
-        });
-        
-        nameInput.addEventListener('keyup', (e) => {
-            e.stopPropagation();
-        });
-        
-        // Name ready button handler
-        nameReadyButton.addEventListener('click', handleNameComplete);
-    }
-    
-    function handleNameComplete() {
-        const player = playerData[currentPlayerIndex];
-        const enteredName = nameInput.value.trim();
-        
-        if (enteredName.length === 0) {
-            player.name = `Player ${currentPlayerIndex + 1}`;
-        } else {
-            player.name = enteredName;
-            // Save the entered name to localStorage
-            savePlayerName(player.id, enteredName);
-            console.log(`💾 Saved name "${enteredName}" for ${player.id}`);
-        }
-        
-        console.log(`✅ Player ${currentPlayerIndex + 1} name set to: "${player.name}"`);
-        
-        // Re-enable camera controls for base selection phase
-        const sceneAny = /** @type {any} */ (scene);
-        if (sceneAny.cameraControls && sceneAny.cameraControls.enable) {
-            sceneAny.cameraControls.enable();
-            console.log('🎮 Camera controls enabled for base selection');
-        }
-        
-        // Move to base selection phase
-        currentPlayerState = 'base';
-        updatePanelContent(player, currentPlayerIndex);
-        
-        // Show base highlights and enable base selection
-        showBaseHighlights();
-        setupBaseSelection(player, currentPlayerIndex);
+        // No name input handlers needed anymore since names are set in game setup
+        console.log('🎮 Base selection handlers ready');
     }
     
     // Store base highlights for cleanup
