@@ -1,0 +1,17 @@
+<svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <!-- Rocket body -->
+  <rect x="7" y="4" width="2" height="8" fill="#cccccc"/>
+  
+  <!-- Rocket nose cone -->
+  <path d="M8 2 L6 4 L10 4 Z" fill="#ff4444"/>
+  
+  <!-- Rocket fins -->
+  <rect x="6" y="10" width="1" height="2" fill="#4444ff"/>
+  <rect x="9" y="10" width="1" height="2" fill="#4444ff"/>
+  
+  <!-- Rocket window -->
+  <rect x="7.5" y="6" width="1" height="1" fill="#66ccff"/>
+  
+  <!-- Exhaust flame -->
+  <path d="M7.5 12 L8 14 L8.5 12 Z" fill="#ff8800"/>
+</svg>

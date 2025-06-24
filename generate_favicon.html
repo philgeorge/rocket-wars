@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate Rocket Favicon</title>
+</head>
+<body>
+    <h2>Rocket Wars Favicon Generator</h2>
+    <canvas id="canvas" width="32" height="32" style="border: 1px solid black; image-rendering: pixelated; width: 128px; height: 128px;"></canvas>
+    <br><br>
+    <button id="download">Download favicon.png</button>
+    <br><br>
+    <p>Right-click the image above and "Save Image As..." to save as favicon.ico</p>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set image smoothing to false for pixel art
+        ctx.imageSmoothingEnabled = false;
+        
+        // Clear canvas with transparent background
+        ctx.clearRect(0, 0, 32, 32);
+        
+        // Draw rocket
+        function drawRocket() {
+            // Rocket body (light gray)
+            ctx.fillStyle = '#cccccc';
+            ctx.fillRect(14, 8, 4, 16);
+            
+            // Rocket body outline
+            ctx.strokeStyle = '#999999';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(14, 8, 4, 16);
+            
+            // Rocket nose cone (red)
+            ctx.fillStyle = '#ff4444';
+            ctx.beginPath();
+            ctx.moveTo(16, 4);
+            ctx.lineTo(13, 8);
+            ctx.lineTo(19, 8);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            
+            // Rocket fins (blue)
+            ctx.fillStyle = '#4444ff';
+            // Left fin
+            ctx.fillRect(12, 20, 2, 4);
+            ctx.strokeRect(12, 20, 2, 4);
+            // Right fin
+            ctx.fillRect(18, 20, 2, 4);
+            ctx.strokeRect(18, 20, 2, 4);
+            
+            // Rocket window (light blue)
+            ctx.fillStyle = '#66ccff';
+            ctx.fillRect(15, 12, 2, 2);
+            
+            // Exhaust flame (orange)
+            ctx.fillStyle = '#ff8800';
+            ctx.beginPath();
+            ctx.moveTo(15, 24);
+            ctx.lineTo(16, 28);
+            ctx.lineTo(17, 24);
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        drawRocket();
+        
+        document.getElementById('download').addEventListener('click', function() {
+            const link = document.createElement('a');
+            link.download = 'favicon.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+    </script>
+</body>
+</html>
