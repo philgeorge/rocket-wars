@@ -330,3 +330,19 @@ export function updateKeyboardCamera(scene) {
         }
     }
 }
+
+/**
+ * Setup camera bounds and physics world bounds for the game
+ * @param {Phaser.Scene} scene - The Phaser scene
+ * @param {number} worldWidth - World width in pixels
+ * @param {number} worldHeight - World height in pixels
+ */
+export function setupWorldBounds(scene, worldWidth, worldHeight) {
+    console.log(`Setting up world bounds: ${worldWidth}x${worldHeight}px`);
+    
+    // Set camera bounds to the world size
+    scene.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
+    
+    // Set physics world bounds
+    scene.physics.world.setBounds(0, 0, worldWidth, worldHeight);
+}

@@ -201,3 +201,34 @@ export function drawWorldBoundaries(graphics, worldWidth, worldHeight) {
     graphics.lineTo(worldWidth - 1, worldHeight);
     graphics.strokePath();
 }
+
+/**
+ * Setup the complete world landscape including generation, drawing, and boundaries
+ * @param {Phaser.Scene} scene - The Phaser scene
+ * @param {number} worldWidth - World width in pixels
+ * @param {number} worldHeight - World height in pixels  
+ * @param {Object} gameConfig - Game configuration object
+ * @returns {{landscapeData: {points: Array, flatBases: Array}, graphics: Phaser.GameObjects.Graphics}} Landscape setup result
+ */
+export function setupWorldLandscape(scene, worldWidth, worldHeight, gameConfig) {
+    console.log(`Setting up world landscape: ${worldWidth}x${worldHeight}px for ${gameConfig.numPlayers} players`);
+    
+    // Create graphics object for drawing
+    const graphics = scene.add.graphics();
+    graphics.fillStyle(0x3a5c2c, 1); // greenish color for landscape
+    
+    // Generate and draw random landscape
+    const baseY = worldHeight - 100;
+    const numPoints = Math.floor(worldWidth / 50); // Calculate points based on world width
+    console.log(`Generating landscape with world width: ${worldWidth}px, height: ${worldHeight}px, points: ${numPoints}`);
+    
+    const { points, flatBases } = generateLandscapePoints(worldWidth, baseY, numPoints, gameConfig.numPlayers);
+    drawLandscape(graphics, points, worldWidth, worldHeight, flatBases);
+    
+    // Mark the world boundaries
+    drawWorldBoundaries(graphics, worldWidth, worldHeight);
+    
+    // Return landscape data for collision detection and graphics object
+    const landscapeData = { points, flatBases };
+    return { landscapeData, graphics };
+}
