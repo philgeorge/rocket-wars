@@ -224,20 +224,3 @@ body::after {
   display: block;
   height: 200px;
 }
-
-/* Base Selection Panel Styles */
-#base-selection-panel {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.95);
-  border: 3px solid #00ff00; /* Default color, will be updated dynamically */
-  border-radius: 12px;
-  padding: 20px;
-  text-align: center;
-  z-index: 1000;
-  color: white;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
-  pointer-events: auto;
-}
