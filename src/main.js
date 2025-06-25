@@ -29,11 +29,22 @@ initializeGameSetup().then((config) => {
  * Start the Phaser game with the configured parameters
  */
 function startGame() {
+    // Debug viewport information for mobile troubleshooting
+    console.log('📱 Viewport Debug Info:');
+    console.log(`  window.innerWidth: ${window.innerWidth}`);
+    console.log(`  window.innerHeight: ${window.innerHeight}`);
+    console.log(`  window.outerWidth: ${window.outerWidth}`);
+    console.log(`  window.outerHeight: ${window.outerHeight}`);
+    console.log(`  screen.width: ${screen.width}`);
+    console.log(`  screen.height: ${screen.height}`);
+    console.log(`  devicePixelRatio: ${devicePixelRatio}`);
+    console.log(`  User Agent: ${navigator.userAgent}`);
+    
     // Create Phaser game config with form parameters
     const config = {
         type: Phaser.AUTO,
         width: window.innerWidth,
-        height: window.innerHeight - 20, // Account for margin
+        height: window.innerHeight, // Use full viewport height
         backgroundColor: '#222',
         parent: 'game-container',
         scene: {
@@ -121,7 +132,7 @@ function create() {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(() => {
             const newWidth = window.innerWidth;
-            const newHeight = window.innerHeight - 20; // Account for margin
+            const newHeight = window.innerHeight; // Use full viewport height
 
             // Resize the game renderer
             this.scale.resize(newWidth, newHeight);

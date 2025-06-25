@@ -1,5 +1,8 @@
 html {
   font-size: 18px; /* Root font size for rem calculations */
+  /* Prevent pull-to-refresh and other mobile browser behaviors */
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 html, body {
@@ -14,6 +17,9 @@ body {
   color: #fff;
   font-family: 'Courier New', Courier, monospace;
   line-height: 1.4;
+  /* Ensure body properly handles mobile viewport */
+  min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport height for modern browsers */
 }
 p {
   text-align: center;
@@ -206,10 +212,22 @@ input, select {
 
 #game-container {
   width: 100%;
-  height: calc(100vh - 20px);
+  height: 100vh;
+  height: 100dvh; /* Dynamic viewport height for modern browsers */
   display: flex;
   justify-content: center;
   align-items: center;
+  position: fixed; /* Fix to viewport to avoid address bar issues */
+  top: 0;
+  left: 0;
+  /* Handle safe areas on devices with notches */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  box-sizing: border-box;
+  /* Debug border to visualize container bounds */
+  border: 2px solid rgba(255, 0, 0, 0.3);
 }
 
 canvas {
