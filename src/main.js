@@ -3,12 +3,13 @@
 
 import { setupWorldLandscape } from './landscape.js';
 import { placeTurretsOnBases } from './turret.js';
-import { createProjectile, updateProjectileTrail, drawProjectileTrail, createExplosion, checkProjectileCollisions, cleanupProjectile, calculateDamage, calculateAOEDamage, calculateVelocityFactor } from './projectile.js';
-import { createEnvironmentPanel, createPlayerStatsPanel, createGameState, updateWindForNewTurn, applyDamage, positionEnvironmentPanel, positionPlayerStatsPanel } from './ui.js';
+import { createProjectile } from './projectile.js';
+import { createEnvironmentPanel, createPlayerStatsPanel, createGameState, updateWindForNewTurn, positionEnvironmentPanel, positionPlayerStatsPanel } from './ui.js';
 import { initializeGameSetup } from './gameSetup.js';
 import { initializeBaseSelection } from './baseSelection.js';
 import { WORLD_HEIGHT, calculateWorldWidth } from './constants.js';
-import { setupCameraAndInput, updateProjectileCamera, updateKeyboardCamera, setupWorldBounds } from './camera.js';
+import { setupCameraAndInput, updateKeyboardCamera, setupWorldBounds } from './camera.js';
+import { updateProjectiles } from './projectileManager.js';
 
 // Game configuration and world dimensions will be set from form
 let gameConfig = null;
@@ -226,161 +227,12 @@ function create() {
  * @this {Phaser.Scene & {turrets: any[], currentPlayerTurret: any, projectiles: any[], landscapeData: any, gameState: any, environmentPanel: any, playerStatsPanel: any, cameraControls: any}}
  */
 function update() {
-    // Camera controls are handled in setupCameraAndInput
-
-    // Update projectiles
+    // Update projectiles (now handled by projectile manager)
     if (this.projectiles) {
-        // Camera follows projectiles with smooth following
-        updateProjectileCamera(this, this.projectiles);
-
-        // Update each projectile
-        for (let i = this.projectiles.length - 1; i >= 0; i--) {
-            const projectile = this.projectiles[i];
-
-            // Apply continuous wind force to projectile during flight
-            if (this.gameState && projectile.body) {
-                const windForce = this.gameState.wind.current / 100; // Normalize to -1 to +1
-                const windAcceleration = windForce * 220; // Wind acceleration (pixels/sec²)
-
-                // Apply wind as horizontal acceleration (accumulated over time)
-                projectile.body.acceleration.x = windAcceleration;
-
-                // Optional: Add slight air resistance for more realistic physics
-                const airResistance = 0.99; // Slight velocity reduction each frame
-                projectile.body.velocity.x *= airResistance;
-                projectile.body.velocity.y *= airResistance;
-
-                // Debug: Log wind effect periodically (every 30 frames ≈ 0.5 seconds)
-                if (Math.floor(this.time.now / 500) > Math.floor((this.time.now - 16) / 500)) {
-                    console.log(`Wind effect: ${this.gameState.wind.current} units, acceleration: ${windAcceleration.toFixed(1)} px/s²`);
-                }
-            }
-
-            // Update trail effect
-            updateProjectileTrail(projectile);
-            drawProjectileTrail(this, projectile);
-
-            // Check for collisions
-            const collisions = checkProjectileCollisions(this, projectile, this.landscapeData, this.turrets);
-
-            // Check if projectile should be removed
-            let shouldRemove = false;
-
-            if (collisions.terrain) {
-                console.log('Projectile hit terrain!');
-
-                // Calculate velocity-based explosion size (includes visual scaling)
-                const velocityFactor = calculateVelocityFactor(projectile);
-                const baseExplosionSize = 75; // Minimum explosion size
-                const maxExplosionSize = 150; // Maximum explosion size
-                const terrainExplosionSize = baseExplosionSize + (maxExplosionSize - baseExplosionSize) * velocityFactor;
-
-                console.log(`🌍 Terrain explosion: velocity factor ${(velocityFactor * 100).toFixed(1)}%, size: ${terrainExplosionSize.toFixed(1)}px`);
-                createExplosion(this, projectile.x, projectile.y, terrainExplosionSize, 'terrain');
-
-                // Check for AOE damage to nearby turrets
-                const affectedTurrets = calculateAOEDamage(projectile.x, projectile.y, terrainExplosionSize, this.turrets);
-
-                // Apply AOE damage to affected turrets
-                affectedTurrets.forEach(({ turret, damage }) => {
-                    applyDamage(this.gameState, turret.team, damage);
-                    // Update turret visual health indicator
-                    if (turret.updateHealthDisplay) {
-                        turret.updateHealthDisplay(this.gameState[turret.team].health);
-                    }
-                    console.log(`🌊 ${turret.team} turret took ${damage} AOE damage from terrain explosion, health now: ${this.gameState[turret.team].health}%`);
-                });
-
-                // Update panels if any turrets were damaged
-                if (affectedTurrets.length > 0) {
-                    if (this.environmentPanel && this.environmentPanel.updateDisplay) {
-                        this.environmentPanel.updateDisplay(this.gameState);
-                    }
-                    if (this.playerStatsPanel && this.playerStatsPanel.updateDisplay) {
-                        this.playerStatsPanel.updateDisplay(this.gameState);
-                    }
-                }
-
-                shouldRemove = true;
-            } else if (collisions.turret) {
-                console.log(`Projectile hit ${collisions.turret.team} turret!`);
-
-                // Calculate dynamic damage based on accuracy and velocity
-                const damage = calculateDamage(projectile, collisions.turret, collisions.turretDistance || 0);
-
-                // Calculate velocity-based explosion size
-                const velocityFactor = calculateVelocityFactor(projectile);
-                const baseExplosionSize = 90; // Minimum explosion size for turret hits
-                const maxExplosionSize = 180; // Maximum explosion size for turret hits
-                const explosionSize = baseExplosionSize + (maxExplosionSize - baseExplosionSize) * velocityFactor;
-
-                console.log(`🎯 Turret explosion: velocity factor ${(velocityFactor * 100).toFixed(1)}%, size: ${explosionSize.toFixed(1)}px (damage: ${damage})`);
-                createExplosion(this, projectile.x, projectile.y, explosionSize, 'turret');
-
-                // Apply direct damage to hit turret
-                applyDamage(this.gameState, collisions.turret.team, damage);
-                // Update turret visual health indicator
-                if (collisions.turret.updateHealthDisplay) {
-                    collisions.turret.updateHealthDisplay(this.gameState[collisions.turret.team].health);
-                }
-                console.log(`💥 ${collisions.turret.team} turret took ${damage} direct damage, health now: ${this.gameState[collisions.turret.team].health}%`);
-
-                // Check for AOE damage to other nearby turrets (excluding the directly hit one)
-                const otherTurrets = this.turrets.filter(t => t !== collisions.turret);
-                const affectedTurrets = calculateAOEDamage(projectile.x, projectile.y, explosionSize, otherTurrets);
-
-                // Apply AOE damage to affected turrets
-                affectedTurrets.forEach(({ turret, damage: aoeDamage }) => {
-                    applyDamage(this.gameState, turret.team, aoeDamage);
-                    // Update turret visual health indicator
-                    if (turret.updateHealthDisplay) {
-                        turret.updateHealthDisplay(this.gameState[turret.team].health);
-                    }
-                    console.log(`🌊 ${turret.team} turret took ${aoeDamage} AOE damage from turret explosion, health now: ${this.gameState[turret.team].health}%`);
-                });
-
-                // Update panel displays
-                if (this.environmentPanel && this.environmentPanel.updateDisplay) {
-                    this.environmentPanel.updateDisplay(this.gameState);
-                }
-                if (this.playerStatsPanel && this.playerStatsPanel.updateDisplay) {
-                    this.playerStatsPanel.updateDisplay(this.gameState);
-                }
-
-                shouldRemove = true;
-            } else if (collisions.worldBounds) {
-                console.log('Projectile left world bounds');
-                shouldRemove = true;
-            } else if (this.time.now - projectile.startTime > projectile.maxFlightTime) {
-                console.log('Projectile timed out');
-                shouldRemove = true;
-            }
-
-            // Remove projectile if needed
-            if (shouldRemove) {
-                // Trigger tooltip fade for the turret that fired this projectile
-                if (projectile.firingTurret && projectile.firingTurret.aimTooltip && projectile.firingTurret.aimTooltip.visible) {
-                    projectile.firingTurret.hideTooltip(500, 1500); // Shorter delay, faster fade
-                }
-
-                cleanupProjectile(projectile);
-                this.projectiles.splice(i, 1);
-
-                // When last projectile is removed, disable camera following
-                if (this.projectiles.length === 1 && this.cameraControls && this.cameraControls.followingProjectile) {
-                    console.log('Last projectile removed - re-enabling camera controls');
-                    this.cameraControls.followingProjectile = false;
-                }
-            }
-        }
-
-        // Ensure camera following is disabled when no projectiles remain
-        if (this.projectiles.length === 0 && this.cameraControls && this.cameraControls.followingProjectile) {
-            console.log('No projectiles remaining - disabling camera following');
-            this.cameraControls.followingProjectile = false;
-        }
+        updateProjectiles(this, this.projectiles, this.gameState, 
+                         this.landscapeData, this.turrets, this.cameraControls);
     }
-
+    
     // Handle keyboard camera movement
     updateKeyboardCamera(this);
 }
