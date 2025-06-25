@@ -26,7 +26,7 @@ import { getTeamColorCSS } from './constants.js';
  */
 
 /**
- * Initialize the base selection stage using DOM overlay
+ * Initialize the base selection stage using Phaser panels
  * @param {Phaser.Scene} scene - The Phaser scene instance
  * @param {Object} gameConfig - Game configuration from form
  * @param {Array} flatBases - Array of available flat base locations

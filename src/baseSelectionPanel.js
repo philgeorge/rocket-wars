@@ -1,7 +1,7 @@
 // baseSelectionPanel.js
 // Phaser-based base selection panel to avoid DOM event conflicts
 
-import { getTeamColorName } from './constants.js';
+import { getTeamColorName, getTeamColorHex, getTeamColorCSS } from './constants.js';
 
 /**
  * Create a Phaser-based base selection panel
@@ -15,42 +15,30 @@ export function createBaseSelectionPanel(scene, playerData) {
     // Create container for the panel
     const panel = scene.add.container(0, 0);
     
-    // Create background panel
-    const panelWidth = 400;
-    const panelHeight = 120;
+    // Create background panel (match other panels size and style)
+    const panelWidth = 340; // Reduced by 60px from 400px
+    const panelHeight = 85; // Reduced by 10px from 95px
     const background = scene.add.graphics();
-    background.fillStyle(0x1a1a1a, 0.9);
-    background.lineStyle(3, 0xffffff, 0.8);
+    background.fillStyle(0x000000, 0.8); // Match environment panel background
+    background.lineStyle(2, 0xffffff, 0.6); // Match environment panel border
     background.fillRoundedRect(0, 0, panelWidth, panelHeight, 8);
     background.strokeRoundedRect(0, 0, panelWidth, panelHeight, 8);
     
-    // Create title text
-    const titleText = scene.add.text(panelWidth / 2, 25, 'BASE SELECTION', {
-        fontSize: '20px',
-        fontFamily: 'monospace',
+    // Create title text (matching environment panel style)
+    const titleText = scene.add.text(10, 10, 'BASE SELECTION', {
+        fontSize: '1rem',
         color: '#ffffff',
         fontStyle: 'bold'
-    }).setOrigin(0.5, 0.5);
+    });
     
-    // Create instruction text
-    const instructionText = scene.add.text(panelWidth / 2, 55, 'Find a position for your base.', {
-        fontSize: '14px',
-        fontFamily: 'monospace',
-        color: '#cccccc',
-        align: 'center'
-    }).setOrigin(0.5, 0.5);
-    
-    // Create action text
-    const actionText = scene.add.text(panelWidth / 2, 85, 'Click a coloured circle to select.', {
-        fontSize: '14px',
-        fontFamily: 'monospace',
-        color: '#ffffff',
-        fontStyle: 'bold',
-        align: 'center'
-    }).setOrigin(0.5, 0.5);
+    // Create instruction text (single line, matching environment panel style)
+    const instructionText = scene.add.text(10, 32, 'Click a coloured circle\nto position your base.', {
+        fontSize: '1rem',
+        color: '#ffffff'
+    });
     
     // Add all elements to container
-    panel.add([background, titleText, instructionText, actionText]);
+    panel.add([background, titleText, instructionText]);
     
     // Position panel at top-center of screen
     positionBaseSelectionPanel(panel, scene.cameras.main.width);
@@ -62,8 +50,9 @@ export function createBaseSelectionPanel(scene, playerData) {
     const panelAny = /** @type {any} */ (panel);
     panelAny.titleText = titleText;
     panelAny.instructionText = instructionText;
-    panelAny.actionText = actionText;
     panelAny.background = background;
+    panelAny.panelWidth = panelWidth;
+    panelAny.panelHeight = panelHeight;
     
     return panel;
 }
@@ -82,24 +71,26 @@ export function updateBaseSelectionPanel(panel, currentPlayer, playerIndex, tota
     // Cast panel to any to access custom properties
     const panelAny = /** @type {any} */ (panel);
     
-    // Update title with player info
-    panelAny.titleText.setText(`${progressText} ${currentPlayer.name.toUpperCase()} - ${playerColorName.toUpperCase()} BASE`);
+    // Update title with shorter format: "(n of n) Player Name"
+    panelAny.titleText.setText(`${progressText} ${currentPlayer.name.toUpperCase()}`);
     
-    // Update border color to match player
-    const playerColorHex = getTeamColorHex(currentPlayer.team);
+    // Get player color for styling - use the CSS format for text
+    const playerColorCSS = getTeamColorCSS(currentPlayer.team);
+    
     panelAny.background.clear();
-    panelAny.background.fillStyle(0x1a1a1a, 0.9);
-    panelAny.background.lineStyle(3, playerColorHex, 0.8);
-    panelAny.background.fillRoundedRect(0, 0, 400, 120, 8);
-    panelAny.background.strokeRoundedRect(0, 0, 400, 120, 8);
+    panelAny.background.fillStyle(0x000000, 0.8); // Match environment panel background
+    panelAny.background.lineStyle(2, 0xffffff, 0.6); // Match environment panel border
+    panelAny.background.fillRoundedRect(0, 0, panelAny.panelWidth, panelAny.panelHeight, 8);
+    panelAny.background.strokeRoundedRect(0, 0, panelAny.panelWidth, panelAny.panelHeight, 8);
     
-    // Update title color
-    panelAny.titleText.setColor(`#${playerColorHex.toString(16).padStart(6, '0')}`);
+    // Update title color to match player
+    panelAny.titleText.setColor(playerColorCSS);
     
-    // Update action text to mention the player's color
-    panelAny.actionText.setText(`Click a ${playerColorName.toLowerCase()} circle to select.`);
+    // Update instruction text with player's color: "Click a {color} circle to position your base."
+    panelAny.instructionText.setText(`Click a ${playerColorName.toLowerCase()} circle\nto position your base.`);
+    panelAny.instructionText.setColor(playerColorCSS);
     
-    console.log(`📝 Updated panel for ${currentPlayer.name} (${playerColorName})`);
+    console.log(`📝 Updated panel for ${currentPlayer.name} (${playerColorName}) with color ${playerColorCSS}`);
 }
 
 /**
@@ -108,7 +99,11 @@ export function updateBaseSelectionPanel(panel, currentPlayer, playerIndex, tota
  * @param {number} screenWidth - Current screen width
  */
 export function positionBaseSelectionPanel(panel, screenWidth) {
-    const panelX = (screenWidth - 400) / 2; // Center horizontally
+    // Cast panel to any to access custom properties
+    const panelAny = /** @type {any} */ (panel);
+    const panelWidth = panelAny.panelWidth || 400; // Fallback to default width
+    
+    const panelX = (screenWidth - panelWidth) / 2; // Center horizontally
     const panelY = 20; // 20px from top
     panel.setPosition(panelX, panelY);
 }
@@ -133,23 +128,4 @@ export function showBaseSelectionPanel(panel) {
         panel.setVisible(true);
         console.log('👁️ Base selection panel shown');
     }
-}
-
-/**
- * Convert team name to hex color for Phaser
- * @param {string} team - Team name
- * @returns {number} Hex color value
- */
-function getTeamColorHex(team) {
-    const colorMap = {
-        'red': 0xff6b6b,
-        'blue': 0x6bb6ff,
-        'green': 0x6bff6b,
-        'yellow': 0xffff6b,
-        'purple': 0xb66bff,
-        'orange': 0xff966b,
-        'cyan': 0x6bffff,
-        'pink': 0xff6bff
-    };
-    return colorMap[team] || 0xffffff;
 }
