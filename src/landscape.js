@@ -179,30 +179,6 @@ export function drawLandscape(graphics, points, worldWidth, worldHeight, flatBas
 }
 
 /**
- * Draw world boundaries (left and right edges)
- * @param {Phaser.GameObjects.Graphics} graphics - Phaser graphics object to draw with
- * @param {number} worldWidth - World width in pixels
- * @param {number} worldHeight - World height in pixels
- * @returns {void}
- */
-export function drawWorldBoundaries(graphics, worldWidth, worldHeight) {
-    // Mark the left and right edges of the world with vertical lines
-    graphics.lineStyle(4, 0xff0000, 1); // Red, 4px
-    
-    // Left edge
-    graphics.beginPath();
-    graphics.moveTo(0, 0);
-    graphics.lineTo(0, worldHeight);
-    graphics.strokePath();
-    
-    // Right edge
-    graphics.beginPath();
-    graphics.moveTo(worldWidth - 1, 0);
-    graphics.lineTo(worldWidth - 1, worldHeight);
-    graphics.strokePath();
-}
-
-/**
  * Setup the complete world landscape including generation, drawing, and boundaries
  * @param {Phaser.Scene} scene - The Phaser scene
  * @param {number} worldWidth - World width in pixels
@@ -225,8 +201,6 @@ export function setupWorldLandscape(scene, worldWidth, worldHeight, gameConfig) 
     const { points, flatBases } = generateLandscapePoints(worldWidth, baseY, numPoints, gameConfig.numPlayers);
     drawLandscape(graphics, points, worldWidth, worldHeight, flatBases);
     
-    // Mark the world boundaries
-    drawWorldBoundaries(graphics, worldWidth, worldHeight);
     
     // Return landscape data for collision detection and graphics object
     const landscapeData = { points, flatBases };
