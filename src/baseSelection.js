@@ -2,7 +2,7 @@
 // Base selection stage logic for Rocket Wars
 
 import { createGunTurret } from './turret.js';
-import { createBaseSelectionPanel, updateBaseSelectionPanel, hideBaseSelectionPanel, positionBaseSelectionPanel } from './baseSelectionPanel.js';
+import { createBaseSelectionPanel, hideBaseSelectionPanel, positionBaseSelectionPanel } from './baseSelectionPanel.js';
 import { getTeamColorCSS } from './constants.js';
 
 /**
@@ -57,11 +57,8 @@ export function initializeBaseSelection(scene, gameConfig, flatBases) {
         
         console.log('🎮 Player data initialized with names from game config:', players.map(p => ({ id: p.id, name: p.name })));
         
-        // Create Phaser-based base selection panel
-        const panel = createBaseSelectionPanel(scene, players);
-        
-        // Initialize base selection logic
-        startBaseSelection(scene, players, flatBases, panel, resolve);
+        // Initialize base selection logic (no need to create panel upfront)
+        startBaseSelection(scene, players, flatBases, resolve);
     });
 }
 
@@ -70,10 +67,9 @@ export function initializeBaseSelection(scene, gameConfig, flatBases) {
  * @param {Phaser.Scene} scene - The Phaser scene
  * @param {Array} players - Array of player data
  * @param {Array} flatBases - Array of available flat base locations
- * @param {Object} panel - The base selection panel
  * @param {Function} resolve - Promise resolve function
  */
-function startBaseSelection(scene, players, flatBases, panel, resolve) {
+function startBaseSelection(scene, players, flatBases, resolve) {
     const sceneAny = /** @type {any} */ (scene);
     const landscapePoints = sceneAny.landscapeData?.points;
     if (!landscapePoints) {
@@ -86,12 +82,18 @@ function startBaseSelection(scene, players, flatBases, panel, resolve) {
     let setupTurrets = [];
     let baseHighlights = [];
     let baseClickHandlers = [];
+    let currentPanel = null; // Track the current panel
     
     function showBaseSelection(playerIndex) {
         const player = players[playerIndex];
         
-        // Update panel for current player
-        updateBaseSelectionPanel(panel, player, playerIndex, players.length);
+        // Hide the previous panel if it exists
+        if (currentPanel) {
+            hideBaseSelectionPanel(currentPanel);
+        }
+        
+        // Create a new panel for this player
+        currentPanel = createBaseSelectionPanel(scene, player, playerIndex, players.length);
         
         // Show base highlights and enable base selection
         showBaseHighlights(player);
@@ -227,8 +229,10 @@ function startBaseSelection(scene, players, flatBases, panel, resolve) {
         // Cleanup any remaining highlights
         hideBaseHighlights();
         
-        // Hide the panel
-        hideBaseSelectionPanel(panel);
+        // Hide the current panel
+        if (currentPanel) {
+            hideBaseSelectionPanel(currentPanel);
+        }
         
         // Resolve the promise with player data and existing turrets
         resolve({ players: players, turrets: setupTurrets });
@@ -236,7 +240,9 @@ function startBaseSelection(scene, players, flatBases, panel, resolve) {
     
     // Handle window resize for panel positioning
     const handleResize = () => {
-        positionBaseSelectionPanel(panel, scene.cameras.main.width);
+        if (currentPanel) {
+            positionBaseSelectionPanel(currentPanel, scene.cameras.main.width);
+        }
     };
     window.addEventListener('resize', handleResize);
     
