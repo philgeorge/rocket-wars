@@ -9,6 +9,7 @@
  * @property {Function} isDragging - Returns true if camera is being dragged
  * @property {Function} isPanning - Returns true if camera is being panned (multi-touch)
  * @property {boolean} followingProjectile - Flag to disable manual controls during projectile flight
+ * @property {Function} updateMomentum - Update momentum scrolling physics
  * @property {Function} disable - Disable camera controls for player setup
  * @property {Function} enable - Re-enable camera controls after player setup
  */
@@ -25,6 +26,21 @@ export function setupCameraAndInput(scene, onShoot) {
     let dragStartX, dragStartY;
     let cameraStartX, cameraStartY;
     
+    // Momentum scrolling variables
+    let momentumVelocityX = 0;
+    let momentumVelocityY = 0;
+    let lastCalculatedVelocityX = 0; // Preserve last calculated velocity
+    let lastCalculatedVelocityY = 0; // Preserve last calculated velocity
+    let lastMoveTime = 0;
+    let lastMoveX = 0;
+    let lastMoveY = 0;
+    let momentumActive = false;
+    // Keep a short history of recent movements for better velocity calculation
+    let moveHistory = [];
+    const momentumDecay = 0.94; // How quickly momentum slows down (increased from 0.92 for longer effect)
+    const momentumThreshold = 0.1; // Stop momentum when velocity is very low (reduced from 0.5)
+    const maxMomentumSpeed = 20; // Maximum momentum speed per frame (increased from 15)
+    
     // Multi-touch pan/scroll controls
     let isPanning = false;
     let panStartX, panStartY;
@@ -33,6 +49,26 @@ export function setupCameraAndInput(scene, onShoot) {
     
     // Function to stop dragging (used by multiple events)
     const stopDragging = () => {
+        if (isDragging) {
+            const currentTime = Date.now();
+            const timeDelta = currentTime - lastMoveTime;
+            
+            // Use the last calculated velocity instead of current momentum values
+            const finalVelocityX = lastCalculatedVelocityX;
+            const finalVelocityY = lastCalculatedVelocityY;
+            
+            // Use the preserved velocity and only apply momentum if movement was recent (within 100ms)
+            if (timeDelta < 100 && (Math.abs(finalVelocityX) > momentumThreshold || Math.abs(finalVelocityY) > momentumThreshold)) {
+                // Cap momentum to reasonable speeds
+                momentumVelocityX = Math.max(-maxMomentumSpeed, Math.min(maxMomentumSpeed, finalVelocityX));
+                momentumVelocityY = Math.max(-maxMomentumSpeed, Math.min(maxMomentumSpeed, finalVelocityY));
+                
+                momentumActive = true;
+            } else {
+                momentumVelocityX = 0;
+                momentumVelocityY = 0;
+            }
+        }
         isDragging = false;
     };
     
@@ -40,6 +76,10 @@ export function setupCameraAndInput(scene, onShoot) {
     const stopPanning = () => {
         isPanning = false;
         activePointers.clear();
+        // Also stop momentum when multi-touch ends
+        momentumActive = false;
+        momentumVelocityX = 0;
+        momentumVelocityY = 0;
     };
     
     // Function to stop aiming and shoot (only for deliberate release)
@@ -87,6 +127,12 @@ export function setupCameraAndInput(scene, onShoot) {
             console.log(`Clicked on ${clickedTurret.team} turret`);
             scene.currentPlayerTurret = clickedTurret;
             clickedTurret.startAiming();
+            
+            // Stop momentum when starting to aim for precision
+            momentumActive = false;
+            momentumVelocityX = 0;
+            momentumVelocityY = 0;
+            
             return; // Exit early if we clicked a turret
         }
         
@@ -121,6 +167,16 @@ export function setupCameraAndInput(scene, onShoot) {
         dragStartY = pointer.y;
         cameraStartX = scene.cameras.main.scrollX;
         cameraStartY = scene.cameras.main.scrollY;
+        
+        // Initialize momentum tracking
+        lastMoveTime = Date.now();
+        lastMoveX = pointer.x;
+        lastMoveY = pointer.y;
+        momentumVelocityX = 0;
+        momentumVelocityY = 0;
+        lastCalculatedVelocityX = 0;
+        lastCalculatedVelocityY = 0;
+        moveHistory = []; // Clear movement history
     });
     
     scene.input.on('pointerup', (pointer) => {
@@ -161,8 +217,58 @@ export function setupCameraAndInput(scene, onShoot) {
             scene.currentPlayerTurret.updateAim(pointer.worldX, pointer.worldY);
         } else if (isDragging && !isPanning && activePointers.size < 2) {
             // Camera panning mode (single touch/mouse drag)
+            const currentTime = Date.now();
             const deltaX = pointer.x - dragStartX;
             const deltaY = pointer.y - dragStartY;
+            
+            // Calculate velocity for momentum (pixels per millisecond)
+            const timeDelta = currentTime - lastMoveTime;
+            if (timeDelta > 0) {
+                const moveX = pointer.x - lastMoveX;
+                const moveY = pointer.y - lastMoveY;
+                
+                // Store this movement in history
+                moveHistory.push({
+                    time: currentTime,
+                    x: pointer.x,
+                    y: pointer.y,
+                    moveX: moveX,
+                    moveY: moveY,
+                    timeDelta: timeDelta
+                });
+                
+                // Keep only recent movements (last 100ms)
+                moveHistory = moveHistory.filter(move => currentTime - move.time < 100);
+                
+                // Calculate velocity from recent movements
+                if (moveHistory.length > 1) {
+                    const oldest = moveHistory[0];
+                    const newest = moveHistory[moveHistory.length - 1];
+                    const totalTime = newest.time - oldest.time;
+                    const totalMoveX = newest.x - oldest.x;
+                    const totalMoveY = newest.y - oldest.y;
+                    
+                    if (totalTime > 0) {
+                        // Invert velocity since camera moves opposite to pointer movement
+                        // Increased multiplier from 16 to 24 for 50% stronger momentum effect
+                        momentumVelocityX = -(totalMoveX / totalTime * 24); // Convert to ~60fps equivalent and invert
+                        momentumVelocityY = -(totalMoveY / totalTime * 24); // Convert to ~60fps equivalent and invert
+                        
+                        // Preserve these values for when we stop dragging
+                        lastCalculatedVelocityX = momentumVelocityX;
+                        lastCalculatedVelocityY = momentumVelocityY;
+                    }
+                }
+                
+            }
+            
+            // Update last move tracking
+            lastMoveTime = currentTime;
+            lastMoveX = pointer.x;
+            lastMoveY = pointer.y;
+            
+            // Stop any active momentum when actively dragging (but keep velocity for when we stop)
+            momentumActive = false;
             
             scene.cameras.main.scrollX = cameraStartX - deltaX;
             scene.cameras.main.scrollY = cameraStartY - deltaY;
@@ -175,6 +281,11 @@ export function setupCameraAndInput(scene, onShoot) {
         if (Math.abs(event.deltaX) > 0 || Math.abs(event.deltaY) > 0) {
             // Prevent default scrolling behavior
             event.preventDefault();
+            
+            // Stop momentum when using trackpad (trackpad has its own momentum)
+            momentumActive = false;
+            momentumVelocityX = 0;
+            momentumVelocityY = 0;
             
             // Use wheel delta for camera panning
             const sensitivity = 2; // Adjust for desired pan speed
@@ -221,6 +332,26 @@ export function setupCameraAndInput(scene, onShoot) {
     const cursors = scene.input.keyboard.createCursorKeys();
     const wasd = scene.input.keyboard.addKeys('W,S,A,D');
     
+    // Momentum update function (called from main update loop)
+    const updateMomentum = () => {
+        if (momentumActive && !isDragging && !isPanning && !scene.cameraControls?.followingProjectile) {
+            // Apply momentum velocity to camera
+            scene.cameras.main.scrollX += momentumVelocityX;
+            scene.cameras.main.scrollY += momentumVelocityY;
+            
+            // Decay momentum
+            momentumVelocityX *= momentumDecay;
+            momentumVelocityY *= momentumDecay;
+            
+            // Stop momentum if velocity becomes too small
+            if (Math.abs(momentumVelocityX) < momentumThreshold && Math.abs(momentumVelocityY) < momentumThreshold) {
+                momentumActive = false;
+                momentumVelocityX = 0;
+                momentumVelocityY = 0;
+            }
+        }
+    };
+    
     // Return camera controls object
     return {
         cursors,
@@ -228,6 +359,7 @@ export function setupCameraAndInput(scene, onShoot) {
         isDragging: () => isDragging,
         isPanning: () => isPanning,
         followingProjectile: false,  // Flag to disable manual camera controls during projectile flight
+        updateMomentum, // Function to update momentum scrolling
         
         // Methods to enable/disable camera controls during setup
         disable: () => {
@@ -304,10 +436,15 @@ export function updateProjectileCamera(scene, projectiles) {
 }
 
 /**
- * Handle keyboard camera movement in the update loop
+ * Handle keyboard camera movement and momentum in the update loop
  * @param {Phaser.Scene & {cameraControls?: any, currentPlayerTurret?: any}} scene - The Phaser scene
  */
 export function updateKeyboardCamera(scene) {
+    // Update momentum scrolling
+    if (scene.cameraControls && scene.cameraControls.updateMomentum) {
+        scene.cameraControls.updateMomentum();
+    }
+    
     // Keyboard camera movement (disabled while following projectile or when keyboard is disabled)
     if (scene.cameraControls && scene.input.keyboard.enabled && 
         !scene.cameraControls.isDragging() && !scene.cameraControls.isPanning() && 
