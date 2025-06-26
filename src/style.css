@@ -1,8 +1,11 @@
 html {
   font-size: 18px; /* Root font size for rem calculations */
-  /* Prevent pull-to-refresh and other mobile browser behaviors */
-  overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
+}
+
+/* Only prevent overscroll when game container is visible */
+html:has(#game-container:not([style*="display: none"])) {
+  overscroll-behavior: none;
 }
 
 html, body {
@@ -21,6 +24,7 @@ body {
   min-height: 100vh;
   min-height: 100dvh; /* Dynamic viewport height for modern browsers */
 }
+
 p {
   text-align: center;
   margin-bottom: 30px;
@@ -236,9 +240,3 @@ canvas {
   max-height: 100%;
 }
 
-/* Allow scrolling below the world by adding extra space */
-body::after {
-  content: '';
-  display: block;
-  height: 200px;
-}

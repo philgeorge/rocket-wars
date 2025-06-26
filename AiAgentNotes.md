@@ -58,6 +58,9 @@ This file contains notes about my learnings from using an AI Agent to help me bu
 - extracting code out of the main game loop to other modules
 - change base selection to use Phaser graphics instead of HTML overlay
 
+## 26 June 2 hours
+- mobile improvements: shrinking panels, momentum drag, etc
+
 # Odd Agent Behaviour
 
 - Choosing technology and shaping the look of the game went very well. This is kind of like competitor analysis and market research for a product.
