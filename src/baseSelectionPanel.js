@@ -53,6 +53,9 @@ export function createBaseSelectionPanel(scene, currentPlayer, playerIndex, tota
     // Set panel depth to appear above game objects
     panel.setDepth(1000);
     
+    // Keep panel fixed on screen regardless of camera movement
+    panel.setScrollFactor(0);
+    
     // Store width for positioning (cast to any to avoid TypeScript errors)
     const panelAny = /** @type {any} */ (panel);
     panelAny.panelWidth = panelWidth;
