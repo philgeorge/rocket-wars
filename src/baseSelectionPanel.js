@@ -18,7 +18,7 @@ export function createBaseSelectionPanel(scene, currentPlayer, playerIndex, tota
     const panel = scene.add.container(0, 0);
     
     // Create background panel (match other panels size and style)
-    const panelWidth = 340;
+    const panelWidth = 280;
     const panelHeight = 85;
     const background = scene.add.graphics();
     background.fillStyle(0x000000, 0.8); // Match environment panel background

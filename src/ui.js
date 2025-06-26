@@ -15,7 +15,7 @@ export function createEnvironmentPanel(scene, gameState) {
     const envPanel = /** @type {any} */ (scene.add.container(0, 0));
     
     const panelHeight = 80;
-    const panelWidth = 210;
+    const panelWidth = 150;
     
     // Create background
     const bg = scene.add.graphics();
@@ -54,7 +54,7 @@ export function createEnvironmentPanel(scene, gameState) {
         // Update wind display with direction indicator
         const windDirection = gameState.wind.current >= 0 ? '→' : '←';
         const windSpeed = Math.abs(gameState.wind.current);
-        self.windText.setText(`Wind: ${windDirection} ${windSpeed} (±${gameState.wind.variation}%)`);
+        self.windText.setText(`Wind: ${windDirection} ${windSpeed}`);
         
         // Update gravity display
         self.gravityText.setText(`Gravity: ${gameState.gravity}`);
@@ -79,10 +79,10 @@ export function createPlayerStatsPanel(scene, gameState, playerData = null) {
     
     // Calculate panel height based on number of players
     const numPlayers = gameState.numPlayers || 2;
-    const playerHeight = 60; // Height per player section
+    const playerHeight = 40; // Height per player section (reduced from 60)
     const bottomPadding = 12;
     const totalHeight = (numPlayers * playerHeight) + bottomPadding;
-    const panelWidth = 210;
+    const panelWidth = 160;
     
     // Create background
     const bg = scene.add.graphics();
@@ -111,25 +111,18 @@ export function createPlayerStatsPanel(scene, gameState, playerData = null) {
             color: playerColor,
             fontStyle: 'bold'
         });
-        
-        const playerHealth = scene.add.text(10, yOffset + 18, '', {
+         const playerHealth = scene.add.text(10, yOffset + 18, '', {
             fontSize: '1rem',
             color: '#ffffff'
         });
-        
-        const playerStats = scene.add.text(10, yOffset + 36, '', {
-            fontSize: '1rem',
-            color: '#ffffff'
-        });
-        
+
         playerElements.push({
             playerKey,
             title: playerTitle,
-            health: playerHealth,
-            stats: playerStats
+            health: playerHealth
         });
-        
-        elements.push(/** @type {any} */ (playerTitle), /** @type {any} */ (playerHealth), /** @type {any} */ (playerStats));
+
+        elements.push(/** @type {any} */ (playerTitle), /** @type {any} */ (playerHealth));
     }
     
     // Add all elements to container
@@ -146,13 +139,15 @@ export function createPlayerStatsPanel(scene, gameState, playerData = null) {
             const player = gameState[playerElement.playerKey];
             if (player) {
                 playerElement.health.setText(`Health: ${player.health}%`);
-                playerElement.stats.setText(`Kills: ${player.kills} Deaths: ${player.deaths}`);
             }
         });
     };
     
     // Position panel at top-right of screen (will be updated in scene)
     playerPanel.setScrollFactor(0); // Keep panel fixed on screen regardless of camera movement
+    
+    // Store panel width for positioning calculations
+    /** @type {any} */ (playerPanel).panelWidth = panelWidth;
     
     return playerPanel;
 }
@@ -242,7 +237,9 @@ export function positionEnvironmentPanel(envPanel) {
  * @param {number} viewportWidth - The viewport width
  */
 export function positionPlayerStatsPanel(playerPanel, viewportWidth) {
+    // Get panel width from the panel object, with fallback
+    const panelWidth = /** @type {any} */ (playerPanel).panelWidth || 200;
     // Position at top-right of viewport with some padding
-    playerPanel.x = viewportWidth - 230; // 210px panel width + 20px padding
+    playerPanel.x = viewportWidth - (panelWidth + 20); // 20px padding
     playerPanel.y = 20; // 20px from top
 }
