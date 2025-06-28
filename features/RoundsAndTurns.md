@@ -58,12 +58,12 @@ Implement the core turn management mechanics:
 - The countdown shouldn't pause if the browser tab loses focus or is minimised. (Can be done using `setInterval` and timestamps.)
 - Timer automatically advances to next player when time expires (same logic as after firing)
 
-### End of each Turn
+### End of each Turn ✅
 - If the timer reaches 0 without the player firing a projectile, then that player' turn ends.
 - If a player launches a projectile, then the countdown stops, but we continue to watch that projectile and its collision/impact before the turn has ended. (Projectile motion, camera tracking and collision detection need not be changed from current behaviour.)
 - After the player's turn has ended, proceed to the next player, or if all players have taken their turn, then proceed to the next round.
 
-### Player kills/deaths
+### Player kills/deaths ✅
 - If the projectile fired during a turn has reduced any player's health to 0, then that player has been killed.
 - Remove any killed player's turret from the map.
 - Any killed player is skipped from any further rounds of the game.

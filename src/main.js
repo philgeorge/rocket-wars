@@ -4,7 +4,7 @@
 import { setupWorldLandscape } from './landscape.js';
 import { placeTurretsOnBases } from './turret.js';
 import { createProjectile } from './projectile.js';
-import { createEnvironmentPanel, createPlayerStatsPanel, positionEnvironmentPanel, positionPlayerStatsPanel } from './ui.js';
+import { createEnvironmentPanel, createPlayerStatsPanel, positionEnvironmentPanel, positionPlayerStatsPanel } from './ui/index.js';
 import { createGameState, updateWindForNewTurn, startPlayerTurn, getCurrentPlayer, advanceToNextPlayer, advanceToNextRound, shouldGameEnd, getRemainingTurnTime, stopTurnTimer } from './turnManager.js';
 import { focusCameraOnActivePlayer } from './projectileManager.js';
 import { initializeGameSetup } from './gameSetup.js';
@@ -156,10 +156,10 @@ function create() {
 
             // Reposition panels to stay at fixed screen locations
             if (this.environmentPanel) {
-                positionEnvironmentPanel(this.environmentPanel);
+                positionEnvironmentPanel(this.environmentPanel, newWidth, newHeight);
             }
             if (this.playerStatsPanel) {
-                positionPlayerStatsPanel(this.playerStatsPanel, newWidth);
+                positionPlayerStatsPanel(this.playerStatsPanel, newWidth, newHeight);
             }
         }, 100); // Throttle resize events
     };
@@ -228,8 +228,8 @@ function create() {
         this.playerStatsPanel = createPlayerStatsPanel(this, this.gameState, playerData);
 
         // Position panels at fixed screen locations
-        positionEnvironmentPanel(this.environmentPanel);
-        positionPlayerStatsPanel(this.playerStatsPanel, this.cameras.main.width);
+        positionEnvironmentPanel(this.environmentPanel, this.cameras.main.width, this.cameras.main.height);
+        positionPlayerStatsPanel(this.playerStatsPanel, this.cameras.main.width, this.cameras.main.height);
 
         // Initialize panel displays
         this.environmentPanel.updateDisplay(this.gameState);
