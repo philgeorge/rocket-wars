@@ -29,10 +29,15 @@ function initializeFormHandlers(onGameStart) {
     const windVariationValue = document.getElementById('wind-variation-value');
     const gravitySlider = /** @type {HTMLInputElement} */ (document.getElementById('gravity'));
     const gravityValue = document.getElementById('gravity-value');
+    const roundsSlider = /** @type {HTMLInputElement} */ (document.getElementById('rounds'));
+    const roundsValue = document.getElementById('rounds-value');
+    const turnTimeSlider = /** @type {HTMLInputElement} */ (document.getElementById('turn-time'));
+    const turnTimeValue = document.getElementById('turn-time-value');
     const numPlayersSelect = /** @type {HTMLSelectElement} */ (document.getElementById('num-players'));
     const gameVersionInfo = document.getElementById('game-version-info');
     
-    if (!form || !windVariationSlider || !windVariationValue || !gravitySlider || !gravityValue || !numPlayersSelect) {
+    if (!form || !windVariationSlider || !windVariationValue || !gravitySlider || !gravityValue || 
+        !turnTimeSlider || !turnTimeValue || !roundsSlider || !roundsValue || !numPlayersSelect) {
         console.error('Could not find required form elements');
         return;
     }
@@ -45,14 +50,26 @@ function initializeFormHandlers(onGameStart) {
     // Load saved configuration and set form values
     const savedConfig = loadGameConfig();
     numPlayersSelect.value = savedConfig.numPlayers.toString();
+    roundsSlider.value = savedConfig.rounds.toString();
+    turnTimeSlider.value = savedConfig.turnTime.toString();
     windVariationSlider.value = savedConfig.windVariation.toString();
     gravitySlider.value = savedConfig.gravity.toString();
     
     // Update display values
+    roundsValue.textContent = savedConfig.rounds.toString();
+    turnTimeValue.textContent = `${savedConfig.turnTime}s`;
     windVariationValue.textContent = `${savedConfig.windVariation}%`;
     gravityValue.textContent = savedConfig.gravity.toString();
     
-    // Update slider value displays
+    roundsSlider.addEventListener('input', (e) => {
+        const target = /** @type {HTMLInputElement} */ (e.target);
+        roundsValue.textContent = target.value;
+    });
+    turnTimeSlider.addEventListener('input', (e) => {
+        const target = /** @type {HTMLInputElement} */ (e.target);
+        turnTimeValue.textContent = `${target.value}s`;
+    });
+        
     windVariationSlider.addEventListener('input', (e) => {
         const target = /** @type {HTMLInputElement} */ (e.target);
         windVariationValue.textContent = `${target.value}%`;
@@ -74,6 +91,8 @@ function initializeFormHandlers(onGameStart) {
         const gameConfig = {
             ...currentConfig,
             numPlayers: parseInt(numPlayersSelect.value),
+            rounds: parseInt(roundsSlider.value),
+            turnTime: parseInt(turnTimeSlider.value),
             windVariation: parseInt(windVariationSlider.value),
             gravity: parseInt(gravitySlider.value)
         };
