@@ -359,7 +359,7 @@ function handlePlayerEliminations(gameState, scene) {
  * @param {any} gameState - Current game state
  * @param {any} scene - The Phaser scene
  */
-function focusCameraOnActivePlayer(gameState, scene) {
+export function focusCameraOnActivePlayer(gameState, scene) {
     if (!scene.turrets || scene.turrets.length === 0) {
         return;
     }

@@ -6,6 +6,7 @@ import { placeTurretsOnBases } from './turret.js';
 import { createProjectile } from './projectile.js';
 import { createEnvironmentPanel, createPlayerStatsPanel, positionEnvironmentPanel, positionPlayerStatsPanel } from './ui.js';
 import { createGameState, updateWindForNewTurn, startPlayerTurn, getCurrentPlayer, advanceToNextPlayer, advanceToNextRound, shouldGameEnd } from './turnManager.js';
+import { focusCameraOnActivePlayer } from './projectileManager.js';
 import { initializeGameSetup } from './gameSetup.js';
 import { initializeBaseSelection } from './baseSelection.js';
 import { WORLD_HEIGHT, calculateWorldWidth } from './constants.js';
@@ -238,9 +239,12 @@ function create() {
 
         // Camera controls already set up before player setup
 
-        // Start camera focused on the left turret (player 1)
+        // Start camera focused on the active player's turret with smooth pan
         if (turrets.length > 0) {
-            this.cameras.main.centerOn(turrets[0].x, turrets[0].y);
+            // Add a small delay to ensure everything is initialized, then focus on first player
+            this.time.delayedCall(500, () => {
+                focusCameraOnActivePlayer(this.gameState, this);
+            });
         }
 
         console.log('🚀 Combat phase ready!');
