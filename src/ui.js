@@ -7,11 +7,11 @@ import { getTeamColorCSS } from './constants.js';
  * Create a floating environment panel showing wind and gravity
  * @param {Phaser.Scene} scene - The Phaser scene
  * @param {Object} gameState - Game state object containing wind and gravity data
- * @returns {Phaser.GameObjects.Container & {updateDisplay: Function, windText: any, gravityText: any}}
+ * @returns {Phaser.GameObjects.Container & {updateDisplay: Function, envTitle: any, windText: any, gravityText: any}}
  */
 export function createEnvironmentPanel(scene, gameState) {
     // Create main container positioned at top-left of screen
-    /** @type {Phaser.GameObjects.Container & {updateDisplay: Function, windText: any, gravityText: any}} */
+    /** @type {Phaser.GameObjects.Container & {updateDisplay: Function, envTitle: any, windText: any, gravityText: any}} */
     const envPanel = /** @type {any} */ (scene.add.container(0, 0));
     
     const panelHeight = 80;
@@ -45,12 +45,17 @@ export function createEnvironmentPanel(scene, gameState) {
     envPanel.add([bg, envTitle, windText, gravityText]);
     
     // Store text references for updates
+    envPanel.envTitle = envTitle;
     envPanel.windText = windText;
     envPanel.gravityText = gravityText;
     
     // Method to update the display with current game state
     envPanel.updateDisplay = function(gameState) {
         const self = /** @type {typeof envPanel} */ (this);
+        
+        // Update title to show current round
+        self.envTitle.setText(`ROUND ${gameState.currentRound}`);
+        
         // Update wind display with direction indicator
         const windDirection = gameState.wind.current >= 0 ? '→' : '←';
         const windSpeed = Math.abs(gameState.wind.current);

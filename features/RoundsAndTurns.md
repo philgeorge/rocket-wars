@@ -39,7 +39,7 @@ Implement the core turn management mechanics:
 - Restrict firing to only the active player's turret
 - Handle turn transitions after projectile impact and damage processing
 
-### Start of each Round
+### Start of each Round ✅
 - The round number should be clearly displayed. Replace the environment panel title "ENVIRONMENT" with "ROUND {n}".
 - Calculate the new randomly adjusted wind strength and update this in the environment panel. This is currently being done after every time a shot is fired.
 

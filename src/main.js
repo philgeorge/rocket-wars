@@ -128,8 +128,6 @@ function shootFromTurret(scene, turret, shootData) {
 
     console.log(`Projectile launched from (${Math.round(tipPosition.x)}, ${Math.round(tipPosition.y)})`);
 
-    // Don't update wind immediately - this will be handled when the turn ends
-    // The projectile impact and turn progression will be handled in projectileManager.js
 }
 
 /**
