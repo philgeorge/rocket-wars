@@ -295,22 +295,25 @@ function handleTurnProgression(gameState, scene) {
         console.log(`🌪️ New round - wind updated to: ${gameState.wind.current}`);
     }
     
-    // Start the next player's turn
-    startPlayerTurn(gameState);
-    console.log(`Turn started for player ${gameState.currentPlayerIndex + 1} (${gameState.playersAlive[gameState.currentPlayerIndex]})`);
-    
-    // Update UI panels
-    if (scene.environmentPanel && scene.environmentPanel.updateDisplay) {
-        scene.environmentPanel.updateDisplay(gameState);
-    }
-    if (scene.playerStatsPanel && scene.playerStatsPanel.updateDisplay) {
-        scene.playerStatsPanel.updateDisplay(gameState);
-    }
-    
-    // Delay camera focus to allow explosion effect to complete
-    // Explosion duration is ~800ms + ring delays (~320ms for 4 rings) = ~1100ms total
+    // Delay all turn progression, UI updates and camera focus to allow explosion effect to complete
+    // This creates a smoother visual transition where all changes happen together
     const explosionCompletionDelay = 1200; // 1.2 seconds to be safe
     scene.time.delayedCall(explosionCompletionDelay, () => {
+        // Start the next player's turn (sets turn timer)
+        startPlayerTurn(gameState);
+        console.log(`Turn started for player ${gameState.currentPlayerIndex + 1} (${gameState.playersAlive[gameState.currentPlayerIndex]})`);
+        
+        // Update environment panel (round number, wind, gravity)
+        if (scene.environmentPanel && scene.environmentPanel.updateDisplay) {
+            scene.environmentPanel.updateDisplay(gameState);
+        }
+        
+        // Update player panel (including active player highlighting)
+        if (scene.playerStatsPanel && scene.playerStatsPanel.updateDisplay) {
+            scene.playerStatsPanel.updateDisplay(gameState);
+        }
+        
+        // Start camera pan to active player
         focusCameraOnActivePlayer(gameState, scene);
     });
 }

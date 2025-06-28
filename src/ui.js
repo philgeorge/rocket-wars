@@ -139,11 +139,54 @@ export function createPlayerStatsPanel(scene, gameState, playerData = null) {
     // Method to update the display with current game state
     playerPanel.updateDisplay = function(gameState) {
         const self = /** @type {typeof playerPanel} */ (this);
+        
+        // Get the current active player number (for turn-based highlighting)
+        let currentActivePlayer = null;
+        if (gameState.playersAlive && gameState.currentPlayerIndex !== undefined) {
+            currentActivePlayer = gameState.playersAlive[gameState.currentPlayerIndex];
+        }
+        
         // Update all player stats
         self.playerElements.forEach(playerElement => {
             const player = gameState[playerElement.playerKey];
             if (player) {
+                // Extract player number from playerKey (e.g., 'player1' -> 1)
+                const playerNum = parseInt(playerElement.playerKey.replace('player', ''));
+                const isActivePlayer = currentActivePlayer === playerNum;
+                
+                // Update health text
                 playerElement.health.setText(`Health: ${player.health}%`);
+                
+                // Highlight active player by adjusting text styles
+                if (isActivePlayer) {
+                    // Bold and bright for active player
+                    playerElement.title.setStyle({ 
+                        fontStyle: 'bold',
+                        fontSize: '1rem',
+                        color: playerElement.title.style.color // Keep original team color
+                    });
+                    playerElement.health.setStyle({ 
+                        fontStyle: 'bold',
+                        fontSize: '1rem',
+                        color: '#ffffff' 
+                    });
+                } else {
+                    // Dimmed for inactive players
+                    playerElement.title.setStyle({ 
+                        fontStyle: 'normal',
+                        fontSize: '1rem',
+                        color: playerElement.title.style.color // Keep original team color but will appear dimmed due to alpha
+                    });
+                    playerElement.health.setStyle({ 
+                        fontStyle: 'normal',
+                        fontSize: '1rem',
+                        color: '#888888' // Dimmed gray
+                    });
+                }
+                
+                // Set alpha for overall dimming effect
+                playerElement.title.setAlpha(isActivePlayer ? 1.0 : 0.6);
+                playerElement.health.setAlpha(isActivePlayer ? 1.0 : 0.6);
             }
         });
     };

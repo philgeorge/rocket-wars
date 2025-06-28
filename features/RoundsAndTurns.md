@@ -43,7 +43,7 @@ Implement the core turn management mechanics:
 - The round number should be clearly displayed. Replace the environment panel title "ENVIRONMENT" with "ROUND {n}".
 - Calculate the new randomly adjusted wind strength and update this in the environment panel. This is currently being done after every time a shot is fired.
 
-### Start of each Turn
+### Start of each Turn ✅
 - The order of players turns is the natural order of players 1,2,3,4, the same as used in base selection.
 - Move the camera to focus on the player whose turn it is. (After the previous turn has ended, including any projectile flight, impact and damage/kill processing.)
 - Update the player stats panel to highlight the name of the player whose turn it is. This could be done by dimming/unbolding the text colour of the other players and their health, and bolding the name and health of the current player.
