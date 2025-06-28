@@ -187,6 +187,12 @@ export function advanceToNextPlayer(gameState) {
  * @returns {boolean} True if advanced to next round, false if game should end
  */
 export function advanceToNextRound(gameState) {
+    // Check if we would exceed max rounds AFTER incrementing
+    if (gameState.currentRound + 1 > gameState.maxRounds) {
+        console.log('Game ended: Maximum rounds reached');
+        return false; // Game should end
+    }
+    
     gameState.currentRound++;
     gameState.currentPlayerIndex = 0; // Start with first alive player
     
@@ -196,12 +202,6 @@ export function advanceToNextRound(gameState) {
     gameState.lastRemainingTime = null; // Reset for next round
     
     console.log(`Advanced to Round ${gameState.currentRound}`);
-    
-    // Check if we've reached max rounds
-    if (gameState.currentRound > gameState.maxRounds) {
-        console.log('Game ended: Maximum rounds reached');
-        return false; // Game should end
-    }
     
     return true; // Continue playing
 }
@@ -217,7 +217,7 @@ export function shouldGameEnd(gameState) {
         return true;
     }
     
-    // Game ends if max rounds completed
+    // Game ends if max rounds completed (we've finished the final round)
     if (gameState.currentRound > gameState.maxRounds) {
         return true;
     }
