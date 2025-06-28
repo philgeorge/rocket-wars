@@ -307,8 +307,12 @@ function handleTurnProgression(gameState, scene) {
         scene.playerStatsPanel.updateDisplay(gameState);
     }
     
-    // Move camera to focus on the new active player
-    focusCameraOnActivePlayer(gameState, scene);
+    // Delay camera focus to allow explosion effect to complete
+    // Explosion duration is ~800ms + ring delays (~320ms for 4 rings) = ~1100ms total
+    const explosionCompletionDelay = 1200; // 1.2 seconds to be safe
+    scene.time.delayedCall(explosionCompletionDelay, () => {
+        focusCameraOnActivePlayer(gameState, scene);
+    });
 }
 
 /**
@@ -364,8 +368,15 @@ function focusCameraOnActivePlayer(gameState, scene) {
     const activeTurret = scene.turrets.find(turret => turret.team === currentPlayerKey);
     
     if (activeTurret) {
-        console.log(`📹 Focusing camera on ${currentPlayerKey} turret at (${activeTurret.x}, ${activeTurret.y})`);
-        scene.cameras.main.centerOn(activeTurret.x, activeTurret.y);
+        console.log(`📹 Smoothly panning camera to ${currentPlayerKey} turret at (${activeTurret.x}, ${activeTurret.y})`);
+        
+        // Use Phaser's pan method for smooth camera movement over 2 seconds
+        scene.cameras.main.pan(activeTurret.x, activeTurret.y, 2000, 'Power2', false, (camera, progress) => {
+            // Optional: Add callback during pan animation if needed
+            if (progress === 1) {
+                console.log(`📹 Camera pan to ${currentPlayerKey} completed`);
+            }
+        });
     } else {
         console.warn(`⚠️ Could not find turret for active player ${currentPlayerKey}`);
     }
