@@ -17,7 +17,7 @@ The initial game setup needs the following additional fields:
 Add these fields to the input form after "Number of Players" but before wind and gravity.
 Ensure that all these fields are also stored and loaded from the browser application storage.
 
-### Game State Structure
+### Game State Structure ✅
 Extend the game state object to track rounds and turns:
 - Add `currentRound` (starting at 1)
 - Add `maxRounds` (from game setup config)
@@ -27,6 +27,7 @@ Extend the game state object to track rounds and turns:
 - Add `turnStartTime` (timestamp when current turn began)
 - Add `hasPlayerFiredThisTurn` (boolean to prevent multiple shots per turn)
 - Add helper functions for turn management and game state queries
+
 Check if any similar state already exists that can be used.
 
 ### Turn System

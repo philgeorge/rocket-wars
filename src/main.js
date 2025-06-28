@@ -4,7 +4,8 @@
 import { setupWorldLandscape } from './landscape.js';
 import { placeTurretsOnBases } from './turret.js';
 import { createProjectile } from './projectile.js';
-import { createEnvironmentPanel, createPlayerStatsPanel, createGameState, updateWindForNewTurn, positionEnvironmentPanel, positionPlayerStatsPanel } from './ui.js';
+import { createEnvironmentPanel, createPlayerStatsPanel, positionEnvironmentPanel, positionPlayerStatsPanel } from './ui.js';
+import { createGameState, updateWindForNewTurn, startPlayerTurn } from './turnManager.js';
 import { initializeGameSetup } from './gameSetup.js';
 import { initializeBaseSelection } from './baseSelection.js';
 import { WORLD_HEIGHT, calculateWorldWidth } from './constants.js';
@@ -209,6 +210,7 @@ function create() {
 
         // Initialize game state and UI (moved here to happen after player setup)
         this.gameState = createGameState(gameConfig);
+        console.log('🎮 Game state initialized:', this.gameState);
         this.environmentPanel = createEnvironmentPanel(this, this.gameState);
         this.playerStatsPanel = createPlayerStatsPanel(this, this.gameState, playerData);
 
@@ -220,6 +222,9 @@ function create() {
         this.environmentPanel.updateDisplay(this.gameState);
         this.playerStatsPanel.updateDisplay(this.gameState);
 
+        // Start the first player's turn
+        startPlayerTurn(this.gameState);
+
         // Camera controls already set up before player setup
 
         // Start camera focused on the left turret (player 1)
@@ -228,6 +233,7 @@ function create() {
         }
 
         console.log('🚀 Combat phase ready!');
+        console.log(`Game started: Player ${this.gameState.playersAlive[0]} begins Round 1`);
     }).catch((error) => {
         console.error('❌ Player setup failed:', error);
     });

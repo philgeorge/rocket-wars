@@ -2,7 +2,7 @@
 // Projectile update and management system for Rocket Wars
 
 import { updateProjectileTrail, drawProjectileTrail, checkProjectileCollisions, cleanupProjectile, calculateDamage, calculateAOEDamage, calculateVelocityFactor, createExplosion } from './projectile.js';
-import { applyDamage } from './ui.js';
+import { applyDamage } from './turnManager.js';
 import { updateProjectileCamera } from './camera.js';
 
 /**
