@@ -10,12 +10,33 @@ This will make for a fair and orderly game where each player has an equal chance
 
 ## Feature Breakdown
 
-### Game setup
+### Game setup ✅
 The initial game setup needs the following additional fields:
-- "Turn Time": range selector from 10 to 100 seconds in 10 second intervals, default 30.
+- "Turn Time": range selector from 10 to 100 seconds in 5 second intervals, default 30.
 - "Rounds": range selector from 5 to 25, intervals of 1, default 10
 Add these fields to the input form after "Number of Players" but before wind and gravity.
 Ensure that all these fields are also stored and loaded from the browser application storage.
+
+### Game State Structure
+Extend the game state object to track rounds and turns:
+- Add `currentRound` (starting at 1)
+- Add `maxRounds` (from game setup config)
+- Add `currentPlayerIndex` (0-based index into active players)
+- Add `playersAlive` (array of player numbers still in the game)
+- Add `turnTimeLimit` (from game setup config)
+- Add `turnStartTime` (timestamp when current turn began)
+- Add `hasPlayerFiredThisTurn` (boolean to prevent multiple shots per turn)
+- Add helper functions for turn management and game state queries
+Check if any similar state already exists that can be used.
+
+### Turn System
+Implement the core turn management mechanics:
+- Create function to advance to next player's turn
+- Create function to advance to next round
+- Create function to check if game should end (one player left or max rounds reached)
+- Integrate turn system with existing projectile firing mechanism
+- Restrict firing to only the active player's turret
+- Handle turn transitions after projectile impact and damage processing
 
 ### Start of each Round
 - The round number should be clearly displayed. Replace the environment panel title "ENVIRONMENT" with "ROUND {n}".
