@@ -59,8 +59,8 @@ export function createEnvironmentPanel(scene, gameState) {
     envPanel.updateDisplay = function(gameState) {
         const self = /** @type {typeof envPanel} */ (this);
         
-        // Update title to show current round
-        self.envTitle.setText(`ROUND ${gameState.currentRound}`);
+        // Update title to show current round and max rounds
+        self.envTitle.setText(`ROUND ${gameState.currentRound}/${gameState.maxRounds}`);
         
         // Update wind display with direction indicator
         const windDirection = gameState.wind.current >= 0 ? '→' : '←';
