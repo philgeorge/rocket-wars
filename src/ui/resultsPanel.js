@@ -85,7 +85,7 @@ export function createResultsPanel(scene, gameState, playerData = null) {
     // Add restart instruction
     textItems.push({
         key: 'restart',
-        text: 'Press R or click anywhere to restart game',
+        text: 'Press R or click anywhere to restart',
         style: {
             fontSize: '0.9rem',
             color: '#888888',
@@ -107,7 +107,7 @@ export function createResultsPanel(scene, gameState, playerData = null) {
     /** @type {any} */ (panel).addRestartButton = function() {
         const self = /** @type {any} */ (this);
         const elements = self.textElements;
-        elements.restart.setText('Press R or click anywhere to restart game');
+        elements.restart.setText('Press R or click anywhere to restart');
         elements.restart.setInteractive();
         elements.restart.on('pointerdown', () => {
             window.location.reload(); // Simple restart for now
