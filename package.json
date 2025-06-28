@@ -2,9 +2,12 @@
   "name": "rocket-wars",
   "version": "0.1.0",
   "description": "browser-based game where players fire rockets at each other's base",
+  "type": "module",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "check-syntax": "for file in src/*.js src/**/*.js; do echo \"Checking $file...\"; node --input-type=module -c < \"$file\" || echo \"Error in $file\"; done",
+    "check-file": "node --input-type=module -c <"
   },
   "repository": {
     "type": "git",

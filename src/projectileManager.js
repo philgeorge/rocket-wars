@@ -4,6 +4,58 @@
 import { updateProjectileTrail, drawProjectileTrail, checkProjectileCollisions, cleanupProjectile, calculateDamage, calculateAOEDamage, calculateVelocityFactor, createExplosion } from './projectile.js';
 import { applyDamage, getCurrentPlayer, advanceToNextPlayer, advanceToNextRound, shouldGameEnd, updateWindForNewTurn, removePlayer, startPlayerTurn, stopTurnTimer } from './turnManager.js';
 import { updateProjectileCamera } from './camera.js';
+import { createResultsPanel, positionResultsPanel } from './ui/index.js';
+
+/**
+ * Handle end of game in projectile manager context
+ * @param {any} scene - The Phaser scene
+ * @param {any} gameState - Game state object
+ * @param {string} reason - Reason for game end
+ */
+function handleProjectileGameEnd(scene, gameState, reason) {
+    console.log(`🏁 Game ended during projectile phase: ${reason}`);
+    
+    // Set game ended flag for keyboard input handling
+    scene.gameEnded = true;
+    
+    // Stop any active turn timer
+    stopTurnTimer(gameState);
+    
+    // Create and show results panel
+    scene.resultsPanel = createResultsPanel(scene, gameState, scene.playerData);
+    positionResultsPanel(scene.resultsPanel, scene.cameras.main.width, scene.cameras.main.height);
+    
+    // Add restart functionality
+    scene.resultsPanel.addRestartButton();
+    
+    // Focus camera on the winner
+    const players = [];
+    for (let i = 1; i <= gameState.numPlayers; i++) {
+        const playerKey = `player${i}`;
+        const player = gameState[playerKey];
+        const isAlive = gameState.playersAlive.includes(i);
+        
+        players.push({
+            number: i,
+            health: player.health,
+            isAlive: isAlive
+        });
+    }
+    
+    // Sort to find winner
+    players.sort((a, b) => {
+        if (a.isAlive !== b.isAlive) return b.isAlive ? 1 : -1;
+        return b.health - a.health;
+    });
+    
+    const winner = players[0];
+    if (winner && scene.turrets) {
+        const winnerTurret = scene.turrets.find(turret => turret.team === `player${winner.number}`);
+        if (winnerTurret) {
+            scene.cameras.main.pan(winnerTurret.x, winnerTurret.y - 100, 2000, 'Power2');
+        }
+    }
+}
 
 /**
  * Update all projectiles in the scene
@@ -271,7 +323,7 @@ function handleTurnProgression(gameState, scene) {
     // Check if game should end
     if (shouldGameEnd(gameState)) {
         console.log('🏁 Game should end!');
-        // TODO: Implement game end logic (results panel, etc.)
+        handleProjectileGameEnd(scene, gameState, 'last_player');
         return;
     }
     
@@ -286,7 +338,7 @@ function handleTurnProgression(gameState, scene) {
         
         if (!gameStillActive) {
             console.log('🏁 Game ended: Maximum rounds reached');
-            // TODO: Implement game end logic (results panel, etc.)
+            handleProjectileGameEnd(scene, gameState, 'max_rounds');
             return;
         }
         

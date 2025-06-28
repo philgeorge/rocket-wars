@@ -51,7 +51,7 @@ export function createResultsPanel(scene, gameState, playerData = null) {
     // Add restart instruction
     textItems.push({
         key: 'restart',
-        text: '',
+        text: 'Press R to restart game',
         style: {
             fontSize: '0.9rem',
             color: '#888888',

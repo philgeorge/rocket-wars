@@ -70,7 +70,7 @@ Implement the core turn management mechanics:
 - There is no renumbering of players after a kill, so for example if player 2 is the first to be killed, then the game continues with players 1, 3, 4.
 - The current round continues with remaining players (if there are more than 1).
 
-### End of Game
+### End of Game ✅
 - If, after a kill, only one player remains, the the game ends.
 - If all rounds (as per the game setup config) have been completed and there is still more than 1 player alive, then the game ends.
 - When the game ends, present a "Results" panel that floats over the landscape.

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Game End - Rocket Wars</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #001122;
+            color: white;
+        }
+        .test-info {
+            background: #333;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .test-steps {
+            background: #444;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        ol {
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        .key-instruction {
+            background: #005500;
+            color: #00ff00;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-info">
+        <h1>🎮 Rocket Wars - End Game Test</h1>
+        <p>This is a quick test page to verify the end game functionality works correctly.</p>
+        <p><strong>Main features to test:</strong></p>
+        <ul>
+            <li>✅ Game ends when only one player remains</li>
+            <li>✅ Game ends when max rounds are completed</li>
+            <li>✅ Results panel appears with ranked players</li>
+            <li>✅ Camera focuses on winner</li>
+            <li>✅ Restart works with <span class="key-instruction">R</span> key or clicking text</li>
+            <li>✅ Results panel is locked from scrolling</li>
+            <li>✅ Landscape can still be scrolled behind panel</li>
+        </ul>
+    </div>
+
+    <div class="test-steps">
+        <h2>🧪 Testing Steps:</h2>
+        <ol>
+            <li>Open <strong>index.html</strong> in your browser</li>
+            <li>Set up a quick game:
+                <ul>
+                    <li>Number of Players: 2</li>
+                    <li>Turn Time: 10 seconds (for quick testing)</li>
+                    <li>Rounds: 1 (to test max rounds completion)</li>
+                </ul>
+            </li>
+            <li>Play the game and either:
+                <ul>
+                    <li><strong>Option A:</strong> Kill the other player to test "last player standing" end condition</li>
+                    <li><strong>Option B:</strong> Let the single round complete without kills to test "max rounds" end condition</li>
+                </ul>
+            </li>
+            <li>Verify the Results panel appears with:
+                <ul>
+                    <li>Player rankings (alive > killed, then by health)</li>
+                    <li>Health percentages</li>
+                    <li>Winner highlighted in gold</li>
+                    <li>Status icons (🏆 for alive, 💀 for dead)</li>
+                    <li>Restart instruction</li>
+                </ul>
+            </li>
+            <li>Test restart functionality:
+                <ul>
+                    <li>Press <span class="key-instruction">R</span> key → should reload page</li>
+                    <li>Click "Press R to restart game" text → should reload page</li>
+                </ul>
+            </li>
+            <li>Test camera and scrolling:
+                <ul>
+                    <li>Camera should focus on winner's turret</li>
+                    <li>Results panel should stay fixed on screen</li>
+                    <li>Dragging should still scroll the landscape behind the panel</li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+
+    <p style="text-align: center; margin-top: 30px;">
+        <a href="index.html" style="color: #00ff00; text-decoration: none; font-size: 1.2em;">
+            🚀 Start Game Test →
+        </a>
+    </p>
+</body>
+</html>

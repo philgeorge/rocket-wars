@@ -4,7 +4,7 @@
 import { setupWorldLandscape } from './landscape.js';
 import { placeTurretsOnBases } from './turret.js';
 import { createProjectile } from './projectile.js';
-import { createEnvironmentPanel, createPlayerStatsPanel, positionEnvironmentPanel, positionPlayerStatsPanel } from './ui/index.js';
+import { createEnvironmentPanel, createPlayerStatsPanel, positionEnvironmentPanel, positionPlayerStatsPanel, createResultsPanel, positionResultsPanel } from './ui/index.js';
 import { createGameState, updateWindForNewTurn, startPlayerTurn, getCurrentPlayer, advanceToNextPlayer, advanceToNextRound, shouldGameEnd, getRemainingTurnTime, stopTurnTimer } from './turnManager.js';
 import { focusCameraOnActivePlayer } from './projectileManager.js';
 import { initializeGameSetup } from './gameSetup.js';
@@ -133,6 +133,83 @@ function shootFromTurret(scene, turret, shootData) {
 }
 
 /**
+ * Handle end of game - show results panel and focus on winner
+ * @param {any} scene - The Phaser scene
+ * @param {string} reason - Reason for game end ('max_rounds' or 'last_player')
+ */
+function handleGameEnd(scene, reason) {
+    console.log(`🏁 Game ended: ${reason}`);
+    
+    // Set game ended flag for keyboard input handling
+    scene.gameEnded = true;
+    
+    // Stop any active turn timer
+    stopTurnTimer(scene.gameState);
+    
+    // Create and show results panel
+    scene.resultsPanel = createResultsPanel(scene, scene.gameState, scene.playerData);
+    positionResultsPanel(scene.resultsPanel, scene.cameras.main.width, scene.cameras.main.height);
+    
+    // Add restart functionality
+    scene.resultsPanel.addRestartButton();
+    
+    // Focus camera on the winner (first player in results)
+    const winner = getRankedPlayers(scene.gameState, scene.playerData)[0];
+    if (winner && scene.turrets) {
+        const winnerTurret = scene.turrets.find(turret => turret.team === `player${winner.number}`);
+        if (winnerTurret) {
+            // Smooth pan to winner's turret
+            scene.cameras.main.pan(winnerTurret.x, winnerTurret.y - 100, 2000, 'Power2');
+        }
+    }
+    
+    console.log(`🎊 Game complete! Winner: Player ${winner ? winner.number : 'Unknown'}`);
+}
+
+/**
+ * Get players ranked by game results (duplicate of resultsPanel function for main.js use)
+ * @param {Object} gameState - Game state object
+ * @param {Array} playerData - Player data with names
+ * @returns {Array} Ranked player list
+ */
+function getRankedPlayers(gameState, playerData = null) {
+    const players = [];
+    
+    // Collect all player data
+    for (let i = 1; i <= gameState.numPlayers; i++) {
+        const playerKey = `player${i}`;
+        const player = gameState[playerKey];
+        const isAlive = gameState.playersAlive.includes(i);
+        
+        let playerName = `PLAYER ${i}`;
+        if (playerData && playerData[i - 1] && playerData[i - 1].name) {
+            playerName = playerData[i - 1].name.toUpperCase();
+        }
+        
+        players.push({
+            number: i,
+            name: playerName,
+            health: player.health,
+            isAlive: isAlive,
+            kills: player.kills || 0,
+            deaths: player.deaths || 0
+        });
+    }
+    
+    // Sort players: alive first, then by health descending
+    players.sort((a, b) => {
+        // Alive players come first
+        if (a.isAlive !== b.isAlive) {
+            return b.isAlive ? 1 : -1;
+        }
+        // Then sort by health (highest first)
+        return b.health - a.health;
+    });
+    
+    return players;
+}
+
+/**
  * Create the game scene
  * @this {Phaser.Scene & {turrets: any[], currentPlayerTurret: any, projectiles: any[], landscapeData: any, gameState: any, environmentPanel: any, playerStatsPanel: any, cameraControls: any}}
  */
@@ -245,8 +322,7 @@ function create() {
                 // Round completed, advance to next round
                 const continueGame = advanceToNextRound(this.gameState);
                 if (!continueGame) {
-                    console.log('🏁 Game Over! Max rounds reached');
-                    // TODO: Handle game end
+                    handleGameEnd(this, 'max_rounds');
                     return;
                 }
                 // Update wind for new round
@@ -255,8 +331,7 @@ function create() {
             
             // Check if game should end (only one player left)
             if (shouldGameEnd(this.gameState)) {
-                console.log('🏁 Game Over! Only one player remaining');
-                // TODO: Handle game end
+                handleGameEnd(this, 'last_player');
                 return;
             }
             
@@ -294,7 +369,7 @@ function create() {
 
 /**
  * Update the game scene
- * @this {Phaser.Scene & {turrets: any[], currentPlayerTurret: any, projectiles: any[], landscapeData: any, gameState: any, environmentPanel: any, playerStatsPanel: any, cameraControls: any}}
+ * @this {Phaser.Scene & {turrets: any[], currentPlayerTurret: any, projectiles: any[], landscapeData: any, gameState: any, environmentPanel: any, playerStatsPanel: any, cameraControls: any, resultsPanel?: any, gameEnded?: boolean}}
  */
 function update() {
     // Update projectiles (now handled by projectile manager)
@@ -306,6 +381,16 @@ function update() {
     // Update UI timer display
     if (this.environmentPanel && this.gameState) {
         this.environmentPanel.updateDisplay(this.gameState);
+    }
+    
+    // Handle keyboard input for game restart
+    if (this.gameEnded && this.resultsPanel) {
+        // Check for R key press to restart
+        const rKey = this.input.keyboard.addKey('R');
+        if (Phaser.Input.Keyboard.JustDown(rKey)) {
+            console.log('🔄 Restarting game via R key...');
+            window.location.reload();
+        }
     }
     
     // Handle keyboard camera movement
