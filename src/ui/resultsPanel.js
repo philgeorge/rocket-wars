@@ -34,17 +34,15 @@ export function createResultsPanel(scene, gameState, playerData = null) {
     // Add each player to the results
     rankedPlayers.forEach((player, index) => {
         const position = index + 1;
-        const totalPlayers = rankedPlayers.length;
         
         // Count how many alive players there are
         const alivePlayers = rankedPlayers.filter(p => p.isAlive);
         const aliveCount = alivePlayers.length;
         
-        // Determine trophy/status icon and color based on position
-        let statusIcon, trophyColor;
+        // Determine trophy/status icon based on position
+        let statusIcon;
         if (!player.isAlive) {
             statusIcon = '💀';
-            trophyColor = '#666666'; // Gray for dead players
         } else {
             // Find position among alive players only
             const alivePosition = alivePlayers.findIndex(p => p.number === player.number) + 1;
@@ -52,20 +50,15 @@ export function createResultsPanel(scene, gameState, playerData = null) {
             // Assign trophies based on position among alive players
             if (alivePosition === 1) {
                 statusIcon = '🏆';
-                trophyColor = '#ffd700'; // Gold
             } else if (alivePosition === 2) {
                 statusIcon = '🥈';
-                trophyColor = '#c0c0c0'; // Silver
             } else if (alivePosition === 3) {
                 statusIcon = '🥉';
-                trophyColor = '#cd7f32'; // Bronze
             } else if (alivePosition === aliveCount && aliveCount > 1) {
                 // Wooden spoon for lowest-ranked alive player (if more than 1 alive and not first)
                 statusIcon = '🥄';
-                trophyColor = '#8b4513'; // Brown
             } else {
                 statusIcon = '🏅'; // Generic medal for other positions
-                trophyColor = getTeamColorCSS(`player${player.number}`);
             }
         }
         
@@ -76,7 +69,7 @@ export function createResultsPanel(scene, gameState, playerData = null) {
             text: `${position}. ${statusIcon} ${playerName} (${player.health}%)`,
             style: {
                 fontSize: '1rem',
-                color: trophyColor,
+                color: getTeamColorCSS(`player${player.number}`), // Always use team color for text
                 fontStyle: position === 1 ? 'bold' : 'normal'
             }
         });

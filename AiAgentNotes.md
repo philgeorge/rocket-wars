@@ -61,7 +61,7 @@ This file contains notes about my learnings from using an AI Agent to help me bu
 ## 26 June 2 hours
 - mobile improvements: shrinking panels, momentum drag, etc
 
-## 28 June 3 hours
+## 28 June 4 hours
 - rounds and turns logic
 
 # Odd Agent Behaviour
