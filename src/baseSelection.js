@@ -2,7 +2,7 @@
 // Base selection stage logic for Rocket Wars
 
 import { createGunTurret } from './turret.js';
-import { createBaseSelectionPanel, hideBaseSelectionPanel, positionBaseSelectionPanel } from './baseSelectionPanel.js';
+import { createBaseSelectionPanel, hideBaseSelectionPanel, positionBaseSelectionPanel } from './ui/index.js';
 import { getTeamColorCSS } from './constants.js';
 
 /**
