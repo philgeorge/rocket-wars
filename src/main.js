@@ -5,7 +5,7 @@ import { setupWorldLandscape } from './landscape.js';
 import { placeTurretsOnBases } from './turret.js';
 import { createProjectile } from './projectile.js';
 import { createEnvironmentPanel, createPlayerStatsPanel, positionEnvironmentPanel, positionPlayerStatsPanel } from './ui.js';
-import { createGameState, updateWindForNewTurn, startPlayerTurn } from './turnManager.js';
+import { createGameState, updateWindForNewTurn, startPlayerTurn, getCurrentPlayer, advanceToNextPlayer, advanceToNextRound, shouldGameEnd } from './turnManager.js';
 import { initializeGameSetup } from './gameSetup.js';
 import { initializeBaseSelection } from './baseSelection.js';
 import { WORLD_HEIGHT, calculateWorldWidth } from './constants.js';
@@ -91,6 +91,28 @@ function preload() {
  * @param {Object} shootData - The shooting data (angle, power, etc.)
  */
 function shootFromTurret(scene, turret, shootData) {
+    // Check if this player is allowed to shoot
+    if (scene.gameState && scene.gameState.playersAlive) {
+        const currentPlayerNum = getCurrentPlayer(scene.gameState);
+        const currentPlayerKey = `player${currentPlayerNum}`;
+        
+        // Verify this is the active player's turret
+        if (turret.team !== currentPlayerKey) {
+            console.log(`🚫 Shooting blocked: ${turret.team} tried to shoot but it's Player ${currentPlayerNum}'s turn`);
+            return;
+        }
+        
+        // Check if player has already fired this turn
+        if (scene.gameState.hasPlayerFiredThisTurn) {
+            console.log(`🚫 Shooting blocked: Player ${currentPlayerNum} has already fired this turn`);
+            return;
+        }
+        
+        // Mark that this player has fired this turn
+        scene.gameState.hasPlayerFiredThisTurn = true;
+        console.log(`✅ Player ${currentPlayerNum} fired their shot this turn`);
+    }
+    
     // Launch projectile from turret gun tip
     const tipPosition = turret.getGunTipPosition();
     const projectile = createProjectile(scene, tipPosition.x, tipPosition.y, shootData.angle, shootData.power);
@@ -106,17 +128,8 @@ function shootFromTurret(scene, turret, shootData) {
 
     console.log(`Projectile launched from (${Math.round(tipPosition.x)}, ${Math.round(tipPosition.y)})`);
 
-    // Update wind for next turn and trigger panel updates
-    if (scene.gameState) {
-        updateWindForNewTurn(scene.gameState);
-        // Update panel displays
-        if (scene.environmentPanel && scene.environmentPanel.updateDisplay) {
-            scene.environmentPanel.updateDisplay(scene.gameState);
-        }
-        if (scene.playerStatsPanel && scene.playerStatsPanel.updateDisplay) {
-            scene.playerStatsPanel.updateDisplay(scene.gameState);
-        }
-    }
+    // Don't update wind immediately - this will be handled when the turn ends
+    // The projectile impact and turn progression will be handled in projectileManager.js
 }
 
 /**

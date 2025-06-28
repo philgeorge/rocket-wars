@@ -123,6 +123,32 @@ export function setupCameraAndInput(scene, onShoot) {
         }
         
         if (clickedTurret) {
+            // Check if this turret belongs to the current active player
+            if (scene.gameState && scene.gameState.playersAlive) {
+                // Import getCurrentPlayer function to check active player
+                const getCurrentPlayer = (gameState) => {
+                    if (gameState.playersAlive.length === 0) {
+                        return 1; // Fallback
+                    }
+                    return gameState.playersAlive[gameState.currentPlayerIndex];
+                };
+                
+                const currentPlayerNum = getCurrentPlayer(scene.gameState);
+                const currentPlayerKey = `player${currentPlayerNum}`;
+                
+                // Only allow interaction if this turret belongs to the current active player
+                if (clickedTurret.team !== currentPlayerKey) {
+                    console.log(`🚫 Can't use ${clickedTurret.team} turret - it's Player ${currentPlayerNum}'s turn (${currentPlayerKey})`);
+                    return; // Exit early - not the active player's turret
+                }
+                
+                // Check if the current player has already fired this turn
+                if (scene.gameState.hasPlayerFiredThisTurn) {
+                    console.log(`🚫 Player ${currentPlayerNum} has already fired this turn`);
+                    return; // Exit early - already fired this turn
+                }
+            }
+            
             // Start aiming
             console.log(`Clicked on ${clickedTurret.team} turret`);
             scene.currentPlayerTurret = clickedTurret;

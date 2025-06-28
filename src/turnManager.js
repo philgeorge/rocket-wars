@@ -159,6 +159,8 @@ export function removePlayer(gameState, playerNum) {
  * @returns {boolean} True if advanced to next player, false if round completed
  */
 export function advanceToNextPlayer(gameState) {
+    console.log(`🔄 Advancing from player index ${gameState.currentPlayerIndex} (Player ${getCurrentPlayer(gameState)})`);
+    
     // Reset turn state
     gameState.hasPlayerFiredThisTurn = false;
     gameState.turnStartTime = null;
@@ -175,10 +177,11 @@ export function advanceToNextPlayer(gameState) {
     // Check if we've gone through all players (round complete)
     if (gameState.currentPlayerIndex >= gameState.playersAlive.length) {
         gameState.currentPlayerIndex = 0;
+        console.log(`Round ${gameState.currentRound} completed, wrapping to start of next round`);
         return false; // Round completed
     }
     
-    console.log(`Turn advanced to Player ${getCurrentPlayer(gameState)}`);
+    console.log(`🎯 Turn advanced to Player ${getCurrentPlayer(gameState)} (index ${gameState.currentPlayerIndex})`);
     return true; // Still in same round
 }
 
@@ -239,5 +242,7 @@ export function startPlayerTurn(gameState) {
     gameState.turnStartTime = Date.now();
     gameState.hasPlayerFiredThisTurn = false;
     
-    console.log(`Started turn for Player ${getCurrentPlayer(gameState)} in Round ${gameState.currentRound}`);
+    const currentPlayer = getCurrentPlayer(gameState);
+    console.log(`🎯 Started turn for Player ${currentPlayer} in Round ${gameState.currentRound}`);
+    console.log(`Players alive: [${gameState.playersAlive.join(', ')}], current index: ${gameState.currentPlayerIndex}`);
 }

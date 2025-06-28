@@ -30,7 +30,7 @@ Extend the game state object to track rounds and turns:
 
 Check if any similar state already exists that can be used.
 
-### Turn System
+### Turn System ✅
 Implement the core turn management mechanics:
 - Create function to advance to next player's turn
 - Create function to advance to next round

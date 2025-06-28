@@ -2,7 +2,7 @@
 // Projectile update and management system for Rocket Wars
 
 import { updateProjectileTrail, drawProjectileTrail, checkProjectileCollisions, cleanupProjectile, calculateDamage, calculateAOEDamage, calculateVelocityFactor, createExplosion } from './projectile.js';
-import { applyDamage } from './turnManager.js';
+import { applyDamage, getCurrentPlayer, advanceToNextPlayer, advanceToNextRound, shouldGameEnd, updateWindForNewTurn, removePlayer, startPlayerTurn } from './turnManager.js';
 import { updateProjectileCamera } from './camera.js';
 
 /**
@@ -37,7 +37,7 @@ export function updateProjectiles(scene, projectiles, gameState, landscapeData, 
 
         // Remove projectile if needed
         if (shouldRemove) {
-            cleanupFinishedProjectile(projectile, projectiles, i, cameraControls);
+            cleanupFinishedProjectile(projectile, projectiles, i, cameraControls, gameState, scene);
         }
     }
 
@@ -221,8 +221,12 @@ function updateGamePanels(environmentPanel, playerStatsPanel, gameState) {
  * @param {any[]} projectiles - Array of all projectiles
  * @param {number} index - Index of projectile to remove
  * @param {any} cameraControls - Camera control state
+ * @param {any} gameState - Current game state (optional)
+ * @param {any} scene - The Phaser scene (optional, for UI updates)
  */
-export function cleanupFinishedProjectile(projectile, projectiles, index, cameraControls) {
+export function cleanupFinishedProjectile(projectile, projectiles, index, cameraControls, gameState = null, scene = null) {
+    console.log(`🧹 Cleaning up projectile ${index}, projectiles before removal: ${projectiles.length}`);
+    
     // Trigger tooltip fade for the turret that fired this projectile
     if (projectile.firingTurret && projectile.firingTurret.aimTooltip && projectile.firingTurret.aimTooltip.visible) {
         projectile.firingTurret.hideTooltip(500, 1500); // Shorter delay, faster fade
@@ -230,10 +234,139 @@ export function cleanupFinishedProjectile(projectile, projectiles, index, camera
 
     cleanupProjectile(projectile);
     projectiles.splice(index, 1);
+    
+    console.log(`🧹 Projectile removed, projectiles remaining: ${projectiles.length}`);
 
-    // When last projectile is removed, disable camera following
-    if (projectiles.length === 1 && cameraControls && cameraControls.followingProjectile) {
-        console.log('Last projectile removed - re-enabling camera controls');
-        cameraControls.followingProjectile = false;
+    // When last projectile is removed, handle turn progression
+    if (projectiles.length === 0) {
+        console.log('🎯 Last projectile removed - handling turn progression');
+        
+        // Disable camera following if it was active
+        if (cameraControls && cameraControls.followingProjectile) {
+            console.log('Re-enabling camera controls');
+            cameraControls.followingProjectile = false;
+        }
+        
+        // Handle turn progression if game state is available
+        if (gameState && scene) {
+            handleTurnProgression(gameState, scene);
+        } else {
+            console.warn('⚠️ Cannot progress turn: missing gameState or scene');
+        }
+    }
+}
+
+/**
+ * Handle turn progression after projectile impact
+ * @param {any} gameState - Current game state
+ * @param {any} scene - The Phaser scene
+ */
+function handleTurnProgression(gameState, scene) {
+    console.log('🔄 Starting turn progression...');
+    console.log(`Current state: Round ${gameState.currentRound}/${gameState.maxRounds}, Player ${gameState.currentPlayerIndex + 1} (${gameState.playersAlive[gameState.currentPlayerIndex]})`);
+    
+    // Check for eliminated players first
+    handlePlayerEliminations(gameState, scene);
+    
+    // Check if game should end
+    if (shouldGameEnd(gameState)) {
+        console.log('🏁 Game should end!');
+        // TODO: Implement game end logic (results panel, etc.)
+        return;
+    }
+    
+    // Advance to next player or next round
+    const stillInSameRound = advanceToNextPlayer(gameState);
+    console.log(`After advancing player: stillInSameRound=${stillInSameRound}`);
+    
+    if (!stillInSameRound) {
+        // Round completed, advance to next round
+        const gameStillActive = advanceToNextRound(gameState);
+        console.log(`After advancing round: gameStillActive=${gameStillActive}`);
+        
+        if (!gameStillActive) {
+            console.log('🏁 Game ended: Maximum rounds reached');
+            // TODO: Implement game end logic (results panel, etc.)
+            return;
+        }
+        
+        // Update wind for the new round
+        updateWindForNewTurn(gameState);
+        console.log(`🌪️ New round - wind updated to: ${gameState.wind.current}`);
+    }
+    
+    // Start the next player's turn
+    startPlayerTurn(gameState);
+    console.log(`Turn started for player ${gameState.currentPlayerIndex + 1} (${gameState.playersAlive[gameState.currentPlayerIndex]})`);
+    
+    // Update UI panels
+    if (scene.environmentPanel && scene.environmentPanel.updateDisplay) {
+        scene.environmentPanel.updateDisplay(gameState);
+    }
+    if (scene.playerStatsPanel && scene.playerStatsPanel.updateDisplay) {
+        scene.playerStatsPanel.updateDisplay(gameState);
+    }
+    
+    // Move camera to focus on the new active player
+    focusCameraOnActivePlayer(gameState, scene);
+}
+
+/**
+ * Check for and handle player eliminations
+ * @param {any} gameState - Current game state
+ * @param {any} scene - The Phaser scene
+ */
+function handlePlayerEliminations(gameState, scene) {
+    const eliminatedPlayers = [];
+    
+    // Check each player's health
+    for (let i = 1; i <= gameState.numPlayers; i++) {
+        const playerKey = `player${i}`;
+        const player = gameState[playerKey];
+        
+        if (player && player.health <= 0 && gameState.playersAlive.includes(i)) {
+            eliminatedPlayers.push(i);
+        }
+    }
+    
+    // Remove eliminated players
+    eliminatedPlayers.forEach(playerNum => {
+        removePlayer(gameState, playerNum);
+        
+        // Remove the eliminated player's turret from the scene
+        if (scene.turrets) {
+            const playerKey = `player${playerNum}`;
+            const turretIndex = scene.turrets.findIndex(turret => turret.team === playerKey);
+            if (turretIndex !== -1) {
+                const eliminatedTurret = scene.turrets[turretIndex];
+                console.log(`💀 Removing ${playerKey} turret from map`);
+                eliminatedTurret.destroy();
+                scene.turrets.splice(turretIndex, 1);
+            }
+        }
+    });
+}
+
+/**
+ * Move camera to focus on the active player's turret
+ * @param {any} gameState - Current game state
+ * @param {any} scene - The Phaser scene
+ */
+function focusCameraOnActivePlayer(gameState, scene) {
+    if (!scene.turrets || scene.turrets.length === 0) {
+        return;
+    }
+    
+    const currentPlayerNum = getCurrentPlayer(gameState);
+    const currentPlayerKey = `player${currentPlayerNum}`;
+    
+    // Find the active player's turret
+    const activeTurret = scene.turrets.find(turret => turret.team === currentPlayerKey);
+    
+    if (activeTurret) {
+        console.log(`📹 Focusing camera on ${currentPlayerKey} turret at (${activeTurret.x}, ${activeTurret.y})`);
+        scene.cameras.main.centerOn(activeTurret.x, activeTurret.y);
+    } else {
+        console.warn(`⚠️ Could not find turret for active player ${currentPlayerKey}`);
     }
 }
