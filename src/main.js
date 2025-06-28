@@ -5,7 +5,7 @@ import { setupWorldLandscape } from './landscape.js';
 import { placeTurretsOnBases } from './turret.js';
 import { createProjectile } from './projectile.js';
 import { createEnvironmentPanel, createPlayerStatsPanel, positionEnvironmentPanel, positionPlayerStatsPanel } from './ui.js';
-import { createGameState, updateWindForNewTurn, startPlayerTurn, getCurrentPlayer, advanceToNextPlayer, advanceToNextRound, shouldGameEnd } from './turnManager.js';
+import { createGameState, updateWindForNewTurn, startPlayerTurn, getCurrentPlayer, advanceToNextPlayer, advanceToNextRound, shouldGameEnd, getRemainingTurnTime, stopTurnTimer } from './turnManager.js';
 import { focusCameraOnActivePlayer } from './projectileManager.js';
 import { initializeGameSetup } from './gameSetup.js';
 import { initializeBaseSelection } from './baseSelection.js';
@@ -109,9 +109,10 @@ function shootFromTurret(scene, turret, shootData) {
             return;
         }
         
-        // Mark that this player has fired this turn
+        // Mark that this player has fired this turn and stop the turn timer
         scene.gameState.hasPlayerFiredThisTurn = true;
-        console.log(`✅ Player ${currentPlayerNum} fired their shot this turn`);
+        stopTurnTimer(scene.gameState);
+        console.log(`✅ Player ${currentPlayerNum} fired their shot this turn - timer stopped`);
     }
     
     // Launch projectile from turret gun tip
@@ -234,8 +235,45 @@ function create() {
         this.environmentPanel.updateDisplay(this.gameState);
         this.playerStatsPanel.updateDisplay(this.gameState);
 
-        // Start the first player's turn
-        startPlayerTurn(this.gameState);
+        // Create timeout handler for turn time limits
+        const handleTurnTimeout = () => {
+            console.log(`⏰ Time's up! Advancing from Player ${getCurrentPlayer(this.gameState)}`);
+            
+            // Advance to next player/round
+            const continueRound = advanceToNextPlayer(this.gameState);
+            if (!continueRound) {
+                // Round completed, advance to next round
+                const continueGame = advanceToNextRound(this.gameState);
+                if (!continueGame) {
+                    console.log('🏁 Game Over! Max rounds reached');
+                    // TODO: Handle game end
+                    return;
+                }
+                // Update wind for new round
+                updateWindForNewTurn(this.gameState);
+            }
+            
+            // Check if game should end (only one player left)
+            if (shouldGameEnd(this.gameState)) {
+                console.log('🏁 Game Over! Only one player remaining');
+                // TODO: Handle game end
+                return;
+            }
+            
+            // Update UI for new turn
+            this.environmentPanel.updateDisplay(this.gameState);
+            this.playerStatsPanel.updateDisplay(this.gameState);
+            
+            // Focus camera on new active player and start their turn
+            focusCameraOnActivePlayer(this.gameState, this);
+            startPlayerTurn(this.gameState, handleTurnTimeout);
+        };
+
+        // Store timeout handler on scene for access by projectileManager
+        /** @type {any} */ (this).handleTurnTimeout = handleTurnTimeout;
+
+        // Start the first player's turn with timeout handler
+        startPlayerTurn(this.gameState, handleTurnTimeout);
 
         // Camera controls already set up before player setup
 
@@ -263,6 +301,11 @@ function update() {
     if (this.projectiles) {
         updateProjectiles(this, this.projectiles, this.gameState, 
                          this.landscapeData, this.turrets, this.cameraControls);
+    }
+    
+    // Update UI timer display
+    if (this.environmentPanel && this.gameState) {
+        this.environmentPanel.updateDisplay(this.gameState);
     }
     
     // Handle keyboard camera movement

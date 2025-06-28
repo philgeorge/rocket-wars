@@ -7,14 +7,14 @@ import { getTeamColorCSS } from './constants.js';
  * Create a floating environment panel showing wind and gravity
  * @param {Phaser.Scene} scene - The Phaser scene
  * @param {Object} gameState - Game state object containing wind and gravity data
- * @returns {Phaser.GameObjects.Container & {updateDisplay: Function, envTitle: any, windText: any, gravityText: any}}
+ * @returns {Phaser.GameObjects.Container & {updateDisplay: Function, envTitle: any, windText: any, gravityText: any, timerText: any}}
  */
 export function createEnvironmentPanel(scene, gameState) {
     // Create main container positioned at top-left of screen
-    /** @type {Phaser.GameObjects.Container & {updateDisplay: Function, envTitle: any, windText: any, gravityText: any}} */
+    /** @type {Phaser.GameObjects.Container & {updateDisplay: Function, envTitle: any, windText: any, gravityText: any, timerText: any}} */
     const envPanel = /** @type {any} */ (scene.add.container(0, 0));
     
-    const panelHeight = 80;
+    const panelHeight = 92; // Reduced height by 8px
     const panelWidth = 150;
     
     // Create background
@@ -41,13 +41,19 @@ export function createEnvironmentPanel(scene, gameState) {
         color: '#ffffff'
     });
     
+    const timerText = scene.add.text(10, 66, '', {
+        fontSize: '1rem',
+        color: '#ffff00' // Yellow for visibility
+    });
+    
     // Add all elements to container
-    envPanel.add([bg, envTitle, windText, gravityText]);
+    envPanel.add([bg, envTitle, windText, gravityText, timerText]);
     
     // Store text references for updates
     envPanel.envTitle = envTitle;
     envPanel.windText = windText;
     envPanel.gravityText = gravityText;
+    envPanel.timerText = timerText;
     
     // Method to update the display with current game state
     envPanel.updateDisplay = function(gameState) {
@@ -63,6 +69,36 @@ export function createEnvironmentPanel(scene, gameState) {
         
         // Update gravity display
         self.gravityText.setText(`Gravity: ${gameState.gravity}`);
+        
+        // Update timer display
+        if (gameState.turnTimeLimit > 0) {
+            if (gameState.turnStartTime) {
+                // Active timer - show countdown
+                const elapsed = Math.floor((Date.now() - gameState.turnStartTime) / 1000);
+                const remaining = Math.max(0, gameState.turnTimeLimit - elapsed);
+                
+                // Color coding: green -> yellow -> red as time runs out
+                let timerColor = '#00ff00'; // Green
+                if (remaining <= 10) {
+                    timerColor = '#ff0000'; // Red for last 10 seconds
+                } else if (remaining <= 20) {
+                    timerColor = '#ffff00'; // Yellow for last 20 seconds
+                }
+                
+                self.timerText.setText(`Time: ${remaining}s`);
+                self.timerText.setColor(timerColor);
+            } else if (gameState.lastRemainingTime !== null) {
+                // Timer stopped (player fired) - show last remaining time frozen
+                self.timerText.setText(`Time: ${gameState.lastRemainingTime}s`);
+                self.timerText.setColor('#888888'); // Gray color for inactive timer
+            } else {
+                // Between turns - show dashes
+                self.timerText.setText('Time: --');
+                self.timerText.setColor('#888888'); // Gray color for inactive timer
+            }
+        } else {
+            self.timerText.setText(''); // No timer when time limit is 0
+        }
     };
     
     // Position panel at top-left of screen (will be updated in scene)

@@ -2,7 +2,7 @@
 // Projectile update and management system for Rocket Wars
 
 import { updateProjectileTrail, drawProjectileTrail, checkProjectileCollisions, cleanupProjectile, calculateDamage, calculateAOEDamage, calculateVelocityFactor, createExplosion } from './projectile.js';
-import { applyDamage, getCurrentPlayer, advanceToNextPlayer, advanceToNextRound, shouldGameEnd, updateWindForNewTurn, removePlayer, startPlayerTurn } from './turnManager.js';
+import { applyDamage, getCurrentPlayer, advanceToNextPlayer, advanceToNextRound, shouldGameEnd, updateWindForNewTurn, removePlayer, startPlayerTurn, stopTurnTimer } from './turnManager.js';
 import { updateProjectileCamera } from './camera.js';
 
 /**
@@ -300,7 +300,8 @@ function handleTurnProgression(gameState, scene) {
     const explosionCompletionDelay = 1200; // 1.2 seconds to be safe
     scene.time.delayedCall(explosionCompletionDelay, () => {
         // Start the next player's turn (sets turn timer)
-        startPlayerTurn(gameState);
+        const timeoutHandler = /** @type {any} */ (scene).handleTurnTimeout || null;
+        startPlayerTurn(gameState, timeoutHandler);
         console.log(`Turn started for player ${gameState.currentPlayerIndex + 1} (${gameState.playersAlive[gameState.currentPlayerIndex]})`);
         
         // Update environment panel (round number, wind, gravity)

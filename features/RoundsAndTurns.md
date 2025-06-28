@@ -49,12 +49,14 @@ Implement the core turn management mechanics:
 - Update the player stats panel to highlight the name of the player whose turn it is. This could be done by dimming/unbolding the text colour of the other players and their health, and bolding the name and health of the current player.
 - Only the active player (whose turn it is) may fire a projectile from their turret. Therefore restrict the aiming and firing mechanic to only the the single applicable turret.
 
-### Time limit
+### Time limit ✅
 - A turn for each individual player is limited to the duration set in game setup. During this time they can scroll around the map, aim, and fire once.
 - Don't allow the player to fire a second projectile within the same turn.
 - The timer countdown shoud be shown in the "environment" panel as a new, third line, e.g.: "Time: 29s". Update every second.
-- After the payer fires (i.e. has launched the projectile) the timer countdown stops. The flight of the projectile isn't included within the time limit.
-- The countdown shouldn't pause if the browser tab loses focus or is minimised. (Is this possible?)
+- Timer label has color coding: green → yellow (last 20s) → red (last 10s)
+- When the payer fires (i.e. has launched the projectile) the timer countdown stops. The flight of the projectile and collision/explosion isn't included within the time limit.
+- The countdown shouldn't pause if the browser tab loses focus or is minimised. (Can be done using `setInterval` and timestamps.)
+- Timer automatically advances to next player when time expires (same logic as after firing)
 
 ### End of each Turn
 - If the timer reaches 0 without the player firing a projectile, then that player' turn ends.

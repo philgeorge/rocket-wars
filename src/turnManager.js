@@ -26,7 +26,8 @@ function createTurnBasedGameState(config = {}) {
         turnTimeLimit: turnTime, // Turn time limit in seconds
         turnStartTime: null, // Timestamp when current turn began (null = no active turn)
         hasPlayerFiredThisTurn: false, // Prevent multiple shots per turn
-        turnTimer: null // Timer ID for countdown
+        turnTimer: null, // Timer ID for countdown
+        lastRemainingTime: null // Last remaining time when timer was stopped
     };
 }
 
@@ -161,15 +162,10 @@ export function removePlayer(gameState, playerNum) {
 export function advanceToNextPlayer(gameState) {
     console.log(`🔄 Advancing from player index ${gameState.currentPlayerIndex} (Player ${getCurrentPlayer(gameState)})`);
     
-    // Reset turn state
+    // Stop current turn timer and reset turn state
+    stopTurnTimer(gameState);
     gameState.hasPlayerFiredThisTurn = false;
-    gameState.turnStartTime = null;
-    
-    // Clear any existing turn timer
-    if (gameState.turnTimer) {
-        clearInterval(gameState.turnTimer);
-        gameState.turnTimer = null;
-    }
+    gameState.lastRemainingTime = null; // Reset for next turn
     
     // Move to next player
     gameState.currentPlayerIndex++;
@@ -194,15 +190,10 @@ export function advanceToNextRound(gameState) {
     gameState.currentRound++;
     gameState.currentPlayerIndex = 0; // Start with first alive player
     
-    // Reset turn state
+    // Stop current turn timer and reset turn state
+    stopTurnTimer(gameState);
     gameState.hasPlayerFiredThisTurn = false;
-    gameState.turnStartTime = null;
-    
-    // Clear any existing turn timer
-    if (gameState.turnTimer) {
-        clearInterval(gameState.turnTimer);
-        gameState.turnTimer = null;
-    }
+    gameState.lastRemainingTime = null; // Reset for next round
     
     console.log(`Advanced to Round ${gameState.currentRound}`);
     
@@ -237,12 +228,69 @@ export function shouldGameEnd(gameState) {
 /**
  * Start a new turn for the current player
  * @param {Object} gameState - Game state object
+ * @param {Function} [onTimeUp] - Optional callback when turn time expires
  */
-export function startPlayerTurn(gameState) {
+export function startPlayerTurn(gameState, onTimeUp = null) {
     gameState.turnStartTime = Date.now();
     gameState.hasPlayerFiredThisTurn = false;
+    gameState.lastRemainingTime = null; // Reset last remaining time for new turn
+    
+    // Clear any existing timer
+    if (gameState.turnTimer) {
+        clearInterval(gameState.turnTimer);
+        gameState.turnTimer = null;
+    }
+    
+    // Start countdown timer if there's a time limit
+    if (gameState.turnTimeLimit > 0 && onTimeUp) {
+        gameState.turnTimer = setInterval(() => {
+            const elapsed = Math.floor((Date.now() - gameState.turnStartTime) / 1000);
+            const remaining = gameState.turnTimeLimit - elapsed;
+            
+            if (remaining <= 0) {
+                // Time's up - clear timer and call callback
+                clearInterval(gameState.turnTimer);
+                gameState.turnTimer = null;
+                gameState.turnStartTime = null;
+                console.log(`⏰ Time's up for Player ${getCurrentPlayer(gameState)}`);
+                onTimeUp();
+            }
+        }, 100); // Check every 100ms for smooth countdown
+    }
     
     const currentPlayer = getCurrentPlayer(gameState);
-    console.log(`🎯 Started turn for Player ${currentPlayer} in Round ${gameState.currentRound}`);
+    console.log(`🎯 Started turn for Player ${currentPlayer} in Round ${gameState.currentRound} (${gameState.turnTimeLimit}s limit)`);
     console.log(`Players alive: [${gameState.playersAlive.join(', ')}], current index: ${gameState.currentPlayerIndex}`);
+}
+
+/**
+ * Get remaining time for current turn in seconds
+ * @param {Object} gameState - Game state object
+ * @returns {number} Remaining time in seconds (0 if no active turn)
+ */
+export function getRemainingTurnTime(gameState) {
+    if (!gameState.turnStartTime || gameState.turnTimeLimit <= 0) {
+        return 0;
+    }
+    const elapsed = Math.floor((Date.now() - gameState.turnStartTime) / 1000);
+    const remaining = gameState.turnTimeLimit - elapsed;
+    return Math.max(0, remaining);
+}
+
+/**
+ * Stop the current turn timer (used when player fires or turn ends early)
+ * @param {Object} gameState - Game state object
+ */
+export function stopTurnTimer(gameState) {
+    // Capture remaining time before stopping timer
+    if (gameState.turnStartTime && gameState.turnTimeLimit > 0) {
+        const elapsed = Math.floor((Date.now() - gameState.turnStartTime) / 1000);
+        gameState.lastRemainingTime = Math.max(0, gameState.turnTimeLimit - elapsed);
+    }
+    
+    if (gameState.turnTimer) {
+        clearInterval(gameState.turnTimer);
+        gameState.turnTimer = null;
+    }
+    gameState.turnStartTime = null;
 }
