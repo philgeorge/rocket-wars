@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trophy System Test - Rocket Wars</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #001122;
+            color: white;
+        }
+        .test-info {
+            background: #333;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .trophy-examples {
+            background: #444;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .trophy-row {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 8px;
+            background: #555;
+            border-radius: 4px;
+        }
+        .position {
+            font-weight: bold;
+            width: 30px;
+        }
+        .trophy {
+            font-size: 1.2em;
+            margin: 0 10px;
+        }
+        .gold { color: #ffd700; }
+        .silver { color: #c0c0c0; }
+        .bronze { color: #cd7f32; }
+        .wooden { color: #8b4513; }
+        .dead { color: #666666; }
+        .team1 { color: #ff6b6b; }
+        .team2 { color: #4ecdc4; }
+        .team3 { color: #45b7d1; }
+        .team4 { color: #f9ca24; }
+        
+        .changes {
+            background: #005500;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #00ff00;
+        }
+        .change-item {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-info">
+        <h1>🏆 Trophy System & Restart Updates</h1>
+        <p>Updated the results panel with a new trophy ranking system and improved restart functionality.</p>
+    </div>
+
+    <div class="changes">
+        <h2>✨ Changes Made:</h2>
+        <div class="change-item">
+            <strong>1. Enhanced Restart Text:</strong><br>
+            Changed from "Press R to restart game" to "<em>Press R or click anywhere to restart game</em>"
+        </div>
+        <div class="change-item">
+            <strong>2. Colored Trophy System:</strong><br>
+            Different trophies and colors based on player ranking (see examples below)
+        </div>
+        <div class="change-item">
+            <strong>3. Click-Anywhere Restart:</strong><br>
+            The entire results panel is now clickable for restarting, not just the text
+        </div>
+    </div>
+
+    <div class="trophy-examples">
+        <h2>🏅 Trophy System Examples:</h2>
+        
+        <h3>4-Player Game Results (All Alive):</h3>
+        <div class="trophy-row">
+            <span class="position">1.</span>
+            <span class="trophy gold">🏆</span>
+            <span class="gold"><strong>PLAYER 1 (85%)</strong></span>
+            <span style="margin-left: 20px; color: #888;">Gold Trophy - 1st Place Winner</span>
+        </div>
+        <div class="trophy-row">
+            <span class="position">2.</span>
+            <span class="trophy silver">🥈</span>
+            <span class="silver">PLAYER 3 (62%)</span>
+            <span style="margin-left: 20px; color: #888;">Silver Medal - 2nd Place</span>
+        </div>
+        <div class="trophy-row">
+            <span class="position">3.</span>
+            <span class="trophy bronze">🥉</span>
+            <span class="bronze">PLAYER 4 (41%)</span>
+            <span style="margin-left: 20px; color: #888;">Bronze Medal - 3rd Place</span>
+        </div>
+        <div class="trophy-row">
+            <span class="position">4.</span>
+            <span class="trophy wooden">🥄</span>
+            <span class="wooden">PLAYER 2 (23%)</span>
+            <span style="margin-left: 20px; color: #888;">Wooden Spoon - Lowest Alive Player</span>
+        </div>
+
+        <h3>Mixed Scenario (2 Alive, 2 Dead):</h3>
+        <div class="trophy-row">
+            <span class="position">1.</span>
+            <span class="trophy gold">🏆</span>
+            <span class="gold"><strong>PLAYER 1 (90%)</strong></span>
+            <span style="margin-left: 20px; color: #888;">Winner - Highest Health</span>
+        </div>
+        <div class="trophy-row">
+            <span class="position">2.</span>
+            <span class="trophy wooden">🥄</span>
+            <span class="wooden">PLAYER 3 (45%)</span>
+            <span style="margin-left: 20px; color: #888;">Wooden Spoon - Lowest Alive Player</span>
+        </div>
+        <div class="trophy-row">
+            <span class="position">3.</span>
+            <span class="trophy dead">💀</span>
+            <span class="dead">PLAYER 2 (0%)</span>
+            <span style="margin-left: 20px; color: #888;">Eliminated (Death Icon)</span>
+        </div>
+        <div class="trophy-row">
+            <span class="position">4.</span>
+            <span class="trophy dead">💀</span>
+            <span class="dead">PLAYER 4 (0%)</span>
+            <span style="margin-left: 20px; color: #888;">Eliminated (Death Icon)</span>
+        </div>
+
+        <h3>Single Survivor:</h3>
+        <div class="trophy-row">
+            <span class="position">1.</span>
+            <span class="trophy gold">🏆</span>
+            <span class="gold"><strong>PLAYER 1 (100%)</strong></span>
+            <span style="margin-left: 20px; color: #888;">Only Survivor - No Wooden Spoon</span>
+        </div>
+        <div class="trophy-row">
+            <span class="position">2.</span>
+            <span class="trophy dead">💀</span>
+            <span class="dead">PLAYER 2 (0%)</span>
+            <span style="margin-left: 20px; color: #888;">Eliminated (Death Icon)</span>
+        </div>
+        <div class="trophy-row">
+            <span class="position">3.</span>
+            <span class="trophy dead">💀</span>
+            <span class="dead">PLAYER 3 (0%)</span>
+            <span style="margin-left: 20px; color: #888;">Eliminated (Death Icon)</span>
+        </div>
+
+        <h3>3-Player Game (All Alive):</h3>
+        <div class="trophy-row">
+            <span class="position">1.</span>
+            <span class="trophy gold">🏆</span>
+            <span class="gold"><strong>PLAYER 1 (90%)</strong></span>
+        </div>
+        <div class="trophy-row">
+            <span class="position">2.</span>
+            <span class="trophy silver">🥈</span>
+            <span class="silver">PLAYER 2 (75%)</span>
+        </div>
+        <div class="trophy-row">
+            <span class="position">3.</span>
+            <span class="trophy wooden">🥄</span>
+            <span class="wooden">PLAYER 3 (60%)</span>
+            <span style="margin-left: 20px; color: #888;">Wooden Spoon - Lowest Alive</span>
+        </div>
+    </div>
+
+    <div class="test-info">
+        <h2>🧪 Testing Instructions:</h2>
+        <ol>
+            <li>Play a game until completion (either eliminate all but one player or complete all rounds)</li>
+            <li>Verify the results panel shows the new trophy system:
+                <ul>
+                    <li>🏆 Gold trophy for 1st place</li>
+                    <li>🥈 Silver medal for 2nd place</li>
+                    <li>🥉 Bronze medal for 3rd place</li>
+                    <li>🥄 Wooden spoon for lowest-ranked alive player (if more than 1 alive)</li>
+                    <li>🏅 Generic medal for other alive positions (team colored)</li>
+                    <li>💀 Death icon for eliminated players (gray colored)</li>
+                </ul>
+            </li>
+            <li>Test restart functionality:
+                <ul>
+                    <li>Press <strong>R</strong> key → should restart</li>
+                    <li>Click anywhere on the results panel → should restart</li>
+                    <li>Text should say "Press R or click anywhere to restart game"</li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+
+    <p style="text-align: center; margin-top: 30px;">
+        <a href="index.html" style="color: #00ff00; text-decoration: none; font-size: 1.2em;">
+            🚀 Test Trophy System →
+        </a>
+    </p>
+</body>
+</html>

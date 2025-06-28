@@ -34,7 +34,41 @@ export function createResultsPanel(scene, gameState, playerData = null) {
     // Add each player to the results
     rankedPlayers.forEach((player, index) => {
         const position = index + 1;
-        const statusIcon = player.isAlive ? '🏆' : '💀';
+        const totalPlayers = rankedPlayers.length;
+        
+        // Count how many alive players there are
+        const alivePlayers = rankedPlayers.filter(p => p.isAlive);
+        const aliveCount = alivePlayers.length;
+        
+        // Determine trophy/status icon and color based on position
+        let statusIcon, trophyColor;
+        if (!player.isAlive) {
+            statusIcon = '💀';
+            trophyColor = '#666666'; // Gray for dead players
+        } else {
+            // Find position among alive players only
+            const alivePosition = alivePlayers.findIndex(p => p.number === player.number) + 1;
+            
+            // Assign trophies based on position among alive players
+            if (alivePosition === 1) {
+                statusIcon = '🏆';
+                trophyColor = '#ffd700'; // Gold
+            } else if (alivePosition === 2) {
+                statusIcon = '🥈';
+                trophyColor = '#c0c0c0'; // Silver
+            } else if (alivePosition === 3) {
+                statusIcon = '🥉';
+                trophyColor = '#cd7f32'; // Bronze
+            } else if (alivePosition === aliveCount && aliveCount > 1) {
+                // Wooden spoon for lowest-ranked alive player (if more than 1 alive and not first)
+                statusIcon = '🥄';
+                trophyColor = '#8b4513'; // Brown
+            } else {
+                statusIcon = '🏅'; // Generic medal for other positions
+                trophyColor = getTeamColorCSS(`player${player.number}`);
+            }
+        }
+        
         const playerName = player.name || `PLAYER ${player.number}`;
         
         textItems.push({
@@ -42,7 +76,7 @@ export function createResultsPanel(scene, gameState, playerData = null) {
             text: `${position}. ${statusIcon} ${playerName} (${player.health}%)`,
             style: {
                 fontSize: '1rem',
-                color: position === 1 ? '#ffd700' : getTeamColorCSS(`player${player.number}`), // Gold for winner
+                color: trophyColor,
                 fontStyle: position === 1 ? 'bold' : 'normal'
             }
         });
@@ -51,7 +85,7 @@ export function createResultsPanel(scene, gameState, playerData = null) {
     // Add restart instruction
     textItems.push({
         key: 'restart',
-        text: 'Press R to restart game',
+        text: 'Press R or click anywhere to restart game',
         style: {
             fontSize: '0.9rem',
             color: '#888888',
@@ -73,9 +107,16 @@ export function createResultsPanel(scene, gameState, playerData = null) {
     /** @type {any} */ (panel).addRestartButton = function() {
         const self = /** @type {any} */ (this);
         const elements = self.textElements;
-        elements.restart.setText('Press R to restart game');
+        elements.restart.setText('Press R or click anywhere to restart game');
         elements.restart.setInteractive();
         elements.restart.on('pointerdown', () => {
+            window.location.reload(); // Simple restart for now
+        });
+        
+        // Make the entire panel clickable for restart
+        self.setSize(self.panelWidth || 300, self.panelHeight || 200);
+        self.setInteractive();
+        self.on('pointerdown', () => {
             window.location.reload(); // Simple restart for now
         });
     };
