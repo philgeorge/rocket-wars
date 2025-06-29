@@ -73,7 +73,7 @@ export function updateProjectileTrail(projectile) {
 }
 
 /**
- * Draw projectile trail as connected line segments with fading alpha
+ * Draw projectile trail as a single connected path with gradient effect
  * @param {Phaser.Scene} scene - The Phaser scene
  * @param {Phaser.GameObjects.Graphics & {trail: Array<{x: number, y: number, time: number}>, trailGraphics?: Phaser.GameObjects.Graphics}} projectile
  */
@@ -86,19 +86,30 @@ export function drawProjectileTrail(scene, projectile) {
     
     if (projectile.trail.length < 2) return;
     
-    // Draw trail as connected line segments with fading alpha
-    for (let i = 1; i < projectile.trail.length; i++) {
-        const alpha = i / projectile.trail.length; // Fade from 0 to 1
+    // Optimized: Draw trail as segments with varying thickness for better performance
+    // Use fewer segments but with better visual effect
+    const numSegments = Math.ceil(projectile.trail.length / 2); // Reduce segments by half
+    
+    for (let seg = 0; seg < numSegments; seg++) {
+        const startIdx = seg * 2;
+        const endIdx = Math.min(startIdx + 2, projectile.trail.length - 1);
+        
+        if (startIdx >= projectile.trail.length - 1) break;
+        
+        const alpha = (seg + 1) / numSegments; // Fade from 0 to 1
         const lineWidth = alpha * 2; // Thicker lines at front of trail
         
         projectile.trailGraphics.lineStyle(lineWidth, 0xff6b6b, alpha * 0.6);
-        
-        const prevPoint = projectile.trail[i - 1];
-        const currentPoint = projectile.trail[i];
-        
         projectile.trailGraphics.beginPath();
-        projectile.trailGraphics.moveTo(prevPoint.x, prevPoint.y);
-        projectile.trailGraphics.lineTo(currentPoint.x, currentPoint.y);
+        
+        // Start the path
+        projectile.trailGraphics.moveTo(projectile.trail[startIdx].x, projectile.trail[startIdx].y);
+        
+        // Connect to next points
+        for (let i = startIdx + 1; i <= endIdx; i++) {
+            projectile.trailGraphics.lineTo(projectile.trail[i].x, projectile.trail[i].y);
+        }
+        
         projectile.trailGraphics.strokePath();
     }
 }
@@ -125,7 +136,7 @@ export function createExplosion(scene, x, y, radius = 80, hitType = 'turret') {
     ];
     
     // Create multiple concentric rings
-    const numRings = 4;
+    const numRings = 3; // Reduced from 4 for better performance
     const explosionDuration = 800; // 0.8 seconds
     
     for (let ringIndex = 0; ringIndex < numRings; ringIndex++) {
@@ -203,7 +214,7 @@ export function createExplosion(scene, x, y, radius = 80, hitType = 'turret') {
     });
     
     // Add radiating sparks
-    const numSparks = 8;
+    const numSparks = 6; // Reduced from 8 for better performance
     for (let i = 0; i < numSparks; i++) {
         const sparkGraphics = scene.add.graphics();
         const sparkAngle = (Math.PI * 2 * i) / numSparks + (Math.random() - 0.5) * 0.4;
