@@ -60,7 +60,6 @@ export function createPlayerStatsPanel(scene, gameState, playerData = null) {
         panel.add([playerTitle, playerHealth]);
     }
     
-    // Store references
     panelAny.playerElements = playerElements;
     
     // Method to update the display with current game state
@@ -77,11 +76,9 @@ export function createPlayerStatsPanel(scene, gameState, playerData = null) {
         self.playerElements.forEach(playerElement => {
             const player = gameState[playerElement.playerKey];
             if (player) {
-                // Extract player number from playerKey (e.g., 'player1' -> 1)
                 const playerNum = parseInt(playerElement.playerKey.replace('player', ''));
                 const isActivePlayer = currentActivePlayer === playerNum;
                 
-                // Update health text
                 playerElement.health.setText(`Health: ${player.health}%`);
                 
                 // Highlight active player by adjusting text styles

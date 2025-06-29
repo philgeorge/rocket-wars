@@ -61,24 +61,17 @@ function initializeFormHandlers(onGameStart) {
     windVariationValue.textContent = `${savedConfig.windVariation}%`;
     gravityValue.textContent = savedConfig.gravity.toString();
     
-    roundsSlider.addEventListener('input', (e) => {
-        const target = /** @type {HTMLInputElement} */ (e.target);
-        roundsValue.textContent = target.value;
-    });
-    turnTimeSlider.addEventListener('input', (e) => {
-        const target = /** @type {HTMLInputElement} */ (e.target);
-        turnTimeValue.textContent = `${target.value}s`;
-    });
-        
-    windVariationSlider.addEventListener('input', (e) => {
-        const target = /** @type {HTMLInputElement} */ (e.target);
-        windVariationValue.textContent = `${target.value}%`;
-    });
-    
-    gravitySlider.addEventListener('input', (e) => {
-        const target = /** @type {HTMLInputElement} */ (e.target);
-        gravityValue.textContent = target.value;
-    });
+    // Set up slider event listeners with a helper function
+    const setupSliderListener = (slider, valueElement, formatter = (val) => val) => {
+        slider.addEventListener('input', (e) => {
+            valueElement.textContent = formatter(e.target.value);
+        });
+    };
+
+    setupSliderListener(roundsSlider, roundsValue);
+    setupSliderListener(turnTimeSlider, turnTimeValue, val => `${val}s`);
+    setupSliderListener(windVariationSlider, windVariationValue, val => `${val}%`);
+    setupSliderListener(gravitySlider, gravityValue);
     
     // Handle form submission
     form.addEventListener('submit', (e) => {

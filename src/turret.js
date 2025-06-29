@@ -48,7 +48,6 @@ export function createGunTurret(scene, x, y, team = 'player1') {
     // Add all parts to the container
     turret.add([base, turretBody, barrel]);
     
-    // Store references for easy access
     turret.base = base;
     turret.turretBody = turretBody;
     turret.barrel = barrel;

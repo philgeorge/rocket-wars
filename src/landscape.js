@@ -115,7 +115,6 @@ export function generateLandscapePoints(width, baseY, numPoints, numPlayers = 2)
         if (!allFlat) {
             console.warn(`Fixed flat base ${index} inconsistencies`);
         }
-        // Note: Removed success logging to reduce console noise
     });
 
     return { points, flatBases };
@@ -168,7 +167,6 @@ export function drawLandscape(graphics, points, worldWidth, worldHeight, flatBas
                 }
                 console.warn(`Y values: [${yValues.join(', ')}]`);
             }
-            // Note: Removed success logging to reduce console noise
             
             graphics.beginPath();
             graphics.moveTo(start.x, start.y);

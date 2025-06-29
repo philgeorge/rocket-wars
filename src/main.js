@@ -5,7 +5,7 @@ import { setupWorldLandscape } from './landscape.js';
 import { placeTurretsOnBases } from './turret.js';
 import { createProjectile } from './projectile.js';
 import { createEnvironmentPanel, createPlayerStatsPanel, positionEnvironmentPanel, positionPlayerStatsPanel, createResultsPanel, positionResultsPanel } from './ui/index.js';
-import { createGameState, updateWindForNewTurn, startPlayerTurn, getCurrentPlayer, advanceToNextPlayer, advanceToNextRound, shouldGameEnd, getRemainingTurnTime, stopTurnTimer } from './turnManager.js';
+import { createGameState, updateWindForNewTurn, startPlayerTurn, getCurrentPlayer, advanceToNextPlayer, advanceToNextRound, shouldGameEnd, getRemainingTurnTime, stopTurnTimer, getRankedPlayers } from './turnManager.js';
 import { focusCameraOnActivePlayer } from './projectileManager.js';
 import { initializeGameSetup } from './gameSetup.js';
 import { initializeBaseSelection } from './baseSelection.js';
@@ -31,17 +31,6 @@ initializeGameSetup().then((config) => {
  * Start the Phaser game with the configured parameters
  */
 function startGame() {
-    // Debug viewport information for mobile troubleshooting
-    console.log('📱 Viewport Debug Info:');
-    console.log(`  window.innerWidth: ${window.innerWidth}`);
-    console.log(`  window.innerHeight: ${window.innerHeight}`);
-    console.log(`  window.outerWidth: ${window.outerWidth}`);
-    console.log(`  window.outerHeight: ${window.outerHeight}`);
-    console.log(`  screen.width: ${screen.width}`);
-    console.log(`  screen.height: ${screen.height}`);
-    console.log(`  devicePixelRatio: ${devicePixelRatio}`);
-    console.log(`  User Agent: ${navigator.userAgent}`);
-    
     // Create Phaser game config with form parameters
     const config = {
         type: Phaser.AUTO,
@@ -167,49 +156,6 @@ function handleGameEnd(scene, reason) {
 }
 
 /**
- * Get players ranked by game results (duplicate of resultsPanel function for main.js use)
- * @param {Object} gameState - Game state object
- * @param {Array} playerData - Player data with names
- * @returns {Array} Ranked player list
- */
-function getRankedPlayers(gameState, playerData = null) {
-    const players = [];
-    
-    // Collect all player data
-    for (let i = 1; i <= gameState.numPlayers; i++) {
-        const playerKey = `player${i}`;
-        const player = gameState[playerKey];
-        const isAlive = gameState.playersAlive.includes(i);
-        
-        let playerName = `PLAYER ${i}`;
-        if (playerData && playerData[i - 1] && playerData[i - 1].name) {
-            playerName = playerData[i - 1].name.toUpperCase();
-        }
-        
-        players.push({
-            number: i,
-            name: playerName,
-            health: player.health,
-            isAlive: isAlive,
-            kills: player.kills || 0,
-            deaths: player.deaths || 0
-        });
-    }
-    
-    // Sort players: alive first, then by health descending
-    players.sort((a, b) => {
-        // Alive players come first
-        if (a.isAlive !== b.isAlive) {
-            return b.isAlive ? 1 : -1;
-        }
-        // Then sort by health (highest first)
-        return b.health - a.health;
-    });
-    
-    return players;
-}
-
-/**
  * Create the game scene
  * @this {Phaser.Scene & {turrets: any[], currentPlayerTurret: any, projectiles: any[], landscapeData: any, gameState: any, environmentPanel: any, playerStatsPanel: any, cameraControls: any}}
  */
@@ -253,15 +199,14 @@ function create() {
     // Store landscape data for collision detection
     this.landscapeData = landscapeData;
 
-    // Initialize basic scene properties that will be needed
     this.projectiles = [];
 
-    // 🆕 Set up camera controls and input BEFORE player setup so scrolling works during setup
+    // Set up camera controls and input BEFORE player setup so scrolling works during setup
     this.cameraControls = setupCameraAndInput(this, (turret, shootData) => {
         shootFromTurret(this, turret, shootData);
     });
 
-    // 🆕 NEW: Start base selection stage instead of immediately placing turrets
+    // Start base selection stage instead of immediately placing turrets
     console.log('🎮 Starting base selection stage...');
     initializeBaseSelection(this, gameConfig, landscapeData.flatBases).then((setupResult) => {
         console.log('✅ Base selection complete, starting combat phase...');
@@ -271,25 +216,13 @@ function create() {
         // Use existing turrets if they were created during setup, otherwise create them
         let turrets;
         if (existingTurrets && existingTurrets.length > 0) {
-            console.log(`🏭 Using ${existingTurrets.length} turrets created during setup`);
             turrets = existingTurrets;
         } else {
-            console.log('🏭 Creating turrets from player data...');
             turrets = placeTurretsOnBases(this, landscapeData.flatBases, landscapeData.points, playerData);
         }
 
         const turretAny = /** @type {any} */ (turrets);
         console.log(`Using ${turrets.length} turrets:`, turretAny.map(t => ({ team: t.team, x: t.x, y: t.y })));
-
-        // Log turret distances for AOE debugging
-        if (turrets.length >= 2) {
-            for (let i = 0; i < turrets.length; i++) {
-                for (let j = i + 1; j < turrets.length; j++) {
-                    const distance = Phaser.Math.Distance.Between(turrets[i].x, turrets[i].y, turrets[j].x, turrets[j].y);
-                    console.log(`📏 Distance between ${turrets[i].team} and ${turrets[j].team}: ${distance.toFixed(1)}px`);
-                }
-            }
-        }
 
         // Store turrets for access in input handlers
         this.turrets = turrets;
@@ -350,8 +283,6 @@ function create() {
         // Start the first player's turn with timeout handler
         startPlayerTurn(this.gameState, handleTurnTimeout);
 
-        // Camera controls already set up before player setup
-
         // Start camera focused on the active player's turret with smooth pan
         if (turrets.length > 0) {
             // Add a small delay to ensure everything is initialized, then focus on first player
@@ -378,16 +309,12 @@ function update() {
                          this.landscapeData, this.turrets, this.cameraControls);
     }
     
-    // Optimized UI updates - only update when values change
+    // Only update timer if it's active
     if (this.environmentPanel && this.gameState) {
-        // Only update timer if it's active (time limit > 0 and turn started)
         const hasActiveTimer = this.gameState.turnTimeLimit > 0 && this.gameState.turnStartTime;
         if (hasActiveTimer) {
-            // Update only the timer (most efficient for frequent updates)
             this.environmentPanel.updateTimer(this.gameState);
         }
-        // Note: Other panel elements (round, wind, gravity) are updated only when they change
-        // via the turn progression system using updateDisplay(), not every frame
     }
     
     // Handle keyboard input for game restart

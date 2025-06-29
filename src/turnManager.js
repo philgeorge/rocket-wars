@@ -294,3 +294,46 @@ export function stopTurnTimer(gameState) {
     }
     gameState.turnStartTime = null;
 }
+
+/**
+ * Get players ranked by game results
+ * @param {Object} gameState - Game state object
+ * @param {Array} playerData - Player data with names
+ * @returns {Array} Ranked player list
+ */
+export function getRankedPlayers(gameState, playerData = null) {
+    const players = [];
+    
+    // Collect all player data
+    for (let i = 1; i <= gameState.numPlayers; i++) {
+        const playerKey = `player${i}`;
+        const player = gameState[playerKey];
+        const isAlive = gameState.playersAlive.includes(i);
+        
+        let playerName = `PLAYER ${i}`;
+        if (playerData && playerData[i - 1] && playerData[i - 1].name) {
+            playerName = playerData[i - 1].name.toUpperCase();
+        }
+        
+        players.push({
+            number: i,
+            name: playerName,
+            health: player.health,
+            isAlive: isAlive,
+            kills: player.kills || 0,
+            deaths: player.deaths || 0
+        });
+    }
+    
+    // Sort players: alive first, then by health descending
+    players.sort((a, b) => {
+        // Alive players come first
+        if (a.isAlive !== b.isAlive) {
+            return b.isAlive ? 1 : -1;
+        }
+        // Then sort by health (highest first)
+        return b.health - a.health;
+    });
+    
+    return players;
+}

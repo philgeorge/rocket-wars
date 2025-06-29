@@ -277,8 +277,6 @@ function updateGamePanels(environmentPanel, playerStatsPanel, gameState) {
  * @param {any} scene - The Phaser scene (optional, for UI updates)
  */
 export function cleanupFinishedProjectile(projectile, projectiles, index, cameraControls, gameState = null, scene = null) {
-    console.log(`🧹 Cleaning up projectile ${index}, projectiles before removal: ${projectiles.length}`);
-    
     // Trigger tooltip fade for the turret that fired this projectile
     if (projectile.firingTurret && projectile.firingTurret.aimTooltip && projectile.firingTurret.aimTooltip.visible) {
         projectile.firingTurret.hideTooltip(500, 1500); // Shorter delay, faster fade
@@ -286,16 +284,11 @@ export function cleanupFinishedProjectile(projectile, projectiles, index, camera
 
     cleanupProjectile(projectile);
     projectiles.splice(index, 1);
-    
-    console.log(`🧹 Projectile removed, projectiles remaining: ${projectiles.length}`);
 
     // When last projectile is removed, handle turn progression
     if (projectiles.length === 0) {
-        console.log('🎯 Last projectile removed - handling turn progression');
-        
         // Disable camera following if it was active
         if (cameraControls && cameraControls.followingProjectile) {
-            console.log('Re-enabling camera controls');
             cameraControls.followingProjectile = false;
         }
         
