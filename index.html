@@ -38,34 +38,33 @@
       </div>
       
       <div class="form-group">
-        <label for="rounds">Rounds (5-25):</label>
-        <input type="range" id="rounds" name="rounds" min="5" max="25" step="1" value="10">
+        <label for="rounds">Rounds (2-20):</label>
+        <input type="range" id="rounds" name="rounds" min="2" max="20" step="1" value="10">
         <span id="rounds-value">10</span>
       </div>
       
       <div class="form-group">
-        <label for="turn-time">Turn Time (10-100 seconds):</label>
-        <input type="range" id="turn-time" name="turnTime" min="10" max="100" step="5" value="30">
+        <label for="turn-time">Turn Time (10-60 seconds):</label>
+        <input type="range" id="turn-time" name="turnTime" min="10" max="60" step="5" value="30">
         <span id="turn-time-value">30s</span>
       </div>
       
       <div class="form-group">
         <label for="wind-variation">Wind Variation (0-100%):</label>
-        <input type="range" id="wind-variation" name="windVariation" min="0" max="100" value="50">
+        <input type="range" id="wind-variation" name="windVariation" min="0" max="100" step="5" value="50">
         <span id="wind-variation-value">50%</span>
       </div>
       
       <div class="form-group">
         <label for="gravity">Gravity Strength (20-100):</label>
-        <input type="range" id="gravity" name="gravity" min="20" max="100" value="60">
+        <input type="range" id="gravity" name="gravity" min="20" max="100" step="5" value="60">
         <span id="gravity-value">60</span>
-      </div>
-      
+      </div>      
       
       <div class="form-buttons">
         <button type="submit">Set Up Players</button>
       </div>
-      <!-- Version info -->
+      
       <div id="game-version-info">v0.0.0</div>
     </form>
   </div>
