@@ -78,7 +78,7 @@ export function createResultsPanel(scene, gameState, playerData = null) {
     // Add restart instruction
     textItems.push({
         key: 'restart',
-        text: 'Press R or click anywhere to restart',
+        text: 'Press R or click here to restart',
         style: {
             fontSize: '0.9rem',
             color: '#888888',
@@ -100,18 +100,27 @@ export function createResultsPanel(scene, gameState, playerData = null) {
     /** @type {any} */ (panel).addRestartButton = function() {
         const self = /** @type {any} */ (this);
         const elements = self.textElements;
-        elements.restart.setText('Press R or click anywhere to restart');
-        elements.restart.setInteractive();
-        elements.restart.on('pointerdown', () => {
+        elements.restart.setText('Press R or click here to restart');
+        
+        // Get the panel's actual dimensions after it's been sized
+        const panelWidth = self.panelWidth || 300;
+        const panelHeight = self.panelHeight || 200;
+        
+        console.log(`🎯 Setting up results panel interactive area: ${panelWidth}x${panelHeight}`);
+        
+        // Make the entire panel clickable for restart using actual dimensions
+        self.setSize(panelWidth, panelHeight);
+        self.setInteractive(new Phaser.Geom.Rectangle(0, 0, panelWidth, panelHeight), Phaser.Geom.Rectangle.Contains);
+        
+        // Use a higher priority event listener to intercept clicks before global handler
+        self.on('pointerdown', (pointer, localX, localY, event) => {
+            console.log('🎯 Results panel clicked - restarting game');
+            event.stopPropagation(); // Stop the event from reaching global handlers
             window.location.reload(); // Simple restart for now
         });
         
-        // Make the entire panel clickable for restart
-        self.setSize(self.panelWidth || 300, self.panelHeight || 200);
-        self.setInteractive();
-        self.on('pointerdown', () => {
-            window.location.reload(); // Simple restart for now
-        });
+        // Also make sure the panel is on top of other elements
+        self.setDepth(1000);
     };
     
     return /** @type {any} */ (panel);
