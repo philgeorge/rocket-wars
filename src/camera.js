@@ -415,7 +415,7 @@ export function setupCameraAndInput(scene, onShoot) {
 }
 
 /**
- * Update camera to follow projectile with smooth lerping
+ * Update camera to follow projectile with optimized lerping
  * @param {Phaser.Scene & {cameraControls?: any}} scene - The Phaser scene
  * @param {Array} projectiles - Array of active projectiles
  */
@@ -425,30 +425,50 @@ export function updateProjectileCamera(scene, projectiles) {
         // Get the first (newest) projectile to follow
         const activeProjectile = projectiles[0];
         
-        // Smooth camera following with lerp for cinematic effect
+        // Performance optimization: Only update camera if projectile is moving fast enough
+        const body = activeProjectile.body;
+        if (!body || !body.velocity) {
+            return; // Skip if no physics body or velocity
+        }
+        
+        const velocityMagnitude = Math.sqrt(body.velocity.x * body.velocity.x + body.velocity.y * body.velocity.y);
+        const minFollowSpeed = 100; // Minimum speed to trigger camera following (pixels/second)
+        
+        // Skip camera updates for slow-moving projectiles (reduces jerkiness at arc peaks)
+        if (velocityMagnitude < minFollowSpeed) {
+            return;
+        }
+        
         const camera = scene.cameras.main;
         const lerpFactor = 0.08; // Adjust for smoothness (0.05-0.15 works well)
         
         // Calculate target position (slightly ahead of projectile based on velocity direction)
-        const body = activeProjectile.body;
         const leadDistance = 100; // How far ahead to look
         let targetX = activeProjectile.x;
         let targetY = activeProjectile.y;
         
-        // Add leading prediction based on velocity
-        if (body && body.velocity) {
-            const velocityMagnitude = Math.sqrt(body.velocity.x * body.velocity.x + body.velocity.y * body.velocity.y);
-            if (velocityMagnitude > 50) { // Only lead if moving fast enough
-                const normalizedVelX = body.velocity.x / velocityMagnitude;
-                const normalizedVelY = body.velocity.y / velocityMagnitude;
-                targetX += normalizedVelX * leadDistance;
-                targetY += normalizedVelY * leadDistance;
-            }
+        // Add leading prediction based on velocity (only for fast-moving projectiles)
+        if (velocityMagnitude > 50) { // Only lead if moving fast enough
+            const normalizedVelX = body.velocity.x / velocityMagnitude;
+            const normalizedVelY = body.velocity.y / velocityMagnitude;
+            targetX += normalizedVelX * leadDistance;
+            targetY += normalizedVelY * leadDistance;
+        }
+        
+        // Calculate current camera center
+        const currentX = camera.scrollX + camera.width / 2;
+        const currentY = camera.scrollY + camera.height / 2;
+        
+        // Performance optimization: Only move camera if the distance is significant
+        const distanceToTarget = Math.sqrt((targetX - currentX) ** 2 + (targetY - currentY) ** 2);
+        const minMoveDistance = 20; // Minimum distance to trigger camera movement (pixels)
+        
+        // Skip tiny camera adjustments that cause jerkiness
+        if (distanceToTarget < minMoveDistance) {
+            return;
         }
         
         // Smoothly move camera towards target
-        const currentX = camera.scrollX + camera.width / 2;
-        const currentY = camera.scrollY + camera.height / 2;
         const newX = currentX + (targetX - currentX) * lerpFactor;
         const newY = currentY + (targetY - currentY) * lerpFactor;
         
