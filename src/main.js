@@ -378,9 +378,16 @@ function update() {
                          this.landscapeData, this.turrets, this.cameraControls);
     }
     
-    // Update UI timer display
+    // Optimized UI updates - only update when values change
     if (this.environmentPanel && this.gameState) {
-        this.environmentPanel.updateDisplay(this.gameState);
+        // Only update timer if it's active (time limit > 0 and turn started)
+        const hasActiveTimer = this.gameState.turnTimeLimit > 0 && this.gameState.turnStartTime;
+        if (hasActiveTimer) {
+            // Update only the timer (most efficient for frequent updates)
+            this.environmentPanel.updateTimer(this.gameState);
+        }
+        // Note: Other panel elements (round, wind, gravity) are updated only when they change
+        // via the turn progression system using updateDisplay(), not every frame
     }
     
     // Handle keyboard input for game restart

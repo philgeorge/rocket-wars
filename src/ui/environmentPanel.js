@@ -60,30 +60,97 @@ export function createEnvironmentPanel(scene, gameState) {
     // Store text elements reference
     /** @type {any} */ (panel).textElements = textElements;
     
-    // Method to update the display with current game state
+    // Store last known values to avoid unnecessary updates
+    /** @type {any} */ (panel).lastValues = {
+        round: null,
+        maxRounds: null,
+        windCurrent: null,
+        gravity: null,
+        lastTimerValue: null
+    };
+    
+    // Method to update the display with current game state (optimized)
     /** @type {any} */ (panel).updateDisplay = function(gameState) {
         const self = /** @type {any} */ (this);
         const elements = self.textElements;
+        const lastValues = self.lastValues;
         
-        // Update title to show current round and max rounds
-        elements.title.setText(`ROUND ${gameState.currentRound}/${gameState.maxRounds}`);
+        // Only update round if it changed
+        if (lastValues.round !== gameState.currentRound || lastValues.maxRounds !== gameState.maxRounds) {
+            elements.title.setText(`ROUND ${gameState.currentRound}/${gameState.maxRounds}`);
+            lastValues.round = gameState.currentRound;
+            lastValues.maxRounds = gameState.maxRounds;
+        }
         
-        // Update wind display with direction indicator
-        const windDirection = gameState.wind.current >= 0 ? '→' : '←';
-        const windSpeed = Math.abs(gameState.wind.current);
-        elements.wind.setText(`Wind: ${windDirection} ${windSpeed}`);
+        // Only update wind if it changed
+        if (lastValues.windCurrent !== gameState.wind.current) {
+            const windDirection = gameState.wind.current >= 0 ? '→' : '←';
+            const windSpeed = Math.abs(gameState.wind.current);
+            elements.wind.setText(`Wind: ${windDirection} ${windSpeed}`);
+            lastValues.windCurrent = gameState.wind.current;
+        }
         
-        // Update gravity display
-        elements.gravity.setText(`Gravity: ${gameState.gravity}`);
+        // Only update gravity if it changed
+        if (lastValues.gravity !== gameState.gravity) {
+            elements.gravity.setText(`Gravity: ${gameState.gravity}`);
+            lastValues.gravity = gameState.gravity;
+        }
         
-        // Update timer display
+        // Update timer display (this changes frequently so always update)
         if (gameState.turnTimeLimit > 0) {
             if (gameState.turnStartTime) {
                 // Active timer - show countdown
                 const elapsed = Math.floor((Date.now() - gameState.turnStartTime) / 1000);
                 const remaining = Math.max(0, gameState.turnTimeLimit - elapsed);
                 
-                // Color coding: green -> yellow -> red as time runs out
+                // Only update if timer value changed
+                if (lastValues.lastTimerValue !== remaining) {
+                    // Color coding: green -> yellow -> red as time runs out
+                    let timerColor = '#00ff00'; // Green
+                    if (remaining <= 10) {
+                        timerColor = '#ff0000'; // Red for last 10 seconds
+                    } else if (remaining <= 20) {
+                        timerColor = '#ffff00'; // Yellow for last 20 seconds
+                    }
+                    
+                    elements.timer.setText(`Time: ${remaining}s`);
+                    elements.timer.setColor(timerColor);
+                    lastValues.lastTimerValue = remaining;
+                }
+            } else if (gameState.lastRemainingTime !== null) {
+                // Timer stopped (player fired) - show last remaining time frozen
+                const frozenText = `Time: ${gameState.lastRemainingTime}s`;
+                if (elements.timer.text !== frozenText) {
+                    elements.timer.setText(frozenText);
+                    elements.timer.setColor('#888888'); // Gray color for inactive timer
+                }
+            } else {
+                // Between turns - show dashes
+                if (elements.timer.text !== 'Time: --') {
+                    elements.timer.setText('Time: --');
+                    elements.timer.setColor('#888888'); // Gray color for inactive timer
+                }
+            }
+        } else {
+            if (elements.timer.text !== '') {
+                elements.timer.setText(''); // No timer when time limit is 0
+            }
+        }
+    };
+    
+    // Method to update only timer (for frequent updates in main loop)
+    /** @type {any} */ (panel).updateTimer = function(gameState) {
+        const self = /** @type {any} */ (this);
+        const elements = self.textElements;
+        const lastValues = self.lastValues;
+        
+        // Update timer display only
+        if (gameState.turnTimeLimit > 0 && gameState.turnStartTime) {
+            const elapsed = Math.floor((Date.now() - gameState.turnStartTime) / 1000);
+            const remaining = Math.max(0, gameState.turnTimeLimit - elapsed);
+            
+            // Only update if timer value changed
+            if (lastValues.lastTimerValue !== remaining) {
                 let timerColor = '#00ff00'; // Green
                 if (remaining <= 10) {
                     timerColor = '#ff0000'; // Red for last 10 seconds
@@ -93,17 +160,8 @@ export function createEnvironmentPanel(scene, gameState) {
                 
                 elements.timer.setText(`Time: ${remaining}s`);
                 elements.timer.setColor(timerColor);
-            } else if (gameState.lastRemainingTime !== null) {
-                // Timer stopped (player fired) - show last remaining time frozen
-                elements.timer.setText(`Time: ${gameState.lastRemainingTime}s`);
-                elements.timer.setColor('#888888'); // Gray color for inactive timer
-            } else {
-                // Between turns - show dashes
-                elements.timer.setText('Time: --');
-                elements.timer.setColor('#888888'); // Gray color for inactive timer
+                lastValues.lastTimerValue = remaining;
             }
-        } else {
-            elements.timer.setText(''); // No timer when time limit is 0
         }
     };
     
