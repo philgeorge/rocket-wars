@@ -125,11 +125,41 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         const powerPercent = Math.round(power * 100);
         /** @type {any} */ (this.aimTooltip).text.setText(`${displayAngle}°\n${powerPercent}%`);
         
-        // Position tooltip at the tip of the aiming line with a small offset to avoid overlapping
-        const offsetX = 15;  // Smaller offset since we're at the line tip
-        const offsetY = -15; // Smaller offset since we're at the line tip
-        this.aimTooltip.x = aimLineEndX + offsetX;
-        this.aimTooltip.y = aimLineEndY + offsetY;
+        // Position tooltip away from aiming line tip, offset towards screen center for touch usability
+        const camera = scene.cameras.main;
+        const screenCenterX = camera.scrollX + camera.width / 2;
+        const screenCenterY = camera.scrollY + camera.height / 2;
+        
+        // Calculate direction from aiming line tip towards screen center
+        const towardsCenterX = screenCenterX - aimLineEndX;
+        const towardsCenterY = screenCenterY - aimLineEndY;
+        const towardsCenterLength = Math.sqrt(towardsCenterX * towardsCenterX + towardsCenterY * towardsCenterY);
+        
+        // Normalize the direction vector
+        let directionX = 0;
+        let directionY = -1; // Default to upward if we're at screen center
+        if (towardsCenterLength > 0) {
+            directionX = towardsCenterX / towardsCenterLength;
+            directionY = towardsCenterY / towardsCenterLength;
+        }
+        
+        // Position tooltip 150px away from aiming line tip in the direction towards screen center
+        const tooltipDistance = 150;
+        let tooltipX = aimLineEndX + (directionX * tooltipDistance);
+        let tooltipY = aimLineEndY + (directionY * tooltipDistance);
+        
+        // Ensure tooltip stays within viewport bounds with padding
+        const padding = 50;
+        const viewportLeft = camera.scrollX + padding;
+        const viewportRight = camera.scrollX + camera.width - padding;
+        const viewportTop = camera.scrollY + padding;
+        const viewportBottom = camera.scrollY + camera.height - padding;
+        
+        tooltipX = Phaser.Math.Clamp(tooltipX, viewportLeft, viewportRight);
+        tooltipY = Phaser.Math.Clamp(tooltipY, viewportTop, viewportBottom);
+        
+        this.aimTooltip.x = tooltipX;
+        this.aimTooltip.y = tooltipY;
         
         // Make sure tooltip stays visible
         this.aimTooltip.setVisible(true);
