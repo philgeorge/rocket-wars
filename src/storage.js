@@ -8,7 +8,7 @@ export const defaultGameConfig = {
     numPlayers: 2,
     rounds: 10,
     turnTime: 30,
-    windVariation: 50,
+    windVariation: 40,
     gravity: 60,
     playerNames: {
         player1: '',
