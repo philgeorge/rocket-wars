@@ -117,8 +117,8 @@ export function createGunTurret(scene, x, y, team = 'player1') {
             // Left side: -180° to -90° maps to 0° to 90°
             displayAngle = Math.round(angleDegrees + 180);
         } else {
-            // Right side: -90° to 0° maps to 90° to 0°
-            displayAngle = Math.round(Math.abs(angleDegrees + 90));
+            // Right side: -90° to 0° maps to 90° to 0° (abs converts negative angles to positive elevation angles)
+            displayAngle = Math.round(Math.abs(angleDegrees));
         }
         
         const powerPercent = Math.round(power * 100);
