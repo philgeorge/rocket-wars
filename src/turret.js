@@ -62,6 +62,8 @@ export function createGunTurret(scene, x, y, team = 'player1') {
     turret.currentPower = 0.5; // Default to 50% power
     turret.aimTooltip = null; // Add tooltip reference
     turret.tooltipTimer = null; // Add timer reference for delayed tooltip hiding
+    turret.minDistance = 0; // Will be calculated when aiming starts
+    turret.maxDistance = 0; // Will be calculated when aiming starts
 
     // Method to lock tooltip position to current screen coordinates
     turret.lockTooltipPosition = function() {
@@ -219,6 +221,14 @@ export function createGunTurret(scene, x, y, team = 'player1') {
     // Method to start aiming
     turret.startAiming = function() {
         this.isAiming = true;
+        
+        // Calculate responsive distances once when aiming starts (based on current screen size)
+        const camera = scene.cameras.main;
+        const screenSize = Math.min(camera.width, camera.height);
+        this.minDistance = Math.max(40, screenSize * 0.05);  // At least 40px, or 5% of screen
+        this.maxDistance = Math.max(120, screenSize * 0.3); // At least 120px, or 30% of screen
+        console.log(`🔫 Turret aiming on screenSize=${screenSize} with responsive distances: min=${this.minDistance}, max=${this.maxDistance}`);
+        
         // Create aiming line graphics
         if (!this.aimingLine) {
             this.aimingLine = scene.add.graphics();
@@ -236,16 +246,14 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         const angleInRadians = Math.atan2(deltaY, deltaX);
         let angleInDegrees = Phaser.Math.RadToDeg(angleInRadians);
         
-        // Calculate power based on distance from turret
+        // Calculate power based on distance from turret using pre-calculated responsive distances
         const distanceFromTurret = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
         const minPower = 0.1; // Minimum power (10%)
         const maxPower = 1.0; // Maximum power (100%)
-        const minDistance = 50; // Minimum distance for minimum power
-        const maxDistance = 300; // Distance for maximum power
         
-        // Clamp distance and map to power range
-        const clampedDistance = Math.max(minDistance, Math.min(maxDistance, distanceFromTurret));
-        const power = minPower + (maxPower - minPower) * ((clampedDistance - minDistance) / (maxDistance - minDistance));
+        // Use the responsive distances calculated when aiming started
+        const clampedDistance = Math.max(turret.minDistance, Math.min(turret.maxDistance, distanceFromTurret));
+        const power = minPower + (maxPower - minPower) * ((clampedDistance - turret.minDistance) / (turret.maxDistance - turret.minDistance));
         
         // Store power for shooting
         turret.currentPower = power;
@@ -285,9 +293,9 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         turret.aimingLine.lineStyle(3, colorValue, 0.9);
         
         const tipPos = turret.getGunTipPosition();
-        const minLineLength = 50;
-        const maxLineLength = 200;
-        const lineLength = minLineLength + (maxLineLength - minLineLength) * power;
+        
+        // Use the same responsive distances for line length as power calculation
+        const lineLength = turret.minDistance + (turret.maxDistance - turret.minDistance) * power;
         
         const lineEndX = tipPos.x + Math.cos(Phaser.Math.DegToRad(clampedAngle)) * lineLength;
         const lineEndY = tipPos.y + Math.sin(Phaser.Math.DegToRad(clampedAngle)) * lineLength;

@@ -20,6 +20,7 @@ They should be implemented one at a time.
   Aim by clicking or dragging,
   or by Enter and arrow keys.
   Release mouse/touch or Enter again to fire!
+  ESC key to cancel aiming.
 - Should record in application storage that the aiming instructions have been shown so that it's not shown every time (once overall is enough, not needed for each player separately)
 
 ## Keyboard control of shot aiming
@@ -30,3 +31,4 @@ They should be implemented one at a time.
 - Power and Aim should be restricted in the exact same way as with under mouse control: 0-90° angle and 10-100% power.
 - If any of those keys are held down, then the aim or power should change more quickly.
 - Pressing the Enter key again should end aiming and launch the projectile.
+- Pressing the ESC key during aiming should cancel the aiming process. This gives the player the chance to scroll around the landscape again if they need.

@@ -22,6 +22,15 @@ declare global {
     aimTooltip: (Phaser.GameObjects.Container & { text?: Phaser.GameObjects.Text }) | null;
     tooltipTimer: Phaser.Time.TimerEvent | null;
     
+    // Responsive aiming distances (calculated once when aiming starts)
+    minDistance: number;
+    maxDistance: number;
+    
+    // Player data properties (added when turret is placed on base)
+    playerName?: string;
+    playerId?: string;
+    playerData?: any;
+    
     // Custom methods
     createOrUpdateTooltip(angle: number, power: number, mouseX: number, mouseY: number): void;
     hideTooltip(delayMs?: number, fadeMs?: number): void;
