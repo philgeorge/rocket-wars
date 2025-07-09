@@ -1,8 +1,8 @@
 // baseSelectionPanel.js
 // Phaser-based base selection panel to avoid DOM event conflicts
 
-import { getTeamColorName, getTeamColorHex, getTeamColorCSS } from '../constants.js';
-import { createBasePanel, addPanelText, positionPanel } from './panelFactory.js';
+import { getTeamColorName, getTeamColorCSS } from '../constants.js';
+import { createBasePanel, addPanelText } from './panelFactory.js';
 
 /**
  * Create a Phaser-based base selection panel for a specific player
@@ -44,7 +44,15 @@ export function createBaseSelectionPanel(scene, currentPlayer, playerIndex, tota
         },
         {
             key: 'instruction2',
-            text: `to position your base.`,
+            text: `to position your base,`,
+            style: {
+                fontSize: '1rem',
+                color: playerColorCSS
+            }
+        },
+        {
+            key: 'instruction3',
+            text: `or use Tab and Enter keys.`,
             style: {
                 fontSize: '1rem',
                 color: playerColorCSS

@@ -83,6 +83,9 @@ function startBaseSelection(scene, players, flatBases, resolve) {
     let baseHighlights = [];
     let baseClickHandlers = [];
     let currentPanel = null; // Track the current panel
+    let keyboardSelectedBaseIndex = -1; // Track keyboard selection (-1 means no selection)
+    let previewTurret = null; // Preview turret for keyboard selection
+    let keyboardHandlers = []; // Track keyboard event handlers for cleanup
     
     function showBaseSelection(playerIndex) {
         const player = players[playerIndex];
@@ -92,12 +95,17 @@ function startBaseSelection(scene, players, flatBases, resolve) {
             hideBaseSelectionPanel(currentPanel);
         }
         
+        // Clear previous keyboard selection and preview turret
+        keyboardSelectedBaseIndex = -1;
+        clearPreviewTurret();
+        
         // Create a new panel for this player
         currentPanel = createBaseSelectionPanel(scene, player, playerIndex, players.length);
         
         // Show base highlights and enable base selection
         showBaseHighlights(player);
         setupBaseSelectionHandlers(player, playerIndex);
+        setupKeyboardHandlers(player, playerIndex);
     }
     
     function showBaseHighlights(currentPlayer) {
@@ -173,7 +181,7 @@ function startBaseSelection(scene, players, flatBases, resolve) {
     function setupBaseSelectionHandlers(player, playerIndex) {
         console.log('🎯 Setting up base selection for player:', player.name);
         
-        // Add click handlers to all available base highlights
+        // Add click and hover handlers to all available base highlights
         availableBases.forEach((baseIndex, highlightIndex) => {
             const highlight = baseHighlights[highlightIndex];
             if (!highlight) return;
@@ -194,10 +202,16 @@ function startBaseSelection(scene, players, flatBases, resolve) {
                 player.turret = turret;
                 setupTurrets.push(turret);
                 
-                console.log(`� Placed turret for ${player.name} at (${turretX}, ${turretY})`);
+                console.log(`🏭 Placed turret for ${player.name} at (${turretX}, ${turretY})`);
                 
                 // Remove this base from available list
                 availableBases = availableBases.filter(index => index !== baseIndex);
+                
+                // Clear any preview turret
+                clearPreviewTurret();
+                
+                // Clear keyboard handlers
+                clearKeyboardHandlers();
                 
                 // Hide all highlights
                 hideBaseHighlights();
@@ -211,15 +225,170 @@ function startBaseSelection(scene, players, flatBases, resolve) {
                 }
             };
             
-            // Add click handler
-            highlight.on('pointerdown', clickHandler);
+            const hoverHandler = () => {
+                console.log(`🎯 Player ${player.name} hovering over base ${baseIndex}`);
+                
+                // Clear any existing preview turret
+                clearPreviewTurret();
+                
+                // Create preview turret at the hovered base
+                const basePosition = calculateBaseCenter(flatBases[baseIndex]);
+                const turretX = basePosition.x;
+                const turretY = basePosition.y - 20;
+                previewTurret = createGunTurret(scene, turretX, turretY, player.team);
+                
+                // Make preview turret slightly transparent to indicate it's temporary
+                previewTurret.setAlpha(0.7);
+            };
             
-            // Store handler reference for cleanup
+            const hoverOutHandler = () => {
+                // Only clear preview turret if it's from mouse hover (not keyboard selection)
+                if (keyboardSelectedBaseIndex === -1) {
+                    clearPreviewTurret();
+                }
+            };
+            
+            // Add event handlers
+            highlight.on('pointerdown', clickHandler);
+            highlight.on('pointerover', hoverHandler);
+            highlight.on('pointerout', hoverOutHandler);
+            
+            // Store handler references for cleanup
             baseClickHandlers.push({
                 target: highlight,
                 callback: clickHandler
             });
         });
+    }
+    
+    function clearPreviewTurret() {
+        if (previewTurret && previewTurret.destroy) {
+            previewTurret.destroy();
+            previewTurret = null;
+        }
+    }
+    
+    function setupKeyboardHandlers(player, playerIndex) {
+        console.log('⌨️ Setting up keyboard handlers for player:', player.name);
+        console.log('⌨️ Available bases for keyboard selection:', availableBases);
+        
+        // Clear any existing keyboard handlers
+        clearKeyboardHandlers();
+        
+        // Ensure the canvas has focus to capture keyboard events
+        if (scene.game.canvas) {
+            scene.game.canvas.focus();
+            console.log('⌨️ Canvas focused for keyboard input');
+        }
+        
+        // Use Phaser's input system to capture keyboard events
+        const keyboard = scene.input.keyboard;
+        
+        // Tab key handler - cycle through available bases
+        const tabKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TAB);
+        tabKey.on('down', (event) => {
+            console.log('⌨️ Tab key pressed!');
+            cycleToNextBase(player);
+        });
+        
+        // Enter key handler - confirm selection
+        const enterKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
+        enterKey.on('down', (event) => {
+            console.log('⌨️ Enter key pressed!');
+            confirmKeyboardSelection(player, playerIndex);
+        });
+        
+        // Store keys for cleanup
+        keyboardHandlers.push(tabKey, enterKey);
+        
+        console.log('⌨️ Keyboard handlers set up using Phaser input system');
+    }
+    
+    function clearKeyboardHandlers() {
+        keyboardHandlers.forEach(key => {
+            if (key && key.destroy) {
+                key.destroy();
+            }
+        });
+        keyboardHandlers = [];
+    }
+    
+    function cycleToNextBase(player) {
+        console.log('⌨️ cycleToNextBase called for player:', player.name);
+        console.log('⌨️ Current available bases:', availableBases);
+        
+        if (availableBases.length === 0) {
+            console.log('⌨️ No available bases to cycle through');
+            return;
+        }
+        
+        // Get next base index
+        const currentIndex = availableBases.findIndex(baseIndex => baseIndex === keyboardSelectedBaseIndex);
+        const nextIndex = (currentIndex + 1) % availableBases.length;
+        keyboardSelectedBaseIndex = availableBases[nextIndex];
+        
+        console.log(`⌨️ Cycling to base ${keyboardSelectedBaseIndex} for ${player.name} (index ${nextIndex})`);
+        
+        // Move camera to show the selected base
+        const basePosition = calculateBaseCenter(flatBases[keyboardSelectedBaseIndex]);
+        console.log(`⌨️ Moving camera to base position:`, basePosition);
+        scene.cameras.main.pan(basePosition.x, basePosition.y, 500, 'Power2');
+        
+        // Clear any existing preview turret (including from mouse hover)
+        clearPreviewTurret();
+        
+        // Create preview turret at the selected base
+        const turretX = basePosition.x;
+        const turretY = basePosition.y - 20;
+        previewTurret = createGunTurret(scene, turretX, turretY, player.team);
+        
+        // Make preview turret slightly transparent to indicate it's temporary
+        previewTurret.setAlpha(0.7);
+        
+        console.log(`🎯 Preview turret created for ${player.name} at base ${keyboardSelectedBaseIndex}`);
+    }
+    
+    function confirmKeyboardSelection(player, playerIndex) {
+        if (keyboardSelectedBaseIndex === -1) {
+            console.log('⌨️ No base selected via keyboard, ignoring Enter key');
+            return;
+        }
+        
+        console.log(`⌨️ Player ${player.name} confirmed base ${keyboardSelectedBaseIndex} via keyboard`);
+        
+        // Store the selected base in player data
+        player.baseIndex = keyboardSelectedBaseIndex;
+        player.basePosition = calculateBaseCenter(flatBases[keyboardSelectedBaseIndex]);
+        
+        // Convert preview turret to actual turret
+        if (previewTurret) {
+            previewTurret.setAlpha(1.0); // Make it fully opaque
+            player.turret = previewTurret;
+            setupTurrets.push(previewTurret);
+            previewTurret = null; // Clear reference since it's now permanent
+        }
+        
+        console.log(`🏭 Confirmed turret for ${player.name} at (${player.basePosition.x}, ${player.basePosition.y})`);
+        
+        // Remove this base from available list
+        availableBases = availableBases.filter(index => index !== keyboardSelectedBaseIndex);
+        
+        // Clear keyboard selection
+        keyboardSelectedBaseIndex = -1;
+        
+        // Hide all highlights
+        hideBaseHighlights();
+        
+        // Clear keyboard handlers
+        clearKeyboardHandlers();
+        
+        // Move to next player or complete base selection
+        currentPlayerIndex++;
+        if (currentPlayerIndex < players.length) {
+            showBaseSelection(currentPlayerIndex);
+        } else {
+            completeSetup();
+        }
     }
     
     function completeSetup() {
@@ -228,6 +397,12 @@ function startBaseSelection(scene, players, flatBases, resolve) {
         
         // Cleanup any remaining highlights
         hideBaseHighlights();
+        
+        // Clear keyboard handlers
+        clearKeyboardHandlers();
+        
+        // Clear any preview turret
+        clearPreviewTurret();
         
         // Hide the current panel
         if (currentPanel) {
