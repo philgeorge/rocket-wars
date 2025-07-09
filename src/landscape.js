@@ -57,45 +57,87 @@ export function generateLandscapePoints(width, baseY, numPoints, numPlayers = 2)
 
     // Set flat base length in pixels
     const minFlatWidthPx = 40;
-    const maxFlatWidthPx = 100;
+    const maxFlatWidthPx = 80; // Reduced max width to fit 2 bases per section
+    const minSpacingPx = 30; // Minimum spacing between bases
 
-    // 2. Create one flat base in each section
+    // 2. Create up to 2 flat bases in each section
     for (let sectionIndex = 0; sectionIndex < numSections; sectionIndex++) {
         const sectionStartIdx = sectionIndex * sectionSize;
         const sectionEndIdx = Math.min((sectionIndex + 1) * sectionSize - 1, numPoints - 1);
         
         // Skip very small sections
-        if (sectionEndIdx - sectionStartIdx < 3) continue;
+        if (sectionEndIdx - sectionStartIdx < 5) continue; // Need at least 5 points for 2 bases
         
-        const flatWidthPx = minFlatWidthPx + Math.floor(Math.random() * (maxFlatWidthPx - minFlatWidthPx + 1));
-        const flatLen = Math.max(2, Math.round(flatWidthPx / segment));
+        const sectionPoints = sectionEndIdx - sectionStartIdx + 1;
+        const availableWidth = (sectionPoints - 1) * segment; // Width in pixels
         
-        // Ensure flat base fits within section
-        const maxFlatLen = Math.min(flatLen, sectionEndIdx - sectionStartIdx - 1);
-        if (maxFlatLen < 2) continue;
+        // Calculate how many bases can fit in this section
+        const minRequiredForTwoBases = (2 * minFlatWidthPx) + minSpacingPx;
+        const maxBasesInSection = availableWidth >= minRequiredForTwoBases ? 2 : 1;
         
-        // Position flat base randomly within the section, avoiding edges
-        const minStart = sectionStartIdx + 1;
-        const maxStart = sectionEndIdx - maxFlatLen;
+        console.log(`Section ${sectionIndex + 1}: ${sectionPoints} points, ${Math.round(availableWidth)}px wide, attempting ${maxBasesInSection} bases`);
         
-        if (minStart <= maxStart) {
-            const baseStart = minStart + Math.floor(Math.random() * (maxStart - minStart + 1));
-            const baseEnd = baseStart + maxFlatLen - 1;
+        for (let baseInSection = 0; baseInSection < maxBasesInSection; baseInSection++) {
+            // Calculate available space for this base
+            let availableStart, availableEnd;
             
-            // Calculate the average Y position for the flat section
-            let totalY = 0;
-            for (let j = baseStart; j <= baseEnd; j++) {
-                totalY += points[j].y;
+            if (maxBasesInSection === 1) {
+                // Single base: use most of the section
+                availableStart = sectionStartIdx + 1;
+                availableEnd = sectionEndIdx - 1;
+            } else {
+                // Two bases: divide the section
+                const midPoint = Math.floor((sectionStartIdx + sectionEndIdx) / 2);
+                const spacingPoints = Math.ceil(minSpacingPx / segment);
+                
+                if (baseInSection === 0) {
+                    // First base: start of section to mid-point minus spacing
+                    availableStart = sectionStartIdx + 1;
+                    availableEnd = midPoint - Math.floor(spacingPoints / 2);
+                } else {
+                    // Second base: mid-point plus spacing to end of section
+                    availableStart = midPoint + Math.ceil(spacingPoints / 2);
+                    availableEnd = sectionEndIdx - 1;
+                }
             }
-            const flatY = Math.round(totalY / (baseEnd - baseStart + 1));
             
-            // Set all points in the flat section to the same Y position
-            for (let j = baseStart; j <= baseEnd; j++) {
-                points[j].y = flatY;
+            // Make sure we have enough space
+            if (availableEnd - availableStart < 2) continue;
+            
+            // Calculate flat base size for this specific base
+            const availableWidthForBase = (availableEnd - availableStart) * segment;
+            const maxFlatWidthForBase = Math.min(maxFlatWidthPx, availableWidthForBase - 20); // Leave some margin
+            const flatWidthPx = Math.max(minFlatWidthPx, 
+                minFlatWidthPx + Math.floor(Math.random() * (maxFlatWidthForBase - minFlatWidthPx + 1)));
+            const flatLen = Math.max(2, Math.round(flatWidthPx / segment));
+            
+            // Ensure flat base fits within available space
+            const maxFlatLen = Math.min(flatLen, availableEnd - availableStart);
+            if (maxFlatLen < 2) continue;
+            
+            // Position flat base randomly within the available space
+            const minStart = availableStart;
+            const maxStart = availableEnd - maxFlatLen;
+            
+            if (minStart <= maxStart) {
+                const baseStart = minStart + Math.floor(Math.random() * (maxStart - minStart + 1));
+                const baseEnd = baseStart + maxFlatLen - 1;
+                
+                // Calculate the average Y position for the flat section
+                let totalY = 0;
+                for (let j = baseStart; j <= baseEnd; j++) {
+                    totalY += points[j].y;
+                }
+                const flatY = Math.round(totalY / (baseEnd - baseStart + 1));
+                
+                // Set all points in the flat section to the same Y position
+                for (let j = baseStart; j <= baseEnd; j++) {
+                    points[j].y = flatY;
+                }
+                
+                console.log(`Created flat base ${baseInSection + 1} in section ${sectionIndex + 1}: points ${baseStart}-${baseEnd}, Y=${flatY}`);
+                flatBases.push({ start: baseStart, end: baseEnd });
             }
-            
-            console.log(`Created flat base in section ${sectionIndex + 1}: points ${baseStart}-${baseEnd}, Y=${flatY}`);
-            flatBases.push({ start: baseStart, end: baseEnd });
         }
     }
 
@@ -116,6 +158,9 @@ export function generateLandscapePoints(width, baseY, numPoints, numPlayers = 2)
             console.warn(`Fixed flat base ${index} inconsistencies`);
         }
     });
+
+    console.log(`📊 Landscape generation complete: Created ${flatBases.length} flat bases for ${numPlayers} players across ${numSections} sections (up to 2 per section)`);
+    console.log(`📊 Flat bases summary:`, flatBases.map((base, index) => `Base ${index}: points ${base.start}-${base.end} (width: ${base.end - base.start + 1} points)`));
 
     return { points, flatBases };
 }
