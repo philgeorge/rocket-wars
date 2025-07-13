@@ -137,6 +137,9 @@ export function showAimingInstructionsIfNeeded(scene, onDismiss = null) {
         const hideInstructions = () => {
             if (!dismissed && scene.aimingInstructionsPanel) {
                 dismissed = true;
+                // Clean up both event listeners
+                scene.input.off('pointerdown', handleInput);
+                scene.input.keyboard?.off('keydown', handleInput);
                 hideAimingInstructionsPanel(scene.aimingInstructionsPanel);
                 console.log('📋 Aiming instructions dismissed');
                 if (onDismiss) {
@@ -148,28 +151,22 @@ export function showAimingInstructionsIfNeeded(scene, onDismiss = null) {
         // Auto-hide after 10 seconds (increased from 5)
         const autoHideTimer = scene.time.delayedCall(10000, hideInstructions);
         
-        // Hide when user clicks anywhere on screen
-        const handleClick = () => {
+        // Handle both click and key input
+        const handleInput = (event) => {
             if (!dismissed) {
+                // For keyboard events, only respond to Enter key
+                if (event.code && event.code !== 'Enter') {
+                    return;
+                }
                 autoHideTimer.remove(); // Cancel auto-hide timer
                 hideInstructions();
-                scene.input.off('pointerdown', handleClick);
-            }
-        };
-        
-        // Hide when user presses Enter key
-        const handleEnterKey = (event) => {
-            if (!dismissed && event.code === 'Enter') {
-                autoHideTimer.remove(); // Cancel auto-hide timer
-                hideInstructions();
-                scene.input.keyboard?.off('keydown', handleEnterKey);
             }
         };
         
         // Set up event listeners
-        scene.input.once('pointerdown', handleClick);
+        scene.input.once('pointerdown', handleInput);
         if (scene.input.keyboard) {
-            scene.input.keyboard.on('keydown', handleEnterKey);
+            scene.input.keyboard.on('keydown', handleInput);
         }
         
         return true; // Panel was shown

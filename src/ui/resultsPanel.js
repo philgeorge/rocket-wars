@@ -114,31 +114,29 @@ export function setupResultsPanelRestart(scene, panel) {
     const handleRestart = () => {
         if (!restarted) {
             restarted = true;
+            // Clean up both event listeners
+            scene.input.off('pointerdown', handleInput);
+            scene.input.keyboard?.off('keydown', handleInput);
             console.log('🔄 Restarting game...');
             window.location.reload();
         }
     };
     
-    // Handle click anywhere on screen
-    const handleClick = () => {
+    // Handle both click and key input
+    const handleInput = (event) => {
         if (!restarted) {
+            // For keyboard events, only respond to Enter key
+            if (event.code && event.code !== 'Enter') {
+                return;
+            }
             handleRestart();
-            scene.input.off('pointerdown', handleClick);
-        }
-    };
-    
-    // Handle Enter key press
-    const handleEnterKey = (event) => {
-        if (!restarted && event.code === 'Enter') {
-            handleRestart();
-            scene.input.keyboard?.off('keydown', handleEnterKey);
         }
     };
     
     // Set up event listeners
-    scene.input.on('pointerdown', handleClick);
+    scene.input.on('pointerdown', handleInput);
     if (scene.input.keyboard) {
-        scene.input.keyboard.on('keydown', handleEnterKey);
+        scene.input.keyboard.on('keydown', handleInput);
     }
 }
 
