@@ -4,7 +4,7 @@
 import { updateProjectileTrail, drawProjectileTrail, checkProjectileCollisions, cleanupProjectile, calculateDamage, calculateAOEDamage, calculateVelocityFactor, createExplosion } from './projectile.js';
 import { applyDamage, getCurrentPlayer, advanceToNextPlayer, advanceToNextRound, shouldGameEnd, updateWindForNewTurn, removePlayer, startPlayerTurn, stopTurnTimer } from './turnManager.js';
 import { updateProjectileCamera } from './camera.js';
-import { createResultsPanel, positionResultsPanel } from './ui/index.js';
+import { createResultsPanel, positionResultsPanel, setupResultsPanelRestart } from './ui/index.js';
 
 /**
  * Handle end of game in projectile manager context
@@ -25,8 +25,8 @@ function handleProjectileGameEnd(scene, gameState, reason) {
     scene.resultsPanel = createResultsPanel(scene, gameState, scene.playerData);
     positionResultsPanel(scene.resultsPanel, scene.cameras.main.width, scene.cameras.main.height);
     
-    // Add restart functionality
-    scene.resultsPanel.addRestartButton();
+    // Set up restart functionality
+    setupResultsPanelRestart(scene, scene.resultsPanel);
     
     // Focus camera on the winner
     const players = [];

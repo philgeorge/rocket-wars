@@ -4,7 +4,7 @@
 import { setupWorldLandscape } from './landscape.js';
 import { placeTurretsOnBases } from './turret.js';
 import { createProjectile } from './projectile.js';
-import { createEnvironmentPanel, createPlayerStatsPanel, positionEnvironmentPanel, positionPlayerStatsPanel, createResultsPanel, positionResultsPanel, createAimingInstructionsPanel, hideAimingInstructionsPanel, showAimingInstructionsIfNeeded, positionPanel } from './ui/index.js';
+import { createEnvironmentPanel, createPlayerStatsPanel, positionEnvironmentPanel, positionPlayerStatsPanel, createResultsPanel, positionResultsPanel, setupResultsPanelRestart, createAimingInstructionsPanel, hideAimingInstructionsPanel, showAimingInstructionsIfNeeded, positionPanel } from './ui/index.js';
 import { createGameState, updateWindForNewTurn, startPlayerTurn, getCurrentPlayer, advanceToNextPlayer, advanceToNextRound, shouldGameEnd, getRemainingTurnTime, stopTurnTimer, getRankedPlayers } from './turnManager.js';
 import { focusCameraOnActivePlayer } from './projectileManager.js';
 import { initializeGameSetup } from './gameSetup.js';
@@ -144,8 +144,8 @@ function handleGameEnd(scene, reason) {
     scene.resultsPanel = createResultsPanel(scene, scene.gameState, scene.playerData);
     positionResultsPanel(scene.resultsPanel, scene.cameras.main.width, scene.cameras.main.height);
     
-    // Add restart functionality
-    scene.resultsPanel.addRestartButton();
+    // Set up restart functionality
+    setupResultsPanelRestart(scene, scene.resultsPanel);
     
     // Focus camera on the winner (first player in results)
     const winner = getRankedPlayers(scene.gameState, scene.playerData)[0];
@@ -344,16 +344,6 @@ function update() {
         const hasActiveTimer = this.gameState.turnTimeLimit > 0 && this.gameState.turnStartTime;
         if (hasActiveTimer) {
             this.environmentPanel.updateTimer(this.gameState);
-        }
-    }
-    
-    // Handle keyboard input for game restart
-    if (this.gameEnded && this.resultsPanel) {
-        // Check for R key press to restart
-        const rKey = this.input.keyboard.addKey('R');
-        if (Phaser.Input.Keyboard.JustDown(rKey)) {
-            console.log('🔄 Restarting game via R key...');
-            window.location.reload();
         }
     }
     

@@ -79,7 +79,7 @@ export function createResultsPanel(scene, gameState, playerData = null) {
     // Add restart instruction
     textItems.push({
         key: 'restart',
-        text: 'Press R or click here to restart',
+        text: 'Click or press Enter to restart...',
         style: {
             fontSize: '0.9rem',
             color: '#888888',
@@ -97,34 +97,49 @@ export function createResultsPanel(scene, gameState, playerData = null) {
     // Store text elements reference
     /** @type {any} */ (panel).textElements = textElements;
     
-    // Add restart button functionality (could be expanded later)
-    /** @type {any} */ (panel).addRestartButton = function() {
-        const self = /** @type {any} */ (this);
-        const elements = self.textElements;
-        elements.restart.setText('Press R or click here to restart');
-        
-        // Get the panel's actual dimensions after it's been sized
-        const panelWidth = self.panelWidth || 300;
-        const panelHeight = self.panelHeight || 200;
-        
-        console.log(`🎯 Setting up results panel interactive area: ${panelWidth}x${panelHeight}`);
-        
-        // Make the entire panel clickable for restart using actual dimensions
-        self.setSize(panelWidth, panelHeight);
-        self.setInteractive(new Phaser.Geom.Rectangle(0, 0, panelWidth, panelHeight), Phaser.Geom.Rectangle.Contains);
-        
-        // Use a higher priority event listener to intercept clicks before global handler
-        self.on('pointerdown', (pointer, localX, localY, event) => {
-            console.log('🎯 Results panel clicked - restarting game');
-            event.stopPropagation(); // Stop the event from reaching global handlers
-            window.location.reload(); // Simple restart for now
-        });
-        
-        // Also make sure the panel is on top of other elements
-        self.setDepth(1000);
+    return /** @type {any} */ (panel);
+}
+
+/**
+ * Setup restart functionality for the results panel (similar to aiming instructions pattern)
+ * @param {Phaser.Scene} scene - The Phaser scene
+ * @param {Object} panel - The results panel
+ */
+export function setupResultsPanelRestart(scene, panel) {
+    console.log('🎯 Setting up results panel restart functionality');
+    
+    let restarted = false;
+    
+    // Function to handle restart
+    const handleRestart = () => {
+        if (!restarted) {
+            restarted = true;
+            console.log('🔄 Restarting game...');
+            window.location.reload();
+        }
     };
     
-    return /** @type {any} */ (panel);
+    // Handle click anywhere on screen
+    const handleClick = () => {
+        if (!restarted) {
+            handleRestart();
+            scene.input.off('pointerdown', handleClick);
+        }
+    };
+    
+    // Handle Enter key press
+    const handleEnterKey = (event) => {
+        if (!restarted && event.code === 'Enter') {
+            handleRestart();
+            scene.input.keyboard?.off('keydown', handleEnterKey);
+        }
+    };
+    
+    // Set up event listeners
+    scene.input.on('pointerdown', handleClick);
+    if (scene.input.keyboard) {
+        scene.input.keyboard.on('keydown', handleEnterKey);
+    }
 }
 
 /**
