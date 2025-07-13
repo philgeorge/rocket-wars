@@ -91,3 +91,29 @@ export function savePlayerName(playerKey, name) {
     playerNames[playerKey] = name;
     savePlayerNames(playerNames);
 }
+
+/**
+ * Check if aiming instructions have been shown to the user
+ * @returns {boolean} True if instructions have been shown before
+ */
+export function hasShownAimingInstructions() {
+    try {
+        const shown = localStorage.getItem('aimingInstructionsShown');
+        return shown === 'true';
+    } catch (error) {
+        console.warn('Failed to check aiming instructions status:', error);
+        return false;
+    }
+}
+
+/**
+ * Mark that aiming instructions have been shown to the user
+ */
+export function markAimingInstructionsShown() {
+    try {
+        localStorage.setItem('aimingInstructionsShown', 'true');
+        console.log('Marked aiming instructions as shown');
+    } catch (error) {
+        console.warn('Failed to save aiming instructions status:', error);
+    }
+}

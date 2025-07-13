@@ -3,7 +3,7 @@
 This is a list of accesibility enhancements that will make the game easier to interact with.
 They should be implemented one at a time.
 
-## Base Selection using keyboard
+## Base Selection using keyboard ✅
 
 - Currently the base selection step of game setup can only be achieved by mouse click (or screen taps). The instructions tell the user to "Click a {colour} circle to position your base".
 - All available bases should still be shown by coloured circles and the current landscape scrolling and base clicking behaviour should be retained. 

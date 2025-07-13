@@ -4,7 +4,7 @@
 import { setupWorldLandscape } from './landscape.js';
 import { placeTurretsOnBases } from './turret.js';
 import { createProjectile } from './projectile.js';
-import { createEnvironmentPanel, createPlayerStatsPanel, positionEnvironmentPanel, positionPlayerStatsPanel, createResultsPanel, positionResultsPanel } from './ui/index.js';
+import { createEnvironmentPanel, createPlayerStatsPanel, positionEnvironmentPanel, positionPlayerStatsPanel, createResultsPanel, positionResultsPanel, createAimingInstructionsPanel, hideAimingInstructionsPanel, showAimingInstructionsIfNeeded, positionPanel } from './ui/index.js';
 import { createGameState, updateWindForNewTurn, startPlayerTurn, getCurrentPlayer, advanceToNextPlayer, advanceToNextRound, shouldGameEnd, getRemainingTurnTime, stopTurnTimer, getRankedPlayers } from './turnManager.js';
 import { focusCameraOnActivePlayer } from './projectileManager.js';
 import { initializeGameSetup } from './gameSetup.js';
@@ -135,6 +135,11 @@ function handleGameEnd(scene, reason) {
     // Stop any active turn timer
     stopTurnTimer(scene.gameState);
     
+    // Hide aiming instructions panel if it's still visible
+    if (scene.aimingInstructionsPanel) {
+        hideAimingInstructionsPanel(scene.aimingInstructionsPanel);
+    }
+    
     // Create and show results panel
     scene.resultsPanel = createResultsPanel(scene, scene.gameState, scene.playerData);
     positionResultsPanel(scene.resultsPanel, scene.cameras.main.width, scene.cameras.main.height);
@@ -157,7 +162,7 @@ function handleGameEnd(scene, reason) {
 
 /**
  * Create the game scene
- * @this {Phaser.Scene & {turrets: any[], currentPlayerTurret: any, projectiles: any[], landscapeData: any, gameState: any, environmentPanel: any, playerStatsPanel: any, cameraControls: any}}
+ * @this {Phaser.Scene & {turrets: any[], currentPlayerTurret: any, projectiles: any[], landscapeData: any, gameState: any, environmentPanel: any, playerStatsPanel: any, aimingInstructionsPanel: any, cameraControls: any}}
  */
 function create() {
     // Set up world bounds (camera and physics)
@@ -183,6 +188,10 @@ function create() {
             }
             if (this.playerStatsPanel) {
                 positionPlayerStatsPanel(this.playerStatsPanel, newWidth, newHeight);
+            }
+            if (this.aimingInstructionsPanel) {
+                // Re-center the aiming instructions panel using the utility function
+                positionPanel(this.aimingInstructionsPanel, 'center', newWidth, newHeight);
             }
         }, 100); // Throttle resize events
     };
@@ -237,6 +246,10 @@ function create() {
         this.environmentPanel = createEnvironmentPanel(this, this.gameState);
         this.playerStatsPanel = createPlayerStatsPanel(this, this.gameState, playerData);
 
+        // Create aiming instructions panel (initially hidden)
+        this.aimingInstructionsPanel = createAimingInstructionsPanel(this);
+        this.aimingInstructionsPanel.setVisible(false);
+
         // Position panels at fixed screen locations
         positionEnvironmentPanel(this.environmentPanel, this.cameras.main.width, this.cameras.main.height);
         positionPlayerStatsPanel(this.playerStatsPanel, this.cameras.main.width, this.cameras.main.height);
@@ -275,6 +288,9 @@ function create() {
             // Focus camera on new active player and start their turn
             focusCameraOnActivePlayer(this.gameState, this);
             startPlayerTurn(this.gameState, handleTurnTimeout);
+            
+            // Show aiming instructions if this is the first time
+            showAimingInstructionsIfNeeded(this);
         };
 
         // Store timeout handler on scene for access by projectileManager
@@ -282,6 +298,9 @@ function create() {
 
         // Start the first player's turn with timeout handler
         startPlayerTurn(this.gameState, handleTurnTimeout);
+        
+        // Show aiming instructions if this is the first time
+        showAimingInstructionsIfNeeded(this);
 
         // Start camera focused on the active player's turret with smooth pan
         if (turrets.length > 0) {

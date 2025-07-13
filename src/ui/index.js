@@ -6,3 +6,9 @@ export { createEnvironmentPanel, positionEnvironmentPanel } from './environmentP
 export { createPlayerStatsPanel, positionPlayerStatsPanel } from './playerStatsPanel.js';
 export { createResultsPanel, positionResultsPanel } from './resultsPanel.js';
 export { createBaseSelectionPanel, positionBaseSelectionPanel, hideBaseSelectionPanel, showBaseSelectionPanel } from './baseSelectionPanel.js';
+export { 
+    createAimingInstructionsPanel, 
+    hideAimingInstructionsPanel, 
+    showAimingInstructionsPanel,
+    showAimingInstructionsIfNeeded
+} from './aimingInstructionsPanel.js';
