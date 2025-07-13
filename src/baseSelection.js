@@ -133,9 +133,15 @@ function startBaseSelection(scene, players, flatBases, resolve) {
             highlight.fillCircle(baseCenter.x, baseCenter.y - 25, 30);
             highlight.strokeCircle(baseCenter.x, baseCenter.y - 25, 30);
             
-            // Make it interactive
-            const hitArea = new Phaser.Geom.Circle(baseCenter.x, baseCenter.y - 25, 30);
+            // Make it interactive with a slightly larger hit area for better click detection
+            const hitArea = new Phaser.Geom.Circle(baseCenter.x, baseCenter.y - 25, 35);
             highlight.setInteractive(hitArea, Phaser.Geom.Circle.Contains);
+            
+            // Ensure the highlight can receive input events
+            highlight.input.cursor = 'pointer';
+            
+            // Set depth above preview turrets to ensure proper event handling
+            highlight.setDepth(500);
             
             // Store reference to the highlight
             baseHighlights.push(highlight);
@@ -145,20 +151,21 @@ function startBaseSelection(scene, players, flatBases, resolve) {
     }
     
     function hideBaseHighlights() {
+        console.log('🧹 Hiding base highlights and clearing event handlers');
+        
         // Remove all highlights and their event handlers
         baseHighlights.forEach(highlight => {
             if (highlight && highlight.scene) {
+                // Remove all event listeners before destroying
+                highlight.off('pointerdown');
+                highlight.off('pointerover');
+                highlight.off('pointerout');
                 highlight.destroy();
             }
         });
         baseHighlights = [];
         
-        // Clear click handlers
-        baseClickHandlers.forEach(handler => {
-            if (handler.target && handler.target.scene) {
-                handler.target.off('pointerdown', handler.callback);
-            }
-        });
+        // Clear click handlers array
         baseClickHandlers = [];
     }
     
@@ -186,8 +193,20 @@ function startBaseSelection(scene, players, flatBases, resolve) {
             const highlight = baseHighlights[highlightIndex];
             if (!highlight) return;
             
+            let isHovering = false; // Track hover state for this specific highlight
+            let hoverTimeout = null; // Track timeout for delayed hover effects
+            
             const clickHandler = () => {
-                console.log(`🎯 Player ${player.name} selected base ${baseIndex}`);
+                console.log(`🎯 Player ${player.name} selected base ${baseIndex} via CLICK`);
+                
+                // Clear any pending hover effects
+                if (hoverTimeout) {
+                    clearTimeout(hoverTimeout);
+                    hoverTimeout = null;
+                }
+                
+                // Immediately clear any preview turret to avoid conflicts
+                clearPreviewTurret();
                 
                 // Store the selected base in player data
                 player.baseIndex = baseIndex;
@@ -207,9 +226,6 @@ function startBaseSelection(scene, players, flatBases, resolve) {
                 // Remove this base from available list
                 availableBases = availableBases.filter(index => index !== baseIndex);
                 
-                // Clear any preview turret
-                clearPreviewTurret();
-                
                 // Clear keyboard handlers
                 clearKeyboardHandlers();
                 
@@ -226,29 +242,62 @@ function startBaseSelection(scene, players, flatBases, resolve) {
             };
             
             const hoverHandler = () => {
+                if (isHovering) return; // Already hovering, don't recreate
+                
                 console.log(`🎯 Player ${player.name} hovering over base ${baseIndex}`);
+                isHovering = true;
                 
-                // Clear any existing preview turret
-                clearPreviewTurret();
-                
-                // Create preview turret at the hovered base
-                const basePosition = calculateBaseCenter(flatBases[baseIndex]);
-                const turretX = basePosition.x;
-                const turretY = basePosition.y - 20;
-                previewTurret = createGunTurret(scene, turretX, turretY, player.team);
-                
-                // Make preview turret slightly transparent to indicate it's temporary
-                previewTurret.setAlpha(0.7);
+                // Only create preview if there's no keyboard selection active
+                if (keyboardSelectedBaseIndex === -1) {
+                    // Clear any existing timeout
+                    if (hoverTimeout) {
+                        clearTimeout(hoverTimeout);
+                    }
+                    
+                    // Small delay to prevent conflicts with rapid mouse movements
+                    hoverTimeout = setTimeout(() => {
+                        // Double-check conditions after delay
+                        if (keyboardSelectedBaseIndex === -1 && isHovering) {
+                            // Clear any existing preview turret
+                            clearPreviewTurret();
+                            
+                            // Create preview turret at the hovered base
+                            const basePosition = calculateBaseCenter(flatBases[baseIndex]);
+                            const turretX = basePosition.x;
+                            const turretY = basePosition.y - 20;
+                            previewTurret = createGunTurret(scene, turretX, turretY, player.team);
+                            
+                            // Make preview turret slightly transparent to indicate it's temporary
+                            previewTurret.setAlpha(0.7);
+                            
+                            // Disable interactivity to prevent mouse event interference
+                            previewTurret.disableInteractive();
+                            
+                            // Set depth below highlights to avoid interference
+                            previewTurret.setDepth(100);
+                        }
+                        hoverTimeout = null;
+                    }, 50); // 50ms delay
+                }
             };
             
             const hoverOutHandler = () => {
+                console.log(`🎯 Player ${player.name} stopped hovering over base ${baseIndex}`);
+                isHovering = false;
+                
+                // Clear any pending hover timeout
+                if (hoverTimeout) {
+                    clearTimeout(hoverTimeout);
+                    hoverTimeout = null;
+                }
+                
                 // Only clear preview turret if it's from mouse hover (not keyboard selection)
                 if (keyboardSelectedBaseIndex === -1) {
                     clearPreviewTurret();
                 }
             };
             
-            // Add event handlers
+            // Add event handlers with proper order - click first
             highlight.on('pointerdown', clickHandler);
             highlight.on('pointerover', hoverHandler);
             highlight.on('pointerout', hoverOutHandler);
@@ -262,8 +311,15 @@ function startBaseSelection(scene, players, flatBases, resolve) {
     }
     
     function clearPreviewTurret() {
-        if (previewTurret && previewTurret.destroy) {
-            previewTurret.destroy();
+        if (previewTurret) {
+            console.log('🧹 Clearing preview turret');
+            try {
+                if (previewTurret.destroy) {
+                    previewTurret.destroy();
+                }
+            } catch (error) {
+                console.warn('Error destroying preview turret:', error);
+            }
             previewTurret = null;
         }
     }
@@ -344,6 +400,12 @@ function startBaseSelection(scene, players, flatBases, resolve) {
         
         // Make preview turret slightly transparent to indicate it's temporary
         previewTurret.setAlpha(0.7);
+        
+        // Disable interactivity to prevent mouse event interference
+        previewTurret.disableInteractive();
+        
+        // Set depth below highlights to avoid interference
+        previewTurret.setDepth(100);
         
         console.log(`🎯 Preview turret created for ${player.name} at base ${keyboardSelectedBaseIndex}`);
     }
