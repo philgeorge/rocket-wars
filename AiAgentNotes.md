@@ -61,8 +61,13 @@ This file contains notes about my learnings from using an AI Agent to help me bu
 ## 26 June 2 hours
 - mobile improvements: shrinking panels, momentum drag, etc
 
-## 28 June 4 hours
+## 28,29 June 7 hours
 - rounds and turns logic
+- bug fixes
+- performance improvements
+
+## 13 July 2 hours
+- accesibility: keyboard controls for base selection and aiming, plus instructions
 
 # Odd Agent Behaviour
 

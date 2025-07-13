@@ -44,7 +44,7 @@ export function createAimingInstructionsPanel(scene) {
         },
         {
             key: 'instruction3',
-            text: 'Release mouse/touch or Enter again to fire!',
+            text: 'Release click/touch or Enter again to fire!',
             style: {
                 fontSize: '1rem',
                 color: '#cccccc'
@@ -57,13 +57,30 @@ export function createAimingInstructionsPanel(scene) {
                 fontSize: '1rem',
                 color: '#cccccc'
             }
+        },
+        {
+            key: 'dismiss',
+            text: '',
+            style: {
+                fontSize: '0.9rem',
+                color: '#888888'
+            }
+        },
+        {
+            key: 'dismissInstruction',
+            text: 'Click or press Enter to continue...',
+            style: {
+                fontSize: '0.9rem',
+                color: '#888888',
+                fontStyle: 'italic'
+            }
         }
     ];
     
     // Add text elements and auto-size panel
     addPanelText(scene, panel, textItems, {
-        minWidth: 320,
-        maxWidth: 400,
+        minWidth: 400,
+        maxWidth: 480,
         lineHeight: 24
     });
     
@@ -103,8 +120,9 @@ export function showAimingInstructionsPanel(panel) {
 /**
  * Show aiming instructions panel if it hasn't been shown before
  * @param {Phaser.Scene & {aimingInstructionsPanel?: any}} scene - The Phaser scene
+ * @param {Function} [onDismiss] - Optional callback when panel is dismissed
  */
-export function showAimingInstructionsIfNeeded(scene) {
+export function showAimingInstructionsIfNeeded(scene, onDismiss = null) {
     // Check if instructions have been shown before
     if (!hasShownAimingInstructions() && scene.aimingInstructionsPanel) {
         console.log('📋 Showing aiming instructions for first time');
@@ -113,27 +131,49 @@ export function showAimingInstructionsIfNeeded(scene) {
         // Mark as shown so it won't appear again
         markAimingInstructionsShown();
         
-        // Auto-hide after 5 seconds or when user presses a key/clicks
+        let dismissed = false;
+        
+        // Auto-hide after 10 seconds or when user interacts
         const hideInstructions = () => {
-            if (scene.aimingInstructionsPanel) {
+            if (!dismissed && scene.aimingInstructionsPanel) {
+                dismissed = true;
                 hideAimingInstructionsPanel(scene.aimingInstructionsPanel);
-                console.log('📋 Aiming instructions auto-hidden');
+                console.log('📋 Aiming instructions dismissed');
+                if (onDismiss) {
+                    onDismiss();
+                }
             }
         };
         
-        // Auto-hide after 5 seconds
-        scene.time.delayedCall(5000, hideInstructions);
+        // Auto-hide after 10 seconds (increased from 5)
+        const autoHideTimer = scene.time.delayedCall(10000, hideInstructions);
         
-        // Hide when user interacts (click or keypress)
-        const handleInteraction = () => {
-            hideInstructions();
-            scene.input.off('pointerdown', handleInteraction);
-            scene.input.keyboard?.off('keydown', handleInteraction);
+        // Hide when user clicks anywhere on screen
+        const handleClick = () => {
+            if (!dismissed) {
+                autoHideTimer.remove(); // Cancel auto-hide timer
+                hideInstructions();
+                scene.input.off('pointerdown', handleClick);
+            }
         };
         
-        scene.input.once('pointerdown', handleInteraction);
+        // Hide when user presses Enter key
+        const handleEnterKey = (event) => {
+            if (!dismissed && event.code === 'Enter') {
+                autoHideTimer.remove(); // Cancel auto-hide timer
+                hideInstructions();
+                scene.input.keyboard?.off('keydown', handleEnterKey);
+            }
+        };
+        
+        // Set up event listeners
+        scene.input.once('pointerdown', handleClick);
         if (scene.input.keyboard) {
-            scene.input.keyboard.once('keydown', handleInteraction);
+            scene.input.keyboard.on('keydown', handleEnterKey);
         }
+        
+        return true; // Panel was shown
     }
+    
+    return false; // Panel was not shown (already seen before)
 }

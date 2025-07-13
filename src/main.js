@@ -287,20 +287,31 @@ function create() {
             
             // Focus camera on new active player and start their turn
             focusCameraOnActivePlayer(this.gameState, this);
-            startPlayerTurn(this.gameState, handleTurnTimeout);
             
-            // Show aiming instructions if this is the first time
-            showAimingInstructionsIfNeeded(this);
+            // Start turn timer immediately for subsequent turns (instructions only show once)
+            startPlayerTurn(this.gameState, handleTurnTimeout);
         };
 
         // Store timeout handler on scene for access by projectileManager
         /** @type {any} */ (this).handleTurnTimeout = handleTurnTimeout;
 
-        // Start the first player's turn with timeout handler
-        startPlayerTurn(this.gameState, handleTurnTimeout);
-        
-        // Show aiming instructions if this is the first time
-        showAimingInstructionsIfNeeded(this);
+        // Helper function to start a turn with conditional timer delay
+        const startTurnWithInstructions = () => {
+            // Check if aiming instructions need to be shown
+            const instructionsShown = showAimingInstructionsIfNeeded(this, () => {
+                // Callback when instructions are dismissed - start the turn timer
+                startPlayerTurn(this.gameState, handleTurnTimeout);
+                console.log('🎯 Turn timer started after aiming instructions dismissed');
+            });
+            
+            if (!instructionsShown) {
+                // Instructions not shown, start turn timer immediately
+                startPlayerTurn(this.gameState, handleTurnTimeout);
+            }
+        };
+
+        // Start the first player's turn (with conditional timer delay for instructions)
+        startTurnWithInstructions();
 
         // Start camera focused on the active player's turret with smooth pan
         if (turrets.length > 0) {
