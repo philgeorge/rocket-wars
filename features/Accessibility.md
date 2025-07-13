@@ -14,7 +14,7 @@ They should be implemented one at a time.
 - Pressing Enter key confirms that the selected base is the user's choice. (This is the same as current behaviour of clicking on a circle.)
 - Update the on-screen instruction to include "or use Tab and Enter keys."
 
-## Instructions for first aim and shot
+## Instructions for first aim and shot ✅
 
 - Use a panel similar to the base selection panel, with a message:
   Aim by clicking or dragging,

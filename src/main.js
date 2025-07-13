@@ -66,6 +66,10 @@ function startGame() {
     const game = new Phaser.Game(config);
 }
 
+/**
+ * Preload assets for the game
+ * @this {Phaser.Scene}
+ */
 function preload() {
     // Create a simple 1x1 white pixel texture for particles
     this.add.graphics()

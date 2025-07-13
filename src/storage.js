@@ -59,38 +59,7 @@ export function saveGameConfig(config) {
     }
 }
 
-/**
- * Load player names from localStorage
- * @returns {Object} Object with player names (player1, player2, etc.)
- */
-export function loadPlayerNames() {
-    const config = loadGameConfig();
-    return config.playerNames || defaultGameConfig.playerNames;
-}
 
-/**
- * Save player names to localStorage (merges with existing config)
- * @param {Object} playerNames - Object with player names to save
- */
-export function savePlayerNames(playerNames) {
-    const config = loadGameConfig();
-    config.playerNames = {
-        ...config.playerNames,
-        ...playerNames
-    };
-    saveGameConfig(config);
-}
-
-/**
- * Save a single player name to localStorage
- * @param {string} playerKey - Player key (player1, player2, etc.)
- * @param {string} name - Player name to save
- */
-export function savePlayerName(playerKey, name) {
-    const playerNames = loadPlayerNames();
-    playerNames[playerKey] = name;
-    savePlayerNames(playerNames);
-}
 
 /**
  * Check if aiming instructions have been shown to the user
