@@ -146,11 +146,16 @@ export function removePlayer(gameState, playerNum) {
         gameState.playersAlive.splice(playerIndex, 1);
         
         // Adjust current player index if needed
-        if (gameState.currentPlayerIndex >= gameState.playersAlive.length) {
-            gameState.currentPlayerIndex = 0; // Wrap to start of round
+        if (playerIndex < gameState.currentPlayerIndex) {
+            // If we removed a player before the current player, shift the index down by 1
+            gameState.currentPlayerIndex--;
+        } else if (gameState.currentPlayerIndex >= gameState.playersAlive.length) {
+            // If current player index is now beyond the end, wrap to start of round
+            gameState.currentPlayerIndex = 0;
         }
         
         console.log(`Player ${playerNum} eliminated. Remaining players:`, gameState.playersAlive);
+        console.log(`Current player index adjusted to: ${gameState.currentPlayerIndex} (Player ${getCurrentPlayer(gameState)})`);
     }
 }
 

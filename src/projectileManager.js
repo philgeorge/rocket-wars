@@ -310,8 +310,18 @@ function handleTurnProgression(gameState, scene) {
     console.log('🔄 Starting turn progression...');
     console.log(`Current state: Round ${gameState.currentRound}/${gameState.maxRounds}, Player ${gameState.currentPlayerIndex + 1} (${gameState.playersAlive[gameState.currentPlayerIndex]})`);
     
+    // Store the current player before eliminations for logging
+    const currentPlayerBefore = getCurrentPlayer(gameState);
+    const currentIndexBefore = gameState.currentPlayerIndex;
+    
     // Check for eliminated players first
     handlePlayerEliminations(gameState, scene);
+    
+    // Log any changes after eliminations
+    if (gameState.currentPlayerIndex !== currentIndexBefore) {
+        console.log(`🔄 Player index adjusted after eliminations: ${currentIndexBefore} → ${gameState.currentPlayerIndex}`);
+        console.log(`🔄 Current player after eliminations: ${currentPlayerBefore} → ${getCurrentPlayer(gameState)}`);
+    }
     
     // Check if game should end
     if (shouldGameEnd(gameState)) {
@@ -382,6 +392,9 @@ function handlePlayerEliminations(gameState, scene) {
         }
     }
     
+    console.log(`💀 Players to eliminate: [${eliminatedPlayers.join(', ')}]`);
+    console.log(`💀 Before eliminations - playersAlive: [${gameState.playersAlive.join(', ')}], currentPlayerIndex: ${gameState.currentPlayerIndex}`);
+    
     // Remove eliminated players
     eliminatedPlayers.forEach(playerNum => {
         removePlayer(gameState, playerNum);
@@ -398,6 +411,8 @@ function handlePlayerEliminations(gameState, scene) {
             }
         }
     });
+    
+    console.log(`💀 After eliminations - playersAlive: [${gameState.playersAlive.join(', ')}], currentPlayerIndex: ${gameState.currentPlayerIndex}`);
 }
 
 /**
