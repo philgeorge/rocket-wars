@@ -28,11 +28,11 @@ export function createGunTurret(scene, x, y, team = 'player1') {
     
     // Create the base (flat-bottomed platform)  
     const base = scene.add.graphics();
-    drawTurretBase(base, darkerColor, 1, color);
+    drawTurretBase(base, darkerColor, 1, color, 100);
     
     // Create the turret body (smaller circle on top)
     const turretBody = scene.add.graphics();
-    drawTurretBody(turretBody, darkerColor, 1, color);
+    drawTurretBody(turretBody, darkerColor, 1, color, 100);
     
     // Create the gun barrel (rectangle that will rotate)
     const barrel = scene.add.graphics();
@@ -324,12 +324,18 @@ export function createGunTurret(scene, x, y, team = 'player1') {
     
     // Method to update health visual indicator
     turret.updateHealthDisplay = function(healthPercent) {
-        // Convert health percentage (0-100) to alpha value (0.0-1.0)
-        const alpha = Math.max(0, Math.min(1, healthPercent / 100));
+        // Clamp health percentage to 0-100 range
+        const clampedHealth = Math.max(0, Math.min(100, healthPercent));
         
-        // Redraw base and turret body with new alpha
-        drawTurretBase(this.base, darkerColor, alpha, color);
-        drawTurretBody(this.turretBody, darkerColor, alpha, color);
+        console.log(`🎯 Updating turret health display: ${clampedHealth}% (team: ${this.team})`);
+        console.log(`🎯 Before redraw - base exists: ${!!this.base}, body exists: ${!!this.turretBody}`);
+        console.log(`🎯 Colors - darkerColor: ${darkerColor.toString(16)}, color: ${color.toString(16)}`);
+        
+        // Redraw base and turret body with vertical fill based on health
+        drawTurretBase(this.base, darkerColor, 1, color, clampedHealth);
+        drawTurretBody(this.turretBody, darkerColor, 1, color, clampedHealth);
+        
+        console.log(`🎯 After redraw - health display updated for ${this.team}`);
     };
 
     // Set initial angle (pointing slightly upward)
@@ -403,24 +409,36 @@ export function placeTurretsOnBases(scene, flatBases, points, playerData = []) {
  * @param {number} fillColor - The fill color
  * @param {number} fillAlpha - The fill alpha (0.0-1.0)
  * @param {number} outlineColor - The outline color
+ * @param {number} [healthPercent=100] - Health percentage (0-100) for vertical fill
  */
-function drawTurretBase(graphics, fillColor, fillAlpha, outlineColor) {
+function drawTurretBase(graphics, fillColor, fillAlpha, outlineColor, healthPercent = 100) {
     graphics.clear();
+    
+    console.log(`🏗️ Drawing turret base with health: ${healthPercent}%`);
     
     // Fill the base shape
     graphics.fillStyle(fillColor, fillAlpha);
     
-    // Draw the top semicircle (arc from -PI to 0)
+    // Always fill the semicircular top completely
     graphics.beginPath();
     graphics.arc(0, 0, 20, -Math.PI, 0, false);
     graphics.lineTo(-20, 0);
     graphics.closePath();
     graphics.fillPath();
     
-    // Draw a rectangular block to fill the bottom gap
-    graphics.fillRect(-20, 0, 40, 20); // 40px wide, 20px tall
+    // Only apply health-based vertical fill to the rectangular bottom portion
+    if (healthPercent > 0) {
+        const rectangleHeight = 20; // Bottom rectangle is 20px tall
+        const fillHeight = (healthPercent / 100) * rectangleHeight;
+        const fillTop = 20 - fillHeight; // Start from bottom (y=20), work up
+        
+        console.log(`🏗️ Rectangle fill: height=${fillHeight}, fillTop=${fillTop}`);
+        
+        // Fill the rectangle from bottom up based on health
+        graphics.fillRect(-20, fillTop, 40, fillHeight);
+    }
     
-    // Draw the outline
+    // Draw the outline (always full outline)
     graphics.lineStyle(3, outlineColor, 1);
     graphics.beginPath();
     graphics.arc(0, 0, 20, -Math.PI, 0, false);
@@ -438,15 +456,64 @@ function drawTurretBase(graphics, fillColor, fillAlpha, outlineColor) {
  * @param {number} fillColor - The fill color
  * @param {number} fillAlpha - The fill alpha (0.0-1.0)
  * @param {number} outlineColor - The outline color
+ * @param {number} [healthPercent=100] - Health percentage (0-100) for vertical fill
  */
-function drawTurretBody(graphics, fillColor, fillAlpha, outlineColor) {
+function drawTurretBody(graphics, fillColor, fillAlpha, outlineColor, healthPercent = 100) {
     graphics.clear();
     
-    // Fill the turret body circle
-    graphics.fillStyle(fillColor, fillAlpha);
-    graphics.fillCircle(0, -5, 12);
+    console.log(`🏗️ Drawing turret body with health: ${healthPercent}%`);
     
-    // Draw the outline
+    // Fill the turret body circle with health-based vertical fill
+    graphics.fillStyle(fillColor, fillAlpha);
+    
+    if (healthPercent > 0) {
+        // Calculate fill height for the circle (diameter is 24, radius is 12)
+        const circleRadius = 12;
+        const circleCenterY = -5;
+        const circleTop = circleCenterY - circleRadius; // -17
+        const circleBottom = circleCenterY + circleRadius; // 7
+        const totalHeight = circleRadius * 2; // 24
+        
+        const fillHeight = (healthPercent / 100) * totalHeight;
+        const fillTop = circleBottom - fillHeight; // Start from bottom, work up
+        
+        console.log(`🏗️ Body fill calculation: fillHeight=${fillHeight}, fillTop=${fillTop}, totalHeight=${totalHeight}`);
+        
+        // Draw a partial circle fill from bottom up
+        if (fillHeight >= totalHeight) {
+            // Full circle
+            console.log(`🏗️ Drawing full circle`);
+            graphics.fillCircle(0, circleCenterY, circleRadius);
+        } else {
+            // Partial circle - draw a custom path
+            console.log(`🏗️ Drawing partial circle`);
+            // Calculate the angle where the fill line intersects the circle
+            const yOffset = fillTop - circleCenterY; // Distance from center to fill line
+            
+            if (yOffset < circleRadius) {
+                // Calculate intersection points
+                const angle = Math.acos(Math.max(-1, Math.min(1, yOffset / circleRadius)));
+                const x1 = -Math.sin(angle) * circleRadius;
+                const x2 = Math.sin(angle) * circleRadius;
+                
+                console.log(`🏗️ Circle intersection: yOffset=${yOffset}, angle=${angle}, x1=${x1}, x2=${x2}`);
+                
+                // Draw the filled portion
+                graphics.beginPath();
+                graphics.arc(0, circleCenterY, circleRadius, Math.PI - angle, angle, false);
+                graphics.lineTo(x1, fillTop);
+                graphics.lineTo(x2, fillTop);
+                graphics.closePath();
+                graphics.fillPath();
+            } else {
+                console.log(`🏗️ Fill line above circle, no fill`);
+            }
+        }
+    } else {
+        console.log(`🏗️ No health remaining, no body fill`);
+    }
+    
+    // Draw the outline (always full circle outline)
     graphics.lineStyle(2, outlineColor, 1);
     graphics.strokeCircle(0, -5, 12);
 }
