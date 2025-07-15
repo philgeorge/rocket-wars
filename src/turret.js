@@ -409,7 +409,7 @@ export function placeTurretsOnBases(scene, flatBases, points, playerData = []) {
  * @param {number} fillColor - The fill color
  * @param {number} fillAlpha - The fill alpha (0.0-1.0)
  * @param {number} outlineColor - The outline color
- * @param {number} [healthPercent=100] - Health percentage (0-100) for vertical fill
+ * @param {number} [healthPercent=100] - Health percentage (0-100) for segmented health bars
  */
 function drawTurretBase(graphics, fillColor, fillAlpha, outlineColor, healthPercent = 100) {
     graphics.clear();
@@ -426,16 +426,40 @@ function drawTurretBase(graphics, fillColor, fillAlpha, outlineColor, healthPerc
     graphics.closePath();
     graphics.fillPath();
     
-    // Only apply health-based vertical fill to the rectangular bottom portion
+    // Draw segmented health bars in the rectangular bottom portion
+    const numSegments = 5;
+    const segmentWidth = 6; // Width of each health bar segment
+    const segmentHeight = 12; // Height of each health bar segment
+    const segmentSpacing = 2; // Space between segments
+    const totalWidth = (numSegments * segmentWidth) + ((numSegments - 1) * segmentSpacing);
+    const startX = -totalWidth / 2; // Center the segments horizontally
+    const segmentY = 4; // Position segments in the middle of the rectangle (y=0 to y=20)
+    
+    // Calculate how many segments to show based on health percentage
+    let activeSegments = 0;
     if (healthPercent > 0) {
-        const rectangleHeight = 20; // Bottom rectangle is 20px tall
-        const fillHeight = (healthPercent / 100) * rectangleHeight;
-        const fillTop = 20 - fillHeight; // Start from bottom (y=20), work up
+        if (healthPercent <= 25) activeSegments = 1;
+        else if (healthPercent <= 50) activeSegments = 2;
+        else if (healthPercent <= 75) activeSegments = 3;
+        else if (healthPercent < 100) activeSegments = 4;
+        else activeSegments = 5;
+    }
+    
+    console.log(`🏗️ Health segments: ${activeSegments}/${numSegments} (${healthPercent}%)`);
+    
+    // Draw each segment
+    for (let i = 0; i < numSegments; i++) {
+        const segmentX = startX + (i * (segmentWidth + segmentSpacing));
         
-        console.log(`🏗️ Rectangle fill: height=${fillHeight}, fillTop=${fillTop}`);
-        
-        // Fill the rectangle from bottom up based on health
-        graphics.fillRect(-20, fillTop, 40, fillHeight);
+        if (i < activeSegments) {
+            // Active segment - fill with team color
+            graphics.fillStyle(fillColor, fillAlpha);
+            graphics.fillRect(segmentX, segmentY, segmentWidth, segmentHeight);
+        } else {
+            // Inactive segment - draw empty outline
+            graphics.lineStyle(1, outlineColor, 0.3);
+            graphics.strokeRect(segmentX, segmentY, segmentWidth, segmentHeight);
+        }
     }
     
     // Draw the outline (always full outline)
