@@ -28,7 +28,9 @@ They should be implemented one at a time.
 - User can already scroll the landscape with either arrow or keys.
 - Pressing Enter key should start the aiming process.
 - Once the aiming process has started, up and down arrow keys (or W and S) increase or decrease the power; left and right arrows (or A and D) adjust the angle.
+- As the keys are pressed, the aiming line and tooltip (in turret.js) should be shown in the same way that they are under mouse/touch control.
 - Power and Aim should be restricted in the exact same way as with under mouse control: 0-90° angle and 10-100% power.
 - If any of those keys are held down, then the aim or power should change more quickly.
 - Pressing the Enter key again should end aiming and launch the projectile.
 - Pressing the ESC key during aiming should cancel the aiming process. This gives the player the chance to scroll around the landscape again if they need.
+- The game state should retain the last used angle and power for each player. If this state exists and aiming is started by keyboard, then that should be the initial angle and power shown from which the arrow keys can adjust.

@@ -28,7 +28,7 @@ export function createAimingInstructionsPanel(scene) {
         },
         {
             key: 'instruction1',
-            text: 'Aim by clicking or dragging,',
+            text: 'Mouse: Click and drag,',
             style: {
                 fontSize: '1rem',
                 color: '#cccccc'
@@ -36,7 +36,7 @@ export function createAimingInstructionsPanel(scene) {
         },
         {
             key: 'instruction2',
-            text: 'or by Enter and arrow keys.',
+            text: 'then release to fire',
             style: {
                 fontSize: '1rem',
                 color: '#cccccc'
@@ -44,7 +44,7 @@ export function createAimingInstructionsPanel(scene) {
         },
         {
             key: 'instruction3',
-            text: 'Release click/touch or Enter again to fire!',
+            text: 'Keyboard: Enter and arrow keys,',
             style: {
                 fontSize: '1rem',
                 color: '#cccccc'
@@ -52,7 +52,15 @@ export function createAimingInstructionsPanel(scene) {
         },
         {
             key: 'instruction4',
-            text: 'ESC key to cancel aiming.',
+            text: 'then Enter again to fire!',
+            style: {
+                fontSize: '1rem',
+                color: '#cccccc'
+            }
+        },
+        {
+            key: 'instruction5',
+            text: 'ESC to cancel aiming.',
             style: {
                 fontSize: '1rem',
                 color: '#cccccc'
@@ -79,8 +87,8 @@ export function createAimingInstructionsPanel(scene) {
     
     // Add text elements and auto-size panel
     addPanelText(scene, panel, textItems, {
-        minWidth: 400,
-        maxWidth: 480,
+        minWidth: 300,
+        maxWidth: 400,
         lineHeight: 24
     });
     
@@ -149,7 +157,7 @@ export function showAimingInstructionsIfNeeded(scene, onDismiss = null) {
         };
         
         // Auto-hide after 10 seconds (increased from 5)
-        const autoHideTimer = scene.time.delayedCall(10000, hideInstructions);
+        const autoHideTimer = scene.time.delayedCall(20000, hideInstructions);
         
         // Handle both click and key input
         const handleInput = (event) => {
