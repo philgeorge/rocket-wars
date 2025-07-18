@@ -26,6 +26,17 @@ declare global {
     isKeyboardAiming: boolean;
     keyboardAngle: number;
     keyboardPower: number;
+    keyHoldState?: {
+        leftHeld: boolean;
+        rightHeld: boolean;
+        upHeld: boolean;
+        downHeld: boolean;
+        leftHoldTime: number;
+        rightHoldTime: number;
+        upHoldTime: number;
+        downHoldTime: number;
+        lastUpdateTime: number;
+    };
     
     // Responsive aiming distances (calculated once when aiming starts)
     minDistance: number;

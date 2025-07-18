@@ -42,10 +42,10 @@ They should be implemented one at a time.
 - Show aiming line and tooltip immediately with initial values
 - Set `isKeyboardAiming = true` to distinguish from mouse aiming
 
-**Step 4: Implement arrow key controls for angle and power**
+**Step 4: Implement arrow key controls for angle and power** ✅
 - In the game update loop, detect arrow key presses when `isKeyboardAiming` is true
-- Left/Right arrows (A/D keys): adjust angle in 2-degree increments
-- Up/Down arrows (W/S keys): adjust power in 2% increments
+- Left/Right arrows (A/D keys): adjust angle in 1-degree increments
+- Up/Down arrows (W/S keys): adjust power in 1% increments
 - Implement key hold detection for faster adjustment (increase rate after 500ms hold)
 - Maintain the same restrictions: angle -180° to 0°, power 10-100%
 

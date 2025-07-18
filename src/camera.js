@@ -548,7 +548,131 @@ export function updateKeyboardCamera(scene) {
         }
     }
     
-    // Keyboard camera movement (disabled while following projectile or when keyboard is disabled)
+    // Handle arrow key controls for keyboard aiming
+    if (scene.currentPlayerTurret && scene.currentPlayerTurret.isKeyboardAiming && scene.input.keyboard.enabled) {
+        const turret = scene.currentPlayerTurret;
+        const cursors = scene.cameraControls.cursors;
+        const wasd = scene.cameraControls.wasd;
+        
+        // Initialize key hold tracking if not exists
+        if (!turret.keyHoldState) {
+            turret.keyHoldState = {
+                leftHeld: false,
+                rightHeld: false,
+                upHeld: false,
+                downHeld: false,
+                leftHoldTime: 0,
+                rightHoldTime: 0,
+                upHoldTime: 0,
+                downHoldTime: 0,
+                lastUpdateTime: 0
+            };
+        }
+        
+        const currentTime = scene.time.now;
+        const deltaTime = currentTime - turret.keyHoldState.lastUpdateTime;
+        turret.keyHoldState.lastUpdateTime = currentTime;
+        
+        // Check key states and update hold times
+        const leftPressed = cursors.left.isDown || (wasd && wasd.A.isDown);
+        const rightPressed = cursors.right.isDown || (wasd && wasd.D.isDown);
+        const upPressed = cursors.up.isDown || (wasd && wasd.W.isDown);
+        const downPressed = cursors.down.isDown || (wasd && wasd.S.isDown);
+        
+        // Update hold times
+        turret.keyHoldState.leftHoldTime = leftPressed ? turret.keyHoldState.leftHoldTime + deltaTime : 0;
+        turret.keyHoldState.rightHoldTime = rightPressed ? turret.keyHoldState.rightHoldTime + deltaTime : 0;
+        turret.keyHoldState.upHoldTime = upPressed ? turret.keyHoldState.upHoldTime + deltaTime : 0;
+        turret.keyHoldState.downHoldTime = downPressed ? turret.keyHoldState.downHoldTime + deltaTime : 0;
+        
+        // Determine if we should trigger an adjustment (either just pressed or held long enough)
+        const holdThreshold = 500; // 500ms before faster adjustment kicks in
+        const fastRepeatInterval = 50; // Repeat every 50ms when held (20 times per second)
+        const superFastThreshold = 1000; // 1000ms before super fast adjustment kicks in
+        const superFastRepeatInterval = 20; // Repeat every 20ms when held long (50 times per second)
+        
+        // Helper function to determine if a key should trigger an adjustment
+        const shouldAdjustForKey = (justPressed, holdTime) => {
+            return justPressed || 
+                   (holdTime > superFastThreshold && 
+                    Math.floor(holdTime / superFastRepeatInterval) > 
+                    Math.floor((holdTime - deltaTime) / superFastRepeatInterval)) ||
+                   (holdTime > holdThreshold && 
+                    holdTime <= superFastThreshold &&
+                    Math.floor(holdTime / fastRepeatInterval) > 
+                    Math.floor((holdTime - deltaTime) / fastRepeatInterval));
+        };
+        
+        let angleChanged = false;
+        let powerChanged = false;
+        
+        // Angle adjustment (Left/Right arrows or A/D keys)
+        if (leftPressed) {
+            const shouldAdjust = shouldAdjustForKey(
+                Phaser.Input.Keyboard.JustDown(cursors.left) || (wasd && Phaser.Input.Keyboard.JustDown(wasd.A)),
+                turret.keyHoldState.leftHoldTime
+            );
+            
+            if (shouldAdjust) {
+                turret.keyboardAngle = Math.max(-180, turret.keyboardAngle - 1); // Decrease angle (more left)
+                angleChanged = true;
+            }
+        }
+        
+        if (rightPressed) {
+            const shouldAdjust = shouldAdjustForKey(
+                Phaser.Input.Keyboard.JustDown(cursors.right) || (wasd && Phaser.Input.Keyboard.JustDown(wasd.D)),
+                turret.keyHoldState.rightHoldTime
+            );
+            
+            if (shouldAdjust) {
+                turret.keyboardAngle = Math.min(0, turret.keyboardAngle + 1); // Increase angle (more right)
+                angleChanged = true;
+            }
+        }
+        
+        // Power adjustment (Up/Down arrows or W/S keys)
+        if (upPressed) {
+            const shouldAdjust = shouldAdjustForKey(
+                Phaser.Input.Keyboard.JustDown(cursors.up) || (wasd && Phaser.Input.Keyboard.JustDown(wasd.W)),
+                turret.keyHoldState.upHoldTime
+            );
+            
+            if (shouldAdjust) {
+                turret.keyboardPower = Math.min(1.0, turret.keyboardPower + 0.01); // Increase power (max 100%)
+                powerChanged = true;
+            }
+        }
+        
+        if (downPressed) {
+            const shouldAdjust = shouldAdjustForKey(
+                Phaser.Input.Keyboard.JustDown(cursors.down) || (wasd && Phaser.Input.Keyboard.JustDown(wasd.S)),
+                turret.keyHoldState.downHoldTime
+            );
+            
+            if (shouldAdjust) {
+                turret.keyboardPower = Math.max(0.1, turret.keyboardPower - 0.01); // Decrease power (min 10%)
+                powerChanged = true;
+            }
+        }
+        
+        // If angle or power changed, update the visual feedback
+        if (angleChanged || powerChanged) {
+            // Update the gun angle
+            turret.setGunAngle(turret.keyboardAngle);
+            
+            // Update current power for shooting
+            turret.currentPower = turret.keyboardPower;
+            
+            // Redraw aiming line and tooltip with new values
+            const angleInRadians = Phaser.Math.DegToRad(turret.keyboardAngle);
+            turret.drawAimingLineAndTooltip(angleInRadians, turret.keyboardPower, true);
+            
+            console.log(`⌨️ Keyboard aiming updated - angle: ${turret.keyboardAngle}°, power: ${Math.round(turret.keyboardPower * 100)}%`);
+        }
+    }
+    
+    // Keyboard camera movement (disabled while following projectile, when keyboard is disabled, or during keyboard aiming)
     if (scene.cameraControls && scene.input.keyboard.enabled && 
         !scene.cameraControls.isDragging() && !scene.cameraControls.isPanning() && 
         !scene.currentPlayerTurret && !scene.cameraControls.followingProjectile) {
