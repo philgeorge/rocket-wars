@@ -54,7 +54,7 @@ They should be implemented one at a time.
 - Ensure aiming line color and tooltip update correctly with keyboard input
 - Use the same visual feedback system as mouse aiming for consistency
 
-**Step 6: Add ESC key to cancel aiming**
+**Step 6: Add ESC key to cancel aiming** ✅
 - Detect ESC key press during keyboard aiming
 - Cancel aiming without shooting (similar to mouse interruption)
 - Clear `scene.currentPlayerTurret` and return to camera scroll mode

@@ -9,6 +9,7 @@ import { getCurrentPlayer } from './turnManager.js';
  * @property {Phaser.Types.Input.Keyboard.CursorKeys} cursors - Arrow key controls
  * @property {Object} wasd - WASD key controls
  * @property {Phaser.Input.Keyboard.Key} enterKey - Enter key for keyboard aiming
+ * @property {Phaser.Input.Keyboard.Key} escKey - ESC key to cancel aiming
  * @property {Function} isDragging - Returns true if camera is being dragged
  * @property {Function} isPanning - Returns true if camera is being panned (multi-touch)
  * @property {boolean} followingProjectile - Flag to disable manual controls during projectile flight
@@ -397,6 +398,7 @@ export function setupCameraAndInput(scene, onShoot) {
     const cursors = scene.input.keyboard.createCursorKeys();
     const wasd = scene.input.keyboard.addKeys('W,S,A,D');
     const enterKey = scene.input.keyboard.addKey('ENTER');
+    const escKey = scene.input.keyboard.addKey('ESC');
     
     // Momentum update function (called from main update loop)
     const updateMomentum = () => {
@@ -423,6 +425,7 @@ export function setupCameraAndInput(scene, onShoot) {
         cursors,
         wasd,
         enterKey,
+        escKey,
         isDragging: () => isDragging,
         isPanning: () => isPanning,
         followingProjectile: false,  // Flag to disable manual camera controls during projectile flight
@@ -437,6 +440,7 @@ export function setupCameraAndInput(scene, onShoot) {
             scene.input.keyboard.removeKey('S');
             scene.input.keyboard.removeKey('D');
             scene.input.keyboard.removeKey('ENTER');
+            scene.input.keyboard.removeKey('ESC');
             // Clear the wasd object
             scene.cameraControls.wasd = null;
             
@@ -452,6 +456,7 @@ export function setupCameraAndInput(scene, onShoot) {
             // Re-add WASD keys
             scene.cameraControls.wasd = scene.input.keyboard.addKeys('W,S,A,D');
             scene.cameraControls.enterKey = scene.input.keyboard.addKey('ENTER');
+            scene.cameraControls.escKey = scene.input.keyboard.addKey('ESC');
             console.log('✅ Re-enabled Phaser keyboard input');
         }
     };
@@ -545,6 +550,22 @@ export function updateKeyboardCamera(scene) {
                 // Stop keyboard aiming and shoot using the helper function
                 scene.stopAimingAndShoot?.(true);
             }
+        }
+    }
+    
+    // Handle ESC key to cancel aiming
+    if (scene.cameraControls && scene.cameraControls.escKey && scene.input.keyboard.enabled && scene.currentPlayerTurret) {
+        // Check if ESC key was just pressed
+        if (Phaser.Input.Keyboard.JustDown(scene.cameraControls.escKey)) {
+            console.log('🚫 ESC key pressed - canceling keyboard aiming');
+            
+            // Cancel aiming without shooting
+            if (scene.currentPlayerTurret.isAiming) {
+                scene.currentPlayerTurret.stopAiming(); // Just stop aiming, don't shoot
+            }
+            
+            // Clear current player turret to return to camera scroll mode
+            scene.currentPlayerTurret = null;
         }
     }
     
