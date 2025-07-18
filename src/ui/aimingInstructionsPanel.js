@@ -1,11 +1,10 @@
 // aimingInstructionsPanel.js
-// Panel for displaying first-time aiming instructions
+// Panel for displaying aiming instructions at the start of each game
 
 import { createBasePanel, addPanelText, positionPanel } from './panelFactory.js';
-import { hasShownAimingInstructions, markAimingInstructionsShown } from '../storage.js';
 
 /**
- * Create an aiming instructions panel for first-time players
+ * Create an aiming instructions panel for players at the start of each game
  * @param {Phaser.Scene} scene - The Phaser scene
  * @returns {Phaser.GameObjects.Container & {panelWidth?: number, panelHeight?: number}}
  */
@@ -126,18 +125,15 @@ export function showAimingInstructionsPanel(panel) {
 }
 
 /**
- * Show aiming instructions panel if it hasn't been shown before
+ * Show aiming instructions panel at the start of each game
  * @param {Phaser.Scene & {aimingInstructionsPanel?: any}} scene - The Phaser scene
  * @param {Function} [onDismiss] - Optional callback when panel is dismissed
  */
 export function showAimingInstructionsIfNeeded(scene, onDismiss = null) {
-    // Check if instructions have been shown before
-    if (!hasShownAimingInstructions() && scene.aimingInstructionsPanel) {
-        console.log('📋 Showing aiming instructions for first time');
+    // Always show instructions at the start of each game
+    if (scene.aimingInstructionsPanel) {
+        console.log('📋 Showing aiming instructions for this game');
         scene.aimingInstructionsPanel.setVisible(true);
-        
-        // Mark as shown so it won't appear again
-        markAimingInstructionsShown();
         
         let dismissed = false;
         
@@ -180,5 +176,5 @@ export function showAimingInstructionsIfNeeded(scene, onDismiss = null) {
         return true; // Panel was shown
     }
     
-    return false; // Panel was not shown (already seen before)
+    return false; // Panel was not shown (no panel available)
 }
