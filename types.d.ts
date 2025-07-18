@@ -43,9 +43,18 @@ declare global {
     setGunAngle(angleInDegrees: number): number;
     getGunTipPosition(): { x: number; y: number };
     startAiming(): void;
+    startKeyboardAiming(): void;
+    drawAimingLineAndTooltip(angle: number, power: number, isKeyboardMode?: boolean): void;
     updateAim(worldX: number, worldY: number): void;
     stopAiming(): { angle: number; power: number };
     updateHealthDisplay(healthPercent: number): void;
+  }
+  
+  // Scene extension for custom properties
+  interface Scene extends Phaser.Scene {
+    onShoot?: (turret: TurretContainer, shootData: { angle: number; power: number }) => void;
+    startPlayerAiming?: (isKeyboardMode: boolean) => boolean;
+    stopAimingAndShoot?: (isKeyboardMode: boolean) => void;
   }
 }
 

@@ -30,13 +30,13 @@ They should be implemented one at a time.
 - Each turret stores its own keyboard aiming preferences throughout the game session
 - Initialize keyboard aiming with sensible defaults (45°, 50% power) - no localStorage needed since turrets persist
 
-**Step 2: Implement Enter key to start/stop aiming**
+**Step 2: Implement Enter key to start/stop aiming** ✅
 - In `camera.js`, add Enter key detection when no turret is actively aiming
 - When Enter is pressed, find the current player's turret and start keyboard aiming mode
 - Set `scene.currentPlayerTurret` and call `startKeyboardAiming()` method
 - When Enter is pressed again during aiming, end aiming and launch projectile (same as mouse release)
 
-**Step 3: Create keyboard aiming method**
+**Step 3: Create keyboard aiming method** ✅
 - Add `startKeyboardAiming()` method to turret objects in `turret.js`
 - Initialize aiming with stored/default angle and power values
 - Show aiming line and tooltip immediately with initial values

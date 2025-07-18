@@ -1,11 +1,14 @@
 // camera.js
 // Camera controls and input handling for Rocket Wars
 
+import { getCurrentPlayer } from './turnManager.js';
+
 /**
  * Camera controls object with methods and state
  * @typedef {Object} CameraControls
  * @property {Phaser.Types.Input.Keyboard.CursorKeys} cursors - Arrow key controls
  * @property {Object} wasd - WASD key controls
+ * @property {Phaser.Input.Keyboard.Key} enterKey - Enter key for keyboard aiming
  * @property {Function} isDragging - Returns true if camera is being dragged
  * @property {Function} isPanning - Returns true if camera is being panned (multi-touch)
  * @property {boolean} followingProjectile - Flag to disable manual controls during projectile flight
@@ -16,11 +19,83 @@
 
 /**
  * Setup camera controls and input handling for the game scene
- * @param {Phaser.Scene & {turrets?: any[], currentPlayerTurret?: any, projectiles?: any[], gameState?: any, environmentPanel?: any, playerStatsPanel?: any, cameraControls?: any}} scene - The Phaser scene
+ * @param {Phaser.Scene & {turrets?: any[], currentPlayerTurret?: any, projectiles?: any[], gameState?: any, environmentPanel?: any, playerStatsPanel?: any, cameraControls?: any, onShoot?: Function, startPlayerAiming?: Function, stopAimingAndShoot?: Function}} scene - The Phaser scene
  * @param {Function} onShoot - Callback function called when player shoots (receives turret and shoot data)
  * @returns {CameraControls} Camera controls object
  */
 export function setupCameraAndInput(scene, onShoot) {
+    // Store the onShoot callback on the scene for use in keyboard aiming
+    scene.onShoot = onShoot;
+    
+    // Helper function to start aiming for the current player
+    const startPlayerAiming = (isKeyboardMode = false) => {
+        if (!scene.gameState || !scene.turrets) {
+            console.warn('⚠️ Cannot start aiming - game state or turrets not available');
+            return false;
+        }
+        
+        const currentPlayerNum = getCurrentPlayer(scene.gameState);
+        const currentPlayerKey = `player${currentPlayerNum}`;
+        
+        // Check if this player has already fired this turn
+        if (scene.gameState.hasPlayerFiredThisTurn) {
+            console.log(`🚫 Player ${currentPlayerNum} has already fired this turn`);
+            return false;
+        }
+        
+        // Find the active player's turret
+        const activeTurret = scene.turrets.find(turret => turret.team === currentPlayerKey);
+        
+        if (!activeTurret) {
+            console.warn(`⚠️ Could not find turret for active player ${currentPlayerKey}`);
+            return false;
+        }
+        
+        // Start aiming
+        console.log(`${isKeyboardMode ? '⌨️' : '🖱️'} Starting ${isKeyboardMode ? 'keyboard' : 'mouse'} aiming for ${currentPlayerKey}`);
+        scene.currentPlayerTurret = activeTurret;
+        
+        if (isKeyboardMode) {
+            // We'll add startKeyboardAiming() method in Step 3
+            if (activeTurret.startKeyboardAiming) {
+                activeTurret.startKeyboardAiming();
+            } else {
+                // Fallback to regular aiming for now
+                activeTurret.startAiming();
+                activeTurret.isKeyboardAiming = true;
+            }
+        } else {
+            activeTurret.startAiming();
+            // Stop momentum when starting to aim for precision
+            momentumActive = false;
+            momentumVelocityX = 0;
+            momentumVelocityY = 0;
+        }
+        
+        return true;
+    };
+    
+    // Helper function to stop aiming and shoot
+    const stopAimingAndShoot = (isKeyboardMode = false) => {
+        if (!scene.currentPlayerTurret) {
+            return;
+        }
+        
+        console.log(`${isKeyboardMode ? '⌨️' : '🖱️'} Stopping ${isKeyboardMode ? 'keyboard' : 'mouse'} aiming and shooting`);
+        const shootData = scene.currentPlayerTurret.stopAiming();
+        
+        // Call the shoot callback
+        if (scene.onShoot) {
+            scene.onShoot(scene.currentPlayerTurret, shootData);
+        }
+        
+        scene.currentPlayerTurret = null;
+    };
+    
+    // Store helper functions on the scene for use in updateKeyboardCamera
+    scene.startPlayerAiming = startPlayerAiming;
+    scene.stopAimingAndShoot = stopAimingAndShoot;
+    
     // Camera drag controls
     let isDragging = false;
     let dragStartX, dragStartY;
@@ -82,21 +157,6 @@ export function setupCameraAndInput(scene, onShoot) {
         momentumVelocityY = 0;
     };
     
-    // Function to stop aiming and shoot (only for deliberate release)
-    const stopAimingAndShoot = () => {
-        if (scene.currentPlayerTurret && scene.currentPlayerTurret.isAiming) {
-            const shootData = scene.currentPlayerTurret.stopAiming();
-            console.log(`Shooting at angle: ${Phaser.Math.RadToDeg(shootData.angle)} degrees, power: ${Math.round(shootData.power * 100)}%`);
-            
-            // Call the provided callback to handle shooting logic
-            if (onShoot) {
-                onShoot(scene.currentPlayerTurret, shootData);
-            }
-            
-            scene.currentPlayerTurret = null;
-        }
-    };
-    
     // Function to cancel aiming without shooting (for interruptions)
     const cancelAiming = () => {
         if (scene.currentPlayerTurret && scene.currentPlayerTurret.isAiming) {
@@ -125,41 +185,20 @@ export function setupCameraAndInput(scene, onShoot) {
         if (clickedTurret) {
             // Check if this turret belongs to the current active player
             if (scene.gameState && scene.gameState.playersAlive) {
-                // Import getCurrentPlayer function to check active player
-                const getCurrentPlayer = (gameState) => {
-                    if (gameState.playersAlive.length === 0) {
-                        return 1; // Fallback
-                    }
-                    return gameState.playersAlive[gameState.currentPlayerIndex];
-                };
-                
+                // Only allow interaction if this turret belongs to the current active player
                 const currentPlayerNum = getCurrentPlayer(scene.gameState);
                 const currentPlayerKey = `player${currentPlayerNum}`;
                 
-                // Only allow interaction if this turret belongs to the current active player
                 if (clickedTurret.team !== currentPlayerKey) {
                     console.log(`🚫 Can't use ${clickedTurret.team} turret - it's Player ${currentPlayerNum}'s turn (${currentPlayerKey})`);
                     return; // Exit early - not the active player's turret
                 }
-                
-                // Check if the current player has already fired this turn
-                if (scene.gameState.hasPlayerFiredThisTurn) {
-                    console.log(`🚫 Player ${currentPlayerNum} has already fired this turn`);
-                    return; // Exit early - already fired this turn
-                }
             }
             
-            // Start aiming
-            console.log(`Clicked on ${clickedTurret.team} turret`);
-            scene.currentPlayerTurret = clickedTurret;
-            clickedTurret.startAiming();
-            
-            // Stop momentum when starting to aim for precision
-            momentumActive = false;
-            momentumVelocityX = 0;
-            momentumVelocityY = 0;
-            
-            return; // Exit early if we clicked a turret
+            // Use the helper function to start aiming
+            if (startPlayerAiming(false)) {
+                return; // Exit early if we successfully started aiming
+            }
         }
         
         // Skip camera controls if following projectile
@@ -216,7 +255,7 @@ export function setupCameraAndInput(scene, onShoot) {
         
         // Only process shooting/dragging if we're not in multi-touch mode
         if (activePointers.size < 2) {
-            stopAimingAndShoot(); // Deliberate release = shoot
+            stopAimingAndShoot(false); // Deliberate release = shoot (mouse mode)
             stopDragging();
         }
     });
@@ -357,6 +396,7 @@ export function setupCameraAndInput(scene, onShoot) {
     // Keyboard controls for camera
     const cursors = scene.input.keyboard.createCursorKeys();
     const wasd = scene.input.keyboard.addKeys('W,S,A,D');
+    const enterKey = scene.input.keyboard.addKey('ENTER');
     
     // Momentum update function (called from main update loop)
     const updateMomentum = () => {
@@ -382,6 +422,7 @@ export function setupCameraAndInput(scene, onShoot) {
     return {
         cursors,
         wasd,
+        enterKey,
         isDragging: () => isDragging,
         isPanning: () => isPanning,
         followingProjectile: false,  // Flag to disable manual camera controls during projectile flight
@@ -395,6 +436,7 @@ export function setupCameraAndInput(scene, onShoot) {
             scene.input.keyboard.removeKey('A');
             scene.input.keyboard.removeKey('S');
             scene.input.keyboard.removeKey('D');
+            scene.input.keyboard.removeKey('ENTER');
             // Clear the wasd object
             scene.cameraControls.wasd = null;
             
@@ -409,6 +451,7 @@ export function setupCameraAndInput(scene, onShoot) {
             scene.input.keyboard.enabled = true;
             // Re-add WASD keys
             scene.cameraControls.wasd = scene.input.keyboard.addKeys('W,S,A,D');
+            scene.cameraControls.enterKey = scene.input.keyboard.addKey('ENTER');
             console.log('✅ Re-enabled Phaser keyboard input');
         }
     };
@@ -483,12 +526,26 @@ export function updateProjectileCamera(scene, projectiles) {
 
 /**
  * Handle keyboard camera movement and momentum in the update loop
- * @param {Phaser.Scene & {cameraControls?: any, currentPlayerTurret?: any}} scene - The Phaser scene
+ * @param {Phaser.Scene & {cameraControls?: any, currentPlayerTurret?: any, gameState?: any, turrets?: any[], onShoot?: Function, startPlayerAiming?: Function, stopAimingAndShoot?: Function}} scene - The Phaser scene
  */
 export function updateKeyboardCamera(scene) {
     // Update momentum scrolling
     if (scene.cameraControls && scene.cameraControls.updateMomentum) {
         scene.cameraControls.updateMomentum();
+    }
+    
+    // Handle Enter key for keyboard aiming
+    if (scene.cameraControls && scene.cameraControls.enterKey && scene.input.keyboard.enabled && scene.gameState && scene.turrets) {
+        // Check if Enter key was just pressed
+        if (Phaser.Input.Keyboard.JustDown(scene.cameraControls.enterKey)) {
+            if (!scene.currentPlayerTurret) {
+                // Start keyboard aiming using the helper function
+                scene.startPlayerAiming?.(true);
+            } else {
+                // Stop keyboard aiming and shoot using the helper function
+                scene.stopAimingAndShoot?.(true);
+            }
+        }
     }
     
     // Keyboard camera movement (disabled while following projectile or when keyboard is disabled)

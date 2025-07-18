@@ -283,10 +283,18 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         // Set gun angle (with clamping to -180° to 0° range)
         const clampedAngle = turret.setGunAngle(angleInDegrees);
         
-        // Draw aiming line with length based on power
+        // Draw aiming line and update tooltip using helper method
+        turret.drawAimingLineAndTooltip(Phaser.Math.DegToRad(clampedAngle), power, false);
+    };
+
+    // Helper method to draw aiming line and update tooltip
+    turret.drawAimingLineAndTooltip = function(angle, power, isKeyboardMode = false) {
+        const turret = /** @type {TurretContainer} */ (this);
+        
+        // Clear previous aiming line
         turret.aimingLine.clear();
         
-        // Color intensity based on power (more red = more power)
+        // Color intensity based on power (more red = more power) for all aiming modes
         const powerColor = Phaser.Display.Color.Interpolate.ColorWithColor(
             Phaser.Display.Color.ValueToColor(0xffff00), // Yellow (low power)
             Phaser.Display.Color.ValueToColor(0xff4444), // Red (high power)
@@ -295,20 +303,22 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         );
         const colorValue = Phaser.Display.Color.ObjectToColor(powerColor).color;
         
+        // Set line style (consistent alpha for all aiming modes)
         turret.aimingLine.lineStyle(3, colorValue, 0.9);
         
         const tipPos = turret.getGunTipPosition();
         
-        // Use the same responsive distances for line length as power calculation
+        // Calculate line length based on power and responsive distances
         const lineLength = turret.minDistance + (turret.maxDistance - turret.minDistance) * power;
         
-        const lineEndX = tipPos.x + Math.cos(Phaser.Math.DegToRad(clampedAngle)) * lineLength;
-        const lineEndY = tipPos.y + Math.sin(Phaser.Math.DegToRad(clampedAngle)) * lineLength;
+        // Calculate line end position
+        const lineEndX = tipPos.x + Math.cos(angle) * lineLength;
+        const lineEndY = tipPos.y + Math.sin(angle) * lineLength;
         
         turret.aimingLine.lineBetween(tipPos.x, tipPos.y, lineEndX, lineEndY);
         
-        // Update tooltip with current angle and power positioned at the tip of the aiming line
-        turret.createOrUpdateTooltip(Phaser.Math.DegToRad(clampedAngle), power, lineEndX, lineEndY);
+        // Update tooltip with current angle and power
+        turret.createOrUpdateTooltip(angle, power, lineEndX, lineEndY);
     };
     
     // Method to stop aiming
@@ -341,6 +351,30 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         drawTurretBody(this.turretBody, darkerColor, 1, color, clampedHealth);
         
         console.log(`🎯 After redraw - health display updated for ${this.team}`);
+    };
+
+    // Method to start keyboard aiming
+    turret.startKeyboardAiming = function() {
+        const turret = /** @type {TurretContainer} */ (this);
+        console.log(`⌨️ Starting keyboard aiming for ${turret.team}`);
+        
+        // Start standard aiming first
+        turret.startAiming();
+        
+        // Set keyboard aiming mode
+        turret.isKeyboardAiming = true;
+        
+        // Set gun angle to stored keyboard angle (convert degrees to radians)
+        const angleInRadians = Phaser.Math.DegToRad(turret.keyboardAngle);
+        turret.setGunAngle(turret.keyboardAngle);
+        
+        // Set current power to stored keyboard power
+        turret.currentPower = turret.keyboardPower;
+        
+        // Draw aiming line and update tooltip using helper method
+        turret.drawAimingLineAndTooltip(angleInRadians, turret.currentPower, true);
+        
+        console.log(`⌨️ Keyboard aiming initialized - angle: ${turret.keyboardAngle}°, power: ${Math.round(turret.currentPower * 100)}%`);
     };
 
     // Set initial angle (pointing slightly upward)
