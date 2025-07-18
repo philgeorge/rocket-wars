@@ -22,6 +22,11 @@ declare global {
     aimTooltip: (Phaser.GameObjects.Container & { text?: Phaser.GameObjects.Text }) | null;
     tooltipTimer: Phaser.Time.TimerEvent | null;
     
+    // Keyboard aiming state properties
+    isKeyboardAiming: boolean;
+    keyboardAngle: number;
+    keyboardPower: number;
+    
     // Responsive aiming distances (calculated once when aiming starts)
     minDistance: number;
     maxDistance: number;

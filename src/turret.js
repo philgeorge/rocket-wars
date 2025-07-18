@@ -64,6 +64,11 @@ export function createGunTurret(scene, x, y, team = 'player1') {
     turret.tooltipTimer = null; // Add timer reference for delayed tooltip hiding
     turret.minDistance = 0; // Will be calculated when aiming starts
     turret.maxDistance = 0; // Will be calculated when aiming starts
+    
+    // Add keyboard aiming state properties
+    turret.isKeyboardAiming = false;
+    turret.keyboardAngle = -45; // Default angle: 45 degrees upward
+    turret.keyboardPower = 0.5; // Default power: 50%
 
     // Method to lock tooltip position to current screen coordinates
     turret.lockTooltipPosition = function() {
