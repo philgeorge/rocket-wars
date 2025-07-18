@@ -331,9 +331,20 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         // Lock tooltip position to current screen coordinates but don't start fade timer yet
         // Tooltip will fade when projectile finishes its flight
         turret.lockTooltipPosition();
+        
+        const finalAngle = turret.barrel.rotation;
+        const finalPower = turret.currentPower || 0.5; // Default to 50% power if not set
+        
+        // Store the final angle and power in keyboard aiming properties for next turn
+        // Convert radians to degrees for keyboard aiming storage
+        turret.keyboardAngle = Phaser.Math.RadToDeg(finalAngle);
+        turret.keyboardPower = finalPower;
+        
+        console.log(`💾 Stored aiming preferences - angle: ${turret.keyboardAngle.toFixed(1)}°, power: ${Math.round(turret.keyboardPower * 100)}%`);
+        
         return {
-            angle: turret.barrel.rotation,
-            power: turret.currentPower || 0.5 // Default to 50% power if not set
+            angle: finalAngle,
+            power: finalPower
         };
     };
     

@@ -72,6 +72,9 @@ This file contains notes about my learnings from using an AI Agent to help me bu
 ## 15 July 2 hours
 - turret energy level bar visualisation
 
+## 18 July 2 hours
+- keyboard aiming feature implementation
+
 # Odd Agent Behaviour
 
 - Choosing technology and shaping the look of the game went very well. This is kind of like competitor analysis and market research for a product.
