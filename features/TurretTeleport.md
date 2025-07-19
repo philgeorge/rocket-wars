@@ -29,7 +29,7 @@ This feature requires integration with multiple existing systems and should be i
 - Ensure button is only clickable during active player turns (not during aiming, projectile flight, or game end)
 - Button should trigger the same teleport initiation as the T key
 
-### Step 3: Create turret teleport state management
+### Step 3: Create turret teleport state management ✅
 - Add teleport mode state to the game state object in `turnManager.js`
 - Add functions to enter/exit teleport mode for the current player
 - Ensure teleport mode blocks shooting and normal aiming

@@ -5,7 +5,7 @@ import { setupWorldLandscape } from './landscape.js';
 import { placeTurretsOnBases } from './turret.js';
 import { createProjectile } from './projectile.js';
 import { createEnvironmentPanel, createPlayerStatsPanel, positionEnvironmentPanel, positionPlayerStatsPanel, createResultsPanel, positionResultsPanel, setupResultsPanelRestart, createAimingInstructionsPanel, hideAimingInstructionsPanel, showAimingInstructionsIfNeeded, positionPanel } from './ui/index.js';
-import { createGameState, updateWindForNewTurn, startPlayerTurn, getCurrentPlayer, advanceToNextPlayer, advanceToNextRound, shouldGameEnd, getRemainingTurnTime, stopTurnTimer, getRankedPlayers } from './turnManager.js';
+import { createGameState, updateWindForNewTurn, startPlayerTurn, getCurrentPlayer, advanceToNextPlayer, advanceToNextRound, shouldGameEnd, getRemainingTurnTime, stopTurnTimer, getRankedPlayers, enterTeleportMode, exitTeleportMode, completeTeleport, isTeleportMode } from './turnManager.js';
 import { focusCameraOnActivePlayer } from './projectileManager.js';
 import { initializeGameSetup } from './gameSetup.js';
 import { initializeBaseSelection } from './baseSelection.js';
@@ -247,6 +247,13 @@ function create() {
         // Initialize game state and UI (moved here to happen after player setup)
         this.gameState = createGameState(gameConfig);
         console.log('🎮 Game state initialized:', this.gameState);
+        
+        // Add teleport management functions to scene for easy access
+        /** @type {any} */ (this).enterTeleportMode = () => enterTeleportMode(this.gameState, this);
+        /** @type {any} */ (this).exitTeleportMode = () => exitTeleportMode(this.gameState);
+        /** @type {any} */ (this).completeTeleport = () => completeTeleport(this.gameState);
+        /** @type {any} */ (this).isTeleportMode = () => isTeleportMode(this.gameState);
+        
         this.environmentPanel = createEnvironmentPanel(this, this.gameState);
         this.playerStatsPanel = createPlayerStatsPanel(this, this.gameState, playerData);
 

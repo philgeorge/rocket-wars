@@ -53,34 +53,48 @@ export function setupKeyboardInput(scene, cameraControls) {
         if (tKey && scene.input.keyboard.enabled && scene.gameState && scene.turrets && !scene.gameEnded) {
             // Check if T key was just pressed
             if (Phaser.Input.Keyboard.JustDown(tKey)) {
-                // Only allow teleport initiation during active player turns
-                if (!scene.currentPlayerTurret && scene.gameState.playersAlive && scene.gameState.playersAlive.length > 0) {
-                    console.log('🔄 T key pressed - initiating teleport mode');
-                    // TODO: Call teleport initiation function (will be implemented in Step 3)
-                    // For now, just log the attempt
-                    const currentPlayerNum = getCurrentPlayer(scene.gameState);
-                    console.log(`📍 Player ${currentPlayerNum} wants to initiate teleport mode`);
-                } else if (scene.currentPlayerTurret) {
-                    console.log('🚫 T key blocked - player is currently aiming');
+                console.log('🔄 T key pressed - attempting teleport mode');
+                
+                // Call the teleport initiation function if available
+                if (/** @type {any} */ (scene).enterTeleportMode) {
+                    const success = /** @type {any} */ (scene).enterTeleportMode();
+                    if (success) {
+                        const currentPlayerNum = getCurrentPlayer(scene.gameState);
+                        console.log(`✅ Player ${currentPlayerNum} successfully entered teleport mode via T key`);
+                    }
                 } else {
-                    console.log('🚫 T key blocked - no active player turn');
+                    console.log('⚠️ enterTeleportMode function not available on scene');
                 }
             }
         }
         
-        // Handle ESC key to cancel aiming
-        if (escKey && scene.input.keyboard.enabled && scene.currentPlayerTurret) {
+        // Handle ESC key to cancel aiming or teleport mode
+        if (escKey && scene.input.keyboard.enabled) {
             // Check if ESC key was just pressed
             if (Phaser.Input.Keyboard.JustDown(escKey)) {
-                console.log('🚫 ESC key pressed - canceling keyboard aiming');
-                
-                // Cancel aiming without shooting
-                if (scene.currentPlayerTurret.isAiming) {
-                    scene.currentPlayerTurret.stopAiming(); // Just stop aiming, don't shoot
+                // First check for teleport mode cancellation
+                if (scene.gameState && scene.gameState.teleportMode) {
+                    console.log('🚫 ESC key pressed - canceling teleport mode');
+                    
+                    // Call the teleport exit function if available
+                    if (/** @type {any} */ (scene).exitTeleportMode) {
+                        /** @type {any} */ (scene).exitTeleportMode();
+                    } else {
+                        console.log('⚠️ exitTeleportMode function not available on scene');
+                    }
+                    
+                } else if (scene.currentPlayerTurret) {
+                    // Cancel aiming if player is aiming
+                    console.log('🚫 ESC key pressed - canceling keyboard aiming');
+                    
+                    // Cancel aiming without shooting
+                    if (scene.currentPlayerTurret.isAiming) {
+                        scene.currentPlayerTurret.stopAiming(); // Just stop aiming, don't shoot
+                    }
+                    
+                    // Clear current player turret to return to camera scroll mode
+                    scene.currentPlayerTurret = null;
                 }
-                
-                // Clear current player turret to return to camera scroll mode
-                scene.currentPlayerTurret = null;
             }
         }
         

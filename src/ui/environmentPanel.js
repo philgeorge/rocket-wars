@@ -70,14 +70,17 @@ export function createEnvironmentPanel(scene, gameState) {
         height: buttonSize,
         text: 'T',
         onClick: () => {
-            console.log('🔄 Teleport button clicked - initiating teleport mode');
-            // TODO: Call teleport initiation function (will be implemented in Step 3)
-            // For now, just log the attempt
-            if (gameState && gameState.playersAlive && gameState.playersAlive.length > 0) {
-                const currentPlayerNum = getCurrentPlayer(gameState);
-                console.log(`📍 Player ${currentPlayerNum} wants to initiate teleport mode via button`);
+            console.log('🔄 Teleport button clicked - attempting teleport mode');
+            
+            // Call the teleport initiation function if available
+            if (/** @type {any} */ (scene).enterTeleportMode) {
+                const success = /** @type {any} */ (scene).enterTeleportMode();
+                if (success) {
+                    const currentPlayerNum = getCurrentPlayer(gameState);
+                    console.log(`✅ Player ${currentPlayerNum} successfully entered teleport mode via button`);
+                }
             } else {
-                console.log('🚫 Teleport button blocked - no active player turn');
+                console.log('⚠️ enterTeleportMode function not available on scene');
             }
         }
     });
@@ -205,6 +208,7 @@ export function createEnvironmentPanel(scene, gameState) {
                              !scene.turrets ||
                              scene.currentPlayerTurret || // Player is aiming
                              scene.gameEnded || // Game has ended
+                             gameState.teleportMode || // Already in teleport mode
                              (scene.projectiles && scene.projectiles.length > 0) || // Projectiles in flight
                              (scene.cameraControls && scene.cameraControls.followingProjectile); // Camera following projectile
         

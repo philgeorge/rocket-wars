@@ -27,7 +27,11 @@ function createTurnBasedGameState(config = {}) {
         turnStartTime: null, // Timestamp when current turn began (null = no active turn)
         hasPlayerFiredThisTurn: false, // Prevent multiple shots per turn
         turnTimer: null, // Timer ID for countdown
-        lastRemainingTime: null // Last remaining time when timer was stopped
+        lastRemainingTime: null, // Last remaining time when timer was stopped
+        
+        // Teleport state management
+        teleportMode: false, // True when current player is in teleport mode
+        teleportPlayerNum: null // Player number who initiated teleport (for validation)
     };
 }
 
@@ -166,6 +170,12 @@ export function removePlayer(gameState, playerNum) {
  */
 export function advanceToNextPlayer(gameState) {
     console.log(`🔄 Advancing from player index ${gameState.currentPlayerIndex} (Player ${getCurrentPlayer(gameState)})`);
+    
+    // Exit teleport mode if active (player's turn is ending)
+    if (gameState.teleportMode) {
+        console.log('🔄 Automatically exiting teleport mode due to turn advancement');
+        exitTeleportMode(gameState);
+    }
     
     // Stop current turn timer and reset turn state
     stopTurnTimer(gameState);
@@ -341,4 +351,106 @@ export function getRankedPlayers(gameState, playerData = null) {
     });
     
     return players;
+}
+
+/**
+ * Enter teleport mode for the current player
+ * @param {Object} gameState - Game state object
+ * @param {Object} [scene] - Optional scene object for additional validation
+ * @returns {boolean} True if teleport mode was successfully entered
+ */
+export function enterTeleportMode(gameState, scene = null) {
+    // Validate that we can enter teleport mode
+    if (!gameState.playersAlive || gameState.playersAlive.length === 0) {
+        console.log('🚫 Cannot enter teleport mode - no players alive');
+        return false;
+    }
+    
+    if (gameState.teleportMode) {
+        console.log('🚫 Cannot enter teleport mode - already in teleport mode');
+        return false;
+    }
+    
+    if (gameState.hasPlayerFiredThisTurn) {
+        console.log('🚫 Cannot enter teleport mode - player has already fired this turn');
+        return false;
+    }
+    
+    // Check if player is currently aiming (if scene is provided)
+    if (scene && scene.currentPlayerTurret) {
+        console.log('🚫 Cannot enter teleport mode - player is currently aiming');
+        return false;
+    }
+    
+    const currentPlayer = getCurrentPlayer(gameState);
+    gameState.teleportMode = true;
+    gameState.teleportPlayerNum = currentPlayer;
+    
+    console.log(`🔄 Player ${currentPlayer} entered teleport mode`);
+    console.log(`Turn timer continues running: ${gameState.turnStartTime ? 'YES' : 'NO'}`);
+    
+    return true;
+}
+
+/**
+ * Exit teleport mode and return to normal turn
+ * @param {Object} gameState - Game state object
+ * @returns {boolean} True if teleport mode was successfully exited
+ */
+export function exitTeleportMode(gameState) {
+    if (!gameState.teleportMode) {
+        console.log('🚫 Cannot exit teleport mode - not in teleport mode');
+        return false;
+    }
+    
+    const playerNum = gameState.teleportPlayerNum;
+    gameState.teleportMode = false;
+    gameState.teleportPlayerNum = null;
+    
+    console.log(`↩️ Player ${playerNum} exited teleport mode - can continue turn normally`);
+    
+    return true;
+}
+
+/**
+ * Complete teleport and end current player's turn
+ * @param {Object} gameState - Game state object
+ * @returns {boolean} True if teleport was completed successfully
+ */
+export function completeTeleport(gameState) {
+    if (!gameState.teleportMode) {
+        console.log('🚫 Cannot complete teleport - not in teleport mode');
+        return false;
+    }
+    
+    const playerNum = gameState.teleportPlayerNum;
+    
+    // Exit teleport mode
+    exitTeleportMode(gameState);
+    
+    // Mark turn as completed (similar to firing)
+    gameState.hasPlayerFiredThisTurn = true;
+    
+    console.log(`✅ Player ${playerNum} completed teleport - turn ended`);
+    
+    return true;
+}
+
+/**
+ * Check if the game is currently in teleport mode
+ * @param {Object} gameState - Game state object
+ * @returns {boolean} True if in teleport mode
+ */
+export function isTeleportMode(gameState) {
+    return gameState.teleportMode === true;
+}
+
+/**
+ * Check if a specific player is the one in teleport mode
+ * @param {Object} gameState - Game state object
+ * @param {number} playerNum - Player number to check
+ * @returns {boolean} True if this player is in teleport mode
+ */
+export function isPlayerInTeleportMode(gameState, playerNum) {
+    return gameState.teleportMode && gameState.teleportPlayerNum === playerNum;
 }

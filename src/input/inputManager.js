@@ -32,6 +32,12 @@ export function setupInputManager(scene, onShoot) {
             return false;
         }
         
+        // Block aiming if in teleport mode
+        if (scene.gameState.teleportMode) {
+            console.log('🚫 Cannot start aiming - player is in teleport mode');
+            return false;
+        }
+        
         const currentPlayerNum = getCurrentPlayer(scene.gameState);
         const currentPlayerKey = `player${currentPlayerNum}`;
         
