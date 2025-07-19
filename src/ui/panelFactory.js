@@ -178,3 +178,142 @@ export function positionPanel(panel, position, viewportWidth, viewportHeight, pa
             panel.y = padding;
     }
 }
+
+/**
+ * Create an interactive button for panels
+ * @param {Phaser.Scene} scene - The Phaser scene
+ * @param {Phaser.GameObjects.Container} panel - The panel to add the button to
+ * @param {Object} config - Button configuration
+ * @param {number} config.x - X position within the panel
+ * @param {number} config.y - Y position within the panel
+ * @param {number} [config.width=24] - Button width
+ * @param {number} [config.height=24] - Button height
+ * @param {string} config.text - Button text
+ * @param {Function} config.onClick - Click handler function
+ * @param {number} [config.fontSize=14] - Font size for button text
+ * @returns {Object} Button object with background, text, and control methods
+ */
+export function addPanelButton(scene, panel, config) {
+    const {
+        x,
+        y,
+        width = 24,
+        height = 24,
+        text,
+        onClick,
+        fontSize = 14
+    } = config;
+    
+    // Fixed button styling
+    const buttonStyle = {
+        fontSize: fontSize,
+        cornerRadius: 4,
+        normal: {
+            fill: 0x00aa00,
+            fillAlpha: 0.7,
+            stroke: 0x00ff00,
+            strokeAlpha: 0.8,
+            strokeWidth: 1,
+            textColor: '#ffffff'
+        },
+        hover: {
+            fill: 0x00ff00,
+            fillAlpha: 0.9,
+            stroke: 0x00aa00,
+            strokeAlpha: 1.0,
+            strokeWidth: 2,
+            textColor: '#000000'
+        },
+        disabled: {
+            fill: 0x666666,
+            fillAlpha: 0.5,
+            stroke: 0x999999,
+            strokeAlpha: 0.5,
+            strokeWidth: 1,
+            textColor: '#999999'
+        }
+    };
+    
+    // Button background (rounded rectangle)
+    const buttonBg = scene.add.graphics();
+    buttonBg.setPosition(x, y);
+    panel.add(buttonBg);
+    
+    // Button text
+    const buttonText = scene.add.text(x + width/2, y + height/2, text, {
+        fontSize: `${buttonStyle.fontSize}px`,
+        color: buttonStyle.normal.textColor,
+        fontStyle: 'bold'
+    });
+    buttonText.setOrigin(0.5, 0.5);
+    panel.add(buttonText);
+    
+    // Make button interactive
+    const buttonHitArea = new Phaser.Geom.Rectangle(0, 0, width, height);
+    buttonBg.setInteractive(buttonHitArea, Phaser.Geom.Rectangle.Contains);
+    
+    // Button state management
+    let isDisabled = false;
+    
+    // Button drawing function
+    const drawButton = (isHovered = false, disabled = false) => {
+        buttonBg.clear();
+        
+        let stateStyle;
+        if (disabled) {
+            stateStyle = buttonStyle.disabled;
+        } else if (isHovered) {
+            stateStyle = buttonStyle.hover;
+        } else {
+            stateStyle = buttonStyle.normal;
+        }
+        
+        // Draw button background
+        buttonBg.fillStyle(stateStyle.fill, stateStyle.fillAlpha);
+        buttonBg.lineStyle(stateStyle.strokeWidth, stateStyle.stroke, stateStyle.strokeAlpha);
+        buttonBg.fillRoundedRect(0, 0, width, height, buttonStyle.cornerRadius);
+        buttonBg.strokeRoundedRect(0, 0, width, height, buttonStyle.cornerRadius);
+        
+        // Update text color
+        buttonText.setColor(stateStyle.textColor);
+    };
+    
+    // Initial button draw
+    drawButton();
+    
+    // Button interaction handlers
+    buttonBg.on('pointerover', () => {
+        if (!isDisabled) {
+            drawButton(true, false);
+        }
+    });
+    
+    buttonBg.on('pointerout', () => {
+        drawButton(false, isDisabled);
+    });
+    
+    buttonBg.on('pointerdown', () => {
+        if (!isDisabled && onClick) {
+            onClick();
+        }
+    });
+    
+    // Return button object with control methods
+    return {
+        background: buttonBg,
+        text: buttonText,
+        draw: drawButton,
+        setDisabled: (disabled) => {
+            isDisabled = disabled;
+            drawButton(false, disabled);
+        },
+        setEnabled: (enabled) => {
+            isDisabled = !enabled;
+            drawButton(false, !enabled);
+        },
+        destroy: () => {
+            buttonBg.destroy();
+            buttonText.destroy();
+        }
+    };
+}

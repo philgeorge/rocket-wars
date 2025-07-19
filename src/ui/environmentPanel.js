@@ -1,13 +1,14 @@
 // environmentPanel.js
 // Environment panel showing round, wind, gravity, and timer
 
-import { createBasePanel, addPanelText, positionPanel } from './panelFactory.js';
+import { createBasePanel, addPanelText, addPanelButton, positionPanel } from './panelFactory.js';
+import { getCurrentPlayer } from '../turnManager.js';
 
 /**
  * Create a floating environment panel showing wind and gravity
  * @param {Phaser.Scene} scene - The Phaser scene
  * @param {Object} gameState - Game state object containing wind and gravity data
- * @returns {Phaser.GameObjects.Container & {updateDisplay: Function, textElements: Object}}
+ * @returns {Phaser.GameObjects.Container & {updateDisplay: Function, updateTimer: Function, textElements: Object, teleportButton: Object, updateTeleportButton: Function}}
  */
 export function createEnvironmentPanel(scene, gameState) {
     // Create base panel
@@ -54,8 +55,35 @@ export function createEnvironmentPanel(scene, gameState) {
     // Add text elements and auto-size panel
     const textElements = addPanelText(scene, panel, textItems, {
         minWidth: 150,
-        maxWidth: 200
+        maxWidth: 206
     });
+    
+    // Create teleport button using the reusable button factory
+    const buttonSize = 24;
+    const buttonX = /** @type {any} */ (panel).panelWidth - buttonSize - 8; // 8px from right edge
+    const buttonY = 8; // 8px from top edge
+    
+    const teleportButton = addPanelButton(scene, panel, {
+        x: buttonX,
+        y: buttonY,
+        width: buttonSize,
+        height: buttonSize,
+        text: 'T',
+        onClick: () => {
+            console.log('🔄 Teleport button clicked - initiating teleport mode');
+            // TODO: Call teleport initiation function (will be implemented in Step 3)
+            // For now, just log the attempt
+            if (gameState && gameState.playersAlive && gameState.playersAlive.length > 0) {
+                const currentPlayerNum = getCurrentPlayer(gameState);
+                console.log(`📍 Player ${currentPlayerNum} wants to initiate teleport mode via button`);
+            } else {
+                console.log('🚫 Teleport button blocked - no active player turn');
+            }
+        }
+    });
+    
+    // Store button reference
+    /** @type {any} */ (panel).teleportButton = teleportButton;
     
     // Store text elements reference
     /** @type {any} */ (panel).textElements = textElements;
@@ -163,6 +191,24 @@ export function createEnvironmentPanel(scene, gameState) {
                 lastValues.lastTimerValue = remaining;
             }
         }
+    };
+    
+    // Method to update teleport button state
+    /** @type {any} */ (panel).updateTeleportButton = function(gameState, scene) {
+        const self = /** @type {any} */ (this);
+        const button = self.teleportButton;
+        
+        // Determine if button should be disabled
+        const shouldDisable = !gameState || 
+                             !gameState.playersAlive || 
+                             gameState.playersAlive.length === 0 || 
+                             !scene.turrets ||
+                             scene.currentPlayerTurret || // Player is aiming
+                             scene.gameEnded || // Game has ended
+                             (scene.projectiles && scene.projectiles.length > 0) || // Projectiles in flight
+                             (scene.cameraControls && scene.cameraControls.followingProjectile); // Camera following projectile
+        
+        button.setDisabled(shouldDisable);
     };
     
     return /** @type {any} */ (panel);

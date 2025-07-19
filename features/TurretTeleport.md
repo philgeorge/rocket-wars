@@ -24,10 +24,9 @@ This feature requires integration with multiple existing systems and should be i
 - Prevent T key activation during aiming mode or when game is ended
 - Log T key presses for verification
 
-### Step 2: Add teleport button to environment panel
-- Modify `environmentPanel.js` to include a "T" button for teleportation
-- Position the button top-right, within the existing environment panel layout
-- Ensure button is only clickable during active player turns (not during aiming or game end)
+### Step 2: Add teleport button to environment panel ✅
+- Create interactive "T" button in the top-left environment panel using `panelFactory.js`
+- Ensure button is only clickable during active player turns (not during aiming, projectile flight, or game end)
 - Button should trigger the same teleport initiation as the T key
 
 ### Step 3: Create turret teleport state management

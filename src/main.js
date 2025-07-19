@@ -260,6 +260,7 @@ function create() {
 
         // Initialize panel displays
         this.environmentPanel.updateDisplay(this.gameState);
+        this.environmentPanel.updateTeleportButton(this.gameState, this);
         this.playerStatsPanel.updateDisplay(this.gameState);
 
         // Create timeout handler for turn time limits
@@ -287,6 +288,7 @@ function create() {
             
             // Update UI for new turn
             this.environmentPanel.updateDisplay(this.gameState);
+            this.environmentPanel.updateTeleportButton(this.gameState, this);
             this.playerStatsPanel.updateDisplay(this.gameState);
             
             // Focus camera on new active player and start their turn
@@ -349,6 +351,8 @@ function update() {
         if (hasActiveTimer) {
             this.environmentPanel.updateTimer(this.gameState);
         }
+        // Update teleport button state each frame to ensure it reflects current conditions
+        this.environmentPanel.updateTeleportButton(this.gameState, this);
     }
     
     // Handle keyboard camera movement
