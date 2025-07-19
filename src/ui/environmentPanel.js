@@ -55,7 +55,7 @@ export function createEnvironmentPanel(scene, gameState) {
     // Add text elements and auto-size panel
     const textElements = addPanelText(scene, panel, textItems, {
         minWidth: 150,
-        maxWidth: 206
+        maxWidth: 210
     });
     
     // Create teleport button using the reusable button factory
@@ -70,15 +70,24 @@ export function createEnvironmentPanel(scene, gameState) {
         height: buttonSize,
         text: 'T',
         onClick: () => {
-            // Call the teleport initiation function if available
-            if (/** @type {any} */ (scene).enterTeleportMode) {
-                const success = /** @type {any} */ (scene).enterTeleportMode();
-                if (success) {
-                    const currentPlayerNum = getCurrentPlayer(gameState);
-                    console.log(`✅ Player ${currentPlayerNum} entered teleport mode via button`);
+            // Toggle teleport mode
+            if (/** @type {any} */ (scene).isTeleportMode && /** @type {any} */ (scene).isTeleportMode()) {
+                // Currently in teleport mode - exit it
+                if (/** @type {any} */ (scene).exitTeleportMode) {
+                    const success = /** @type {any} */ (scene).exitTeleportMode();
+                    if (success) {
+                        console.log(`↩️ Player exited teleport mode via button`);
+                    }
                 }
             } else {
-                console.log('⚠️ enterTeleportMode function not available on scene');
+                // Not in teleport mode - enter it
+                if (/** @type {any} */ (scene).enterTeleportMode) {
+                    const success = /** @type {any} */ (scene).enterTeleportMode();
+                    if (success) {
+                        const currentPlayerNum = getCurrentPlayer(gameState);
+                        console.log(`✅ Player ${currentPlayerNum} entered teleport mode via button`);
+                    }
+                }
             }
         }
     });
@@ -199,18 +208,20 @@ export function createEnvironmentPanel(scene, gameState) {
         const self = /** @type {any} */ (this);
         const button = self.teleportButton;
         
-        // Determine if button should be disabled
+        // Determine if button should be disabled (but not when in teleport mode - that's when it's a toggle)
         const shouldDisable = !gameState || 
                              !gameState.playersAlive || 
                              gameState.playersAlive.length === 0 || 
                              !scene.turrets ||
                              scene.currentPlayerTurret || // Player is aiming
                              scene.gameEnded || // Game has ended
-                             gameState.teleportMode || // Already in teleport mode
                              (scene.projectiles && scene.projectiles.length > 0) || // Projectiles in flight
                              (scene.cameraControls && scene.cameraControls.followingProjectile); // Camera following projectile
         
+        const teleportMode = gameState.teleportMode || false;
+        
         button.setDisabled(shouldDisable);
+        button.draw(false, shouldDisable, teleportMode);
     };
     
     return /** @type {any} */ (panel);

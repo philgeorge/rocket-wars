@@ -291,6 +291,9 @@ export function cleanupFinishedProjectile(projectile, projectiles, index, camera
         if (cameraControls && cameraControls.followingProjectile) {
             cameraControls.followingProjectile = false;
         }
+
+        // Update teleport button since projectile state changed
+        scene?.environmentPanel?.updateTeleportButton?.(gameState, scene);
         
         // Handle turn progression if game state is available
         if (gameState && scene) {

@@ -209,10 +209,10 @@ export function addPanelButton(scene, panel, config) {
         fontSize: fontSize,
         cornerRadius: 4,
         normal: {
-            fill: 0x00aa00,
-            fillAlpha: 0.7,
-            stroke: 0x00ff00,
-            strokeAlpha: 0.8,
+            fill: 0x004400, // darker green
+            fillAlpha: 0.9,
+            stroke: 0x006600,
+            strokeAlpha: 1.0,
             strokeWidth: 1,
             textColor: '#ffffff'
         },
@@ -231,6 +231,14 @@ export function addPanelButton(scene, panel, config) {
             strokeAlpha: 0.5,
             strokeWidth: 1,
             textColor: '#999999'
+        },
+        toggleOn: {
+            fill: 0x00aa00,
+            fillAlpha: 0.7,
+            stroke: 0x00ff00,
+            strokeAlpha: 0.8,
+            strokeWidth: 1,
+            textColor: '#ffffff'
         }
     };
     
@@ -258,20 +266,23 @@ export function addPanelButton(scene, panel, config) {
     
     // Button state management
     let isDisabled = false;
+    let isToggleOn = false;
     
     // Button drawing function
-    const drawButton = (isHovered = false, disabled = false) => {
+    const drawButton = (isHovered = false, disabled = false, toggleOn = false) => {
         buttonBg.clear();
         
         let stateStyle;
         if (disabled) {
             stateStyle = buttonStyle.disabled;
+        } else if (toggleOn) {
+            stateStyle = buttonStyle.toggleOn;
         } else if (isHovered) {
             stateStyle = buttonStyle.hover;
         } else {
             stateStyle = buttonStyle.normal;
         }
-        
+
         // Draw button background
         buttonBg.fillStyle(stateStyle.fill, stateStyle.fillAlpha);
         buttonBg.lineStyle(stateStyle.strokeWidth, stateStyle.stroke, stateStyle.strokeAlpha);
@@ -288,12 +299,12 @@ export function addPanelButton(scene, panel, config) {
     // Button interaction handlers
     buttonZone.on('pointerover', () => {
         if (!isDisabled) {
-            drawButton(true, false);
+            drawButton(true, false, isToggleOn);
         }
     });
     
     buttonZone.on('pointerout', () => {
-        drawButton(false, isDisabled);
+        drawButton(false, isDisabled, isToggleOn);
     });
     
     buttonZone.on('pointerdown', (pointer, localX, localY, event) => {
@@ -309,14 +320,19 @@ export function addPanelButton(scene, panel, config) {
         background: buttonBg,
         text: buttonText,
         zone: buttonZone,
-        draw: drawButton,
+        draw: (isHovered = false, disabled = false, toggleOn = false) => {
+            // Update internal state
+            isToggleOn = toggleOn;
+            // Call the draw function
+            drawButton(isHovered, disabled, toggleOn);
+        },
         setDisabled: (disabled) => {
             isDisabled = disabled;
-            drawButton(false, disabled);
+            drawButton(false, disabled, isToggleOn);
         },
         setEnabled: (enabled) => {
             isDisabled = !enabled;
-            drawButton(false, !enabled);
+            drawButton(false, !enabled, isToggleOn);
         },
         destroy: () => {
             buttonBg.destroy();

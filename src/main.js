@@ -123,6 +123,9 @@ function shootFromTurret(scene, turret, shootData) {
 
     console.log(`Projectile launched from (${Math.round(tipPosition.x)}, ${Math.round(tipPosition.y)})`);
 
+    // Update teleport button since projectiles are now in flight
+    scene.environmentPanel?.updateTeleportButton?.(scene.gameState, scene);
+
 }
 
 /**
@@ -250,7 +253,7 @@ function create() {
         
         // Add teleport management functions to scene for easy access
         /** @type {any} */ (this).enterTeleportMode = () => enterTeleportMode(this.gameState, this);
-        /** @type {any} */ (this).exitTeleportMode = () => exitTeleportMode(this.gameState);
+        /** @type {any} */ (this).exitTeleportMode = () => exitTeleportMode(this.gameState, this);
         /** @type {any} */ (this).completeTeleport = () => completeTeleport(this.gameState);
         /** @type {any} */ (this).isTeleportMode = () => isTeleportMode(this.gameState);
         
@@ -358,8 +361,6 @@ function update() {
         if (hasActiveTimer) {
             this.environmentPanel.updateTimer(this.gameState);
         }
-        // Update teleport button state each frame to ensure it reflects current conditions
-        this.environmentPanel.updateTeleportButton(this.gameState, this);
     }
     
     // Handle keyboard camera movement

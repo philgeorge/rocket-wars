@@ -356,10 +356,10 @@ export function getRankedPlayers(gameState, playerData = null) {
 /**
  * Enter teleport mode for the current player
  * @param {Object} gameState - Game state object
- * @param {Object} [scene] - Optional scene object for additional validation
+ * @param {Object} scene - Scene object for validation and UI updates
  * @returns {boolean} True if teleport mode was successfully entered
  */
-export function enterTeleportMode(gameState, scene = null) {
+export function enterTeleportMode(gameState, scene) {
     // Validate that we can enter teleport mode
     if (!gameState.playersAlive || gameState.playersAlive.length === 0) {
         console.log('🚫 Cannot enter teleport mode - no players alive');
@@ -376,8 +376,8 @@ export function enterTeleportMode(gameState, scene = null) {
         return false;
     }
     
-    // Check if player is currently aiming (if scene is provided)
-    if (scene && scene.currentPlayerTurret) {
+    // Check if player is currently aiming
+    if (scene.currentPlayerTurret) {
         console.log('🚫 Cannot enter teleport mode - player is currently aiming');
         return false;
     }
@@ -385,6 +385,9 @@ export function enterTeleportMode(gameState, scene = null) {
     const currentPlayer = getCurrentPlayer(gameState);
     gameState.teleportMode = true;
     gameState.teleportPlayerNum = currentPlayer;
+
+    // Update teleport button since teleport state changed
+    scene.environmentPanel?.updateTeleportButton?.(gameState, scene);
     
     console.log(`🔄 Player ${currentPlayer} entered teleport mode`);
     console.log(`Turn timer continues running: ${gameState.turnStartTime ? 'YES' : 'NO'}`);
@@ -395,9 +398,10 @@ export function enterTeleportMode(gameState, scene = null) {
 /**
  * Exit teleport mode and return to normal turn
  * @param {Object} gameState - Game state object
+ * @param {Object} [scene] - Optional scene for UI updates
  * @returns {boolean} True if teleport mode was successfully exited
  */
-export function exitTeleportMode(gameState) {
+export function exitTeleportMode(gameState, scene = null) {
     if (!gameState.teleportMode) {
         console.log('🚫 Cannot exit teleport mode - not in teleport mode');
         return false;
@@ -406,6 +410,9 @@ export function exitTeleportMode(gameState) {
     const playerNum = gameState.teleportPlayerNum;
     gameState.teleportMode = false;
     gameState.teleportPlayerNum = null;
+
+    // Update teleport button since teleport state changed
+    scene?.environmentPanel?.updateTeleportButton?.(gameState, scene);
     
     console.log(`↩️ Player ${playerNum} exited teleport mode - can continue turn normally`);
     

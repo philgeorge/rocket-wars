@@ -17,7 +17,7 @@ import { getCurrentPlayer } from '../turnManager.js';
 
 /**
  * Setup centralized input management for the game scene
- * @param {Phaser.Scene & {turrets?: any[], currentPlayerTurret?: any, gameState?: any, cameraControls?: any, onShoot?: Function, startPlayerAiming?: Function, stopAimingAndShoot?: Function}} scene - The Phaser scene
+ * @param {Phaser.Scene & {turrets?: any[], currentPlayerTurret?: any, gameState?: any, cameraControls?: any, onShoot?: Function, startPlayerAiming?: Function, stopAimingAndShoot?: Function, environmentPanel?: any}} scene - The Phaser scene
  * @param {Function} onShoot - Callback function called when player shoots
  * @returns {InputManager} Input manager
  */
@@ -66,7 +66,10 @@ export function setupInputManager(scene, onShoot) {
             // Stop momentum when starting to aim for precision
             mouseInput.stopDragging();
         }
-        
+
+        // Update teleport button since aiming state changed
+        scene.environmentPanel?.updateTeleportButton?.(scene.gameState, scene);
+
         return true;
     };
     
@@ -83,8 +86,11 @@ export function setupInputManager(scene, onShoot) {
         if (scene.onShoot) {
             scene.onShoot(scene.currentPlayerTurret, shootData);
         }
-        
+
         scene.currentPlayerTurret = null;
+
+        // Update teleport button since aiming state changed
+        scene.environmentPanel?.updateTeleportButton?.(scene.gameState, scene);
     };
     
     // Store helper functions on the scene for use in input handlers
