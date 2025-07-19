@@ -10,6 +10,7 @@ import { getCurrentPlayer } from '../turnManager.js';
  * @property {Object} wasd - WASD key controls
  * @property {Phaser.Input.Keyboard.Key} enterKey - Enter key for keyboard aiming
  * @property {Phaser.Input.Keyboard.Key} escKey - ESC key to cancel aiming
+ * @property {Phaser.Input.Keyboard.Key} tKey - T key for teleportation
  * @property {Function} update - Update keyboard input state
  * @property {Function} disable - Disable keyboard input
  * @property {Function} enable - Re-enable keyboard input
@@ -17,7 +18,7 @@ import { getCurrentPlayer } from '../turnManager.js';
 
 /**
  * Setup keyboard input handling for the game scene
- * @param {Phaser.Scene & {turrets?: any[], currentPlayerTurret?: any, gameState?: any, cameraControls?: any, onShoot?: Function, startPlayerAiming?: Function, stopAimingAndShoot?: Function}} scene - The Phaser scene
+ * @param {Phaser.Scene & {turrets?: any[], currentPlayerTurret?: any, gameState?: any, gameEnded?: boolean, cameraControls?: any, onShoot?: Function, startPlayerAiming?: Function, stopAimingAndShoot?: Function}} scene - The Phaser scene
  * @param {Object} cameraControls - Camera controls object for coordination
  * @returns {KeyboardInputHandler} Keyboard input handler
  */
@@ -27,10 +28,11 @@ export function setupKeyboardInput(scene, cameraControls) {
     const wasd = scene.input.keyboard.addKeys('W,S,A,D');
     const enterKey = scene.input.keyboard.addKey('ENTER');
     const escKey = scene.input.keyboard.addKey('ESC');
+    const tKey = scene.input.keyboard.addKey('T');
     
     /**
      * Handle keyboard input updates
-     * @param {Phaser.Scene & {cameraControls?: any, currentPlayerTurret?: any, gameState?: any, turrets?: any[], onShoot?: Function, startPlayerAiming?: Function, stopAimingAndShoot?: Function}} scene - The Phaser scene
+     * @param {Phaser.Scene & {cameraControls?: any, currentPlayerTurret?: any, gameState?: any, turrets?: any[], gameEnded?: boolean, onShoot?: Function, startPlayerAiming?: Function, stopAimingAndShoot?: Function}} scene - The Phaser scene
      */
     const updateKeyboardInput = (scene) => {
         // Handle Enter key for keyboard aiming
@@ -43,6 +45,25 @@ export function setupKeyboardInput(scene, cameraControls) {
                 } else {
                     // Stop keyboard aiming and shoot using the helper function
                     scene.stopAimingAndShoot?.(true);
+                }
+            }
+        }
+        
+        // Handle T key for teleportation
+        if (tKey && scene.input.keyboard.enabled && scene.gameState && scene.turrets && !scene.gameEnded) {
+            // Check if T key was just pressed
+            if (Phaser.Input.Keyboard.JustDown(tKey)) {
+                // Only allow teleport initiation during active player turns
+                if (!scene.currentPlayerTurret && scene.gameState.playersAlive && scene.gameState.playersAlive.length > 0) {
+                    console.log('🔄 T key pressed - initiating teleport mode');
+                    // TODO: Call teleport initiation function (will be implemented in Step 3)
+                    // For now, just log the attempt
+                    const currentPlayerNum = getCurrentPlayer(scene.gameState);
+                    console.log(`📍 Player ${currentPlayerNum} wants to initiate teleport mode`);
+                } else if (scene.currentPlayerTurret) {
+                    console.log('🚫 T key blocked - player is currently aiming');
+                } else {
+                    console.log('🚫 T key blocked - no active player turn');
                 }
             }
         }
@@ -82,6 +103,7 @@ export function setupKeyboardInput(scene, cameraControls) {
         wasd,
         enterKey,
         escKey,
+        tKey,
         update: updateKeyboardInput,
         
         disable: () => {
@@ -93,6 +115,7 @@ export function setupKeyboardInput(scene, cameraControls) {
             scene.input.keyboard.removeKey('D');
             scene.input.keyboard.removeKey('ENTER');
             scene.input.keyboard.removeKey('ESC');
+            scene.input.keyboard.removeKey('T');
             
             // Also disable global keyboard capture to prevent interference with DOM inputs
             scene.input.keyboard.enabled = false;

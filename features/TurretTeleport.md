@@ -18,7 +18,7 @@ This is a feature that allows the user to move their turret to a different base,
 
 This feature requires integration with multiple existing systems and should be implemented in discrete steps to ensure safety and proper testing:
 
-### Step 1: Add T key detection to keyboard input system
+### Step 1: Add T key detection to keyboard input system ✅
 - Extend `keyboardInput.js` to detect "T" key press during active player turns
 - Add T key handling to the input manager's update loop
 - Prevent T key activation during aiming mode or when game is ended
@@ -26,7 +26,7 @@ This feature requires integration with multiple existing systems and should be i
 
 ### Step 2: Add teleport button to environment panel
 - Modify `environmentPanel.js` to include a "T" button for teleportation
-- Position the button appropriately within the existing environment panel layout
+- Position the button top-right, within the existing environment panel layout
 - Ensure button is only clickable during active player turns (not during aiming or game end)
 - Button should trigger the same teleport initiation as the T key
 
