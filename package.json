@@ -7,7 +7,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "check-syntax": "for file in src/*.js src/**/*.js; do echo \"Checking $file...\"; node --input-type=module -c < \"$file\" || echo \"Error in $file\"; done",
-    "check-file": "node --input-type=module -c <"
+    "check-file": "node --input-type=module -c <",
+    "update-version": "node update-version"
   },
   "repository": {
     "type": "git",

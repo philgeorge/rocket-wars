@@ -75,6 +75,9 @@ This file contains notes about my learnings from using an AI Agent to help me bu
 ## 18 July 2 hours
 - keyboard aiming feature implementation
 
+## 19 July 3 hours
+- half of teleport feature implementation
+
 # Odd Agent Behaviour
 
 - Choosing technology and shaping the look of the game went very well. This is kind of like competitor analysis and market research for a product.

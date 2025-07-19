@@ -18,7 +18,7 @@ import { getCurrentPlayer } from '../turnManager.js';
 
 /**
  * Setup keyboard input handling for the game scene
- * @param {Phaser.Scene & {turrets?: any[], currentPlayerTurret?: any, gameState?: any, gameEnded?: boolean, cameraControls?: any, onShoot?: Function, startPlayerAiming?: Function, stopAimingAndShoot?: Function}} scene - The Phaser scene
+ * @param {Phaser.Scene & {turrets?: any[], currentPlayerTurret?: any, gameState?: any, gameEnded?: boolean, cameraControls?: any, onShoot?: Function, startPlayerAiming?: Function, stopAimingAndShoot?: Function, enterTeleportMode?: Function, exitTeleportMode?: Function, isTeleportMode?: Function}} scene - The Phaser scene
  * @param {Object} cameraControls - Camera controls object for coordination
  * @returns {KeyboardInputHandler} Keyboard input handler
  */
@@ -32,7 +32,7 @@ export function setupKeyboardInput(scene, cameraControls) {
     
     /**
      * Handle keyboard input updates
-     * @param {Phaser.Scene & {cameraControls?: any, currentPlayerTurret?: any, gameState?: any, turrets?: any[], gameEnded?: boolean, onShoot?: Function, startPlayerAiming?: Function, stopAimingAndShoot?: Function}} scene - The Phaser scene
+     * @param {Phaser.Scene & {cameraControls?: any, currentPlayerTurret?: any, gameState?: any, turrets?: any[], gameEnded?: boolean, onShoot?: Function, startPlayerAiming?: Function, stopAimingAndShoot?: Function, enterTeleportMode?: Function, exitTeleportMode?: Function, isTeleportMode?: Function}} scene - The Phaser scene
      */
     const updateKeyboardInput = (scene) => {
         // Handle Enter key for keyboard aiming
@@ -49,21 +49,26 @@ export function setupKeyboardInput(scene, cameraControls) {
             }
         }
         
-        // Handle T key for teleportation
+        // Handle T key for teleportation toggle
         if (tKey && scene.input.keyboard.enabled && scene.gameState && scene.turrets && !scene.gameEnded) {
             // Check if T key was just pressed
             if (Phaser.Input.Keyboard.JustDown(tKey)) {
-                console.log('🔄 T key pressed - attempting teleport mode');
+                console.log('🔄 T key pressed - toggling teleport mode');
                 
-                // Call the teleport initiation function if available
-                if (/** @type {any} */ (scene).enterTeleportMode) {
-                    const success = /** @type {any} */ (scene).enterTeleportMode();
+                // Toggle teleport mode (same logic as the button)
+                if (scene.isTeleportMode && scene.isTeleportMode()) {
+                    // Currently in teleport mode - exit it
+                    const success = scene.exitTeleportMode();
                     if (success) {
-                        const currentPlayerNum = getCurrentPlayer(scene.gameState);
-                        console.log(`✅ Player ${currentPlayerNum} successfully entered teleport mode via T key`);
+                        console.log(`↩️ Player exited teleport mode via T key`);
                     }
                 } else {
-                    console.log('⚠️ enterTeleportMode function not available on scene');
+                    // Not in teleport mode - enter it
+                    const success = scene.enterTeleportMode();
+                    if (success) {
+                        const currentPlayerNum = getCurrentPlayer(scene.gameState);
+                        console.log(`✅ Player ${currentPlayerNum} entered teleport mode via T key`);
+                    }
                 }
             }
         }
@@ -75,13 +80,7 @@ export function setupKeyboardInput(scene, cameraControls) {
                 // First check for teleport mode cancellation
                 if (scene.gameState && scene.gameState.teleportMode) {
                     console.log('🚫 ESC key pressed - canceling teleport mode');
-                    
-                    // Call the teleport exit function if available
-                    if (/** @type {any} */ (scene).exitTeleportMode) {
-                        /** @type {any} */ (scene).exitTeleportMode();
-                    } else {
-                        console.log('⚠️ exitTeleportMode function not available on scene');
-                    }
+                    scene.exitTeleportMode();
                     
                 } else if (scene.currentPlayerTurret) {
                     // Cancel aiming if player is aiming
