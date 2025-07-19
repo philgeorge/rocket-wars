@@ -292,8 +292,10 @@ export function addPanelButton(scene, panel, config) {
         drawButton(false, isDisabled);
     });
     
-    buttonBg.on('pointerdown', () => {
+    buttonBg.on('pointerdown', (pointer, localX, localY, event) => {
         if (!isDisabled && onClick) {
+            // Stop the event from propagating to prevent global handlers from processing it
+            event.stopPropagation();
             onClick();
         }
     });
