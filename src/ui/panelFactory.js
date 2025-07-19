@@ -248,9 +248,13 @@ export function addPanelButton(scene, panel, config) {
     buttonText.setOrigin(0.5, 0.5);
     panel.add(buttonText);
     
-    // Make button interactive
-    const buttonHitArea = new Phaser.Geom.Rectangle(0, 0, width, height);
-    buttonBg.setInteractive(buttonHitArea, Phaser.Geom.Rectangle.Contains);
+    // Create invisible interactive zone for reliable click detection
+    const buttonZone = scene.add.zone(x + width/2, y + height/2, width, height);
+    buttonZone.setInteractive();
+    panel.add(buttonZone);
+    
+    // Ensure the zone has the same scroll factor as the panel (should inherit, but make sure)
+    buttonZone.setScrollFactor(0);
     
     // Button state management
     let isDisabled = false;
@@ -282,19 +286,19 @@ export function addPanelButton(scene, panel, config) {
     drawButton();
     
     // Button interaction handlers
-    buttonBg.on('pointerover', () => {
+    buttonZone.on('pointerover', () => {
         if (!isDisabled) {
             drawButton(true, false);
         }
     });
     
-    buttonBg.on('pointerout', () => {
+    buttonZone.on('pointerout', () => {
         drawButton(false, isDisabled);
     });
     
-    buttonBg.on('pointerdown', (pointer, localX, localY, event) => {
+    buttonZone.on('pointerdown', (pointer, localX, localY, event) => {
         if (!isDisabled && onClick) {
-            // Stop the event from propagating to prevent global handlers from processing it
+            // Stop the event from propagation to prevent global handlers from processing it
             event.stopPropagation();
             onClick();
         }
@@ -304,6 +308,7 @@ export function addPanelButton(scene, panel, config) {
     return {
         background: buttonBg,
         text: buttonText,
+        zone: buttonZone,
         draw: drawButton,
         setDisabled: (disabled) => {
             isDisabled = disabled;
@@ -316,6 +321,7 @@ export function addPanelButton(scene, panel, config) {
         destroy: () => {
             buttonBg.destroy();
             buttonText.destroy();
+            buttonZone.destroy();
         }
     };
 }

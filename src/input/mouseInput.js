@@ -93,50 +93,6 @@ export function setupMouseInput(scene, startPlayerAiming, stopAimingAndShoot) {
     
     // Mouse/touch controls for camera panning and turret interaction
     scene.input.on('pointerdown', (pointer) => {
-        // Check if clicking on environment panel teleport button
-        if (/** @type {any} */ (scene).environmentPanel && /** @type {any} */ (scene).environmentPanel.teleportButton) {
-            const panel = /** @type {any} */ (scene).environmentPanel;
-            const button = panel.teleportButton;
-            
-            // Calculate button world bounds
-            const buttonWorldX = panel.x + button.background.x;
-            const buttonWorldY = panel.y + button.background.y;
-            const buttonWidth = 24; // From button config
-            const buttonHeight = 24; // From button config
-            
-            // Check if pointer is within button bounds
-            const isOverButton = pointer.x >= buttonWorldX && 
-                               pointer.x <= buttonWorldX + buttonWidth &&
-                               pointer.y >= buttonWorldY && 
-                               pointer.y <= buttonWorldY + buttonHeight;
-            
-            if (isOverButton) {
-                // Directly call the teleport function since we know this is the T button
-                if (/** @type {any} */ (scene).enterTeleportMode) {
-                    /** @type {any} */ (scene).enterTeleportMode();
-                }
-                return; // Exit early
-            }
-        }
-        
-        // Check if the pointer is over any interactive UI elements
-        // If so, let the UI handle it and don't process world interactions
-        const objectsUnderPointer = scene.input.hitTestPointer(pointer);
-        if (objectsUnderPointer.length > 0) {
-            // Check if any of the objects are UI elements (have a parent container with scroll factor 0)
-            const isUIClick = objectsUnderPointer.some(obj => {
-                // Check if object or its parent container has scroll factor 0 (UI elements)
-                const gameObj = /** @type {any} */ (obj);
-                if (gameObj.scrollFactorX === 0 && gameObj.scrollFactorY === 0) return true;
-                if (gameObj.parentContainer && gameObj.parentContainer.scrollFactorX === 0 && gameObj.parentContainer.scrollFactorY === 0) return true;
-                return false;
-            });
-            
-            if (isUIClick) {
-                return; // Let UI elements handle their own events
-            }
-        }
-        
         // Only handle turret interactions if turrets exist (after player setup)
         /** @type {any} */
         let clickedTurret = null;

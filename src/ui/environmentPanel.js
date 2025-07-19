@@ -70,14 +70,12 @@ export function createEnvironmentPanel(scene, gameState) {
         height: buttonSize,
         text: 'T',
         onClick: () => {
-            console.log('🔄 Teleport button clicked - attempting teleport mode');
-            
             // Call the teleport initiation function if available
             if (/** @type {any} */ (scene).enterTeleportMode) {
                 const success = /** @type {any} */ (scene).enterTeleportMode();
                 if (success) {
                     const currentPlayerNum = getCurrentPlayer(gameState);
-                    console.log(`✅ Player ${currentPlayerNum} successfully entered teleport mode via button`);
+                    console.log(`✅ Player ${currentPlayerNum} entered teleport mode via button`);
                 }
             } else {
                 console.log('⚠️ enterTeleportMode function not available on scene');
