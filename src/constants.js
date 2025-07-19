@@ -22,9 +22,9 @@ export const TEAM_COLORS = {
         name: 'Yellow'
     },
     player3: {
-        hex: 0xe74c3c,     // Red - Phaser format
-        css: '#e74c3c',    // Red - CSS format
-        name: 'Red'
+        hex: 0xff8c00,     // Orange - Phaser format
+        css: '#ff8c00',    // Orange - CSS format
+        name: 'Orange'
     },
     player4: {
         hex: 0x2ecc71,     // Green - Phaser format
