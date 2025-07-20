@@ -234,6 +234,9 @@ function startSinglePlayerBaseSelection(scene, player, flatBases, availableBases
     setupBaseSelectionHandlers();
     setupKeyboardHandlers();
     
+    // Store cleanup function reference for external cancellation
+    scene.activeBaseSelectionCleanup = cleanupSelection;
+    
     // Handle ESC key for cancellation
     const escKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     escKey.on('down', () => {
@@ -456,6 +459,9 @@ function startSinglePlayerBaseSelection(scene, player, flatBases, availableBases
         
         // Reset selection state
         keyboardSelectedBaseIndex = -1;
+        
+        // Clear external cleanup reference
+        scene.activeBaseSelectionCleanup = null;
     }
 }
 

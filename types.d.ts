@@ -156,6 +156,9 @@ declare global {
     playerStatsPanel?: PlayerStatsPanel;
     resultsPanel?: ResultsPanel;
     
+    // Teleport state management
+    activeBaseSelectionCleanup?: (() => void) | null;
+    
     // Callback functions
     onShoot?: (turret: TurretContainer, shootData: { angle: number; power: number }) => void;
     startPlayerAiming?: (isKeyboardMode: boolean) => boolean;

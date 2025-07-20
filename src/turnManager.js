@@ -422,6 +422,12 @@ export function exitTeleportMode(gameState, scene = null) {
     gameState.teleportMode = false;
     gameState.teleportPlayerNum = null;
 
+    // Clean up any active base selection UI
+    if (scene && scene.activeBaseSelectionCleanup) {
+        console.log('🧹 Cleaning up active base selection UI');
+        scene.activeBaseSelectionCleanup();
+    }
+
     // Update teleport button since teleport state changed
     scene?.environmentPanel?.updateTeleportButton?.(gameState, scene);
     
@@ -518,10 +524,9 @@ function startTeleportBaseSelection(gameState, scene) {
     }
     
     // Start the teleport base selection process
-    initializeTeleportBaseSelection(scene, gameState, flatBases)
+    const baseSelectionPromise = initializeTeleportBaseSelection(scene, gameState, flatBases)
         .then((selection) => {
             console.log('✅ Teleport base selected:', selection);
-            // TODO: Move turret to new base and complete teleport
             handleTeleportBaseSelected(gameState, scene, selection);
         })
         .catch((error) => {
@@ -564,9 +569,6 @@ function handleTeleportBaseSelected(gameState, scene, selection) {
     gameState[currentPlayerKey].baseIndex = selection.baseIndex;
     
     console.log(`✅ Turret moved to (${newX}, ${newY}) - Base index updated to ${selection.baseIndex}`);
-    
-    // Focus camera on the moved turret
-    scene.cameras.main.pan(newX, newY - 100, 1000, 'Power2');
     
     // Complete the teleport (this ends the turn)
     completeTeleport(gameState, scene);
