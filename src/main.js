@@ -12,6 +12,7 @@ import { initializeBaseSelection } from './baseSelection.js';
 import { WORLD_HEIGHT, calculateWorldWidth } from './constants.js';
 import { setupCameraAndInput, updateKeyboardCamera, setupWorldBounds } from './camera.js';
 import { updateProjectiles } from './projectileManager.js';
+import { logDeviceInfo } from './deviceDetection.js';
 
 // Game configuration and world dimensions will be set from form
 let gameConfig = null;
@@ -31,6 +32,9 @@ initializeGameSetup().then((config) => {
  * Start the Phaser game with the configured parameters
  */
 function startGame() {
+    // Log device detection info for debugging and optimization
+    logDeviceInfo();
+    
     // Create Phaser game config with form parameters
     const config = {
         type: Phaser.AUTO,

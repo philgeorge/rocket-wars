@@ -3,6 +3,7 @@
 
 import { getTeamColorName, getTeamColorCSS } from '../constants.js';
 import { createBasePanel, addPanelText } from './panelFactory.js';
+import { shouldUseMobilePositioning } from '../deviceDetection.js';
 
 /**
  * Create a Phaser-based base selection panel for a specific player
@@ -93,9 +94,9 @@ export function positionBaseSelectionPanel(panel, screenWidth, isTeleportMode = 
     // Adjust Y position based on mode and screen size
     let panelY = 20; // Default: 20px from top
     
-    if (isTeleportMode && screenWidth < 750) {
+    if (isTeleportMode && shouldUseMobilePositioning()) {
         // On mobile devices during teleport, position lower to avoid overlap with environment panel
-        panelY+= 180; // Move down to avoid UI overlap
+        panelY += 180; // Move down to avoid UI overlap
         console.log(`📱 Positioning teleport panel lower for mobile (Y=${panelY})`);
     }
     
