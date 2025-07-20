@@ -9,11 +9,9 @@ import { shouldUseMobilePositioning } from '../deviceDetection.js';
  * Create a Phaser-based base selection panel for a specific player
  * @param {Phaser.Scene} scene - The Phaser scene
  * @param {Object} currentPlayer - Current player data
- * @param {number} playerIndex - Current player index (0-based)
- * @param {number} totalPlayers - Total number of players
  * @returns {Phaser.GameObjects.Container & {panelWidth?: number, panelHeight?: number}}
  */
-export function createBaseSelectionPanel(scene, currentPlayer, playerIndex, totalPlayers) {
+export function createBaseSelectionPanel(scene, currentPlayer) {
     console.log(`🎮 Creating base selection panel for ${currentPlayer.name}...`);
     
     // Create base panel using factory
@@ -22,12 +20,11 @@ export function createBaseSelectionPanel(scene, currentPlayer, playerIndex, tota
     // Get player-specific styling
     const playerColorName = getTeamColorName(currentPlayer.team);
     const playerColorCSS = getTeamColorCSS(currentPlayer.team);
-    const progressText = totalPlayers > 1 ? `(${playerIndex + 1} of ${totalPlayers}) ` : '';
 
     // Define text content for the panel
     const textItems = [
         {
-            text: `${progressText}${currentPlayer.name.toUpperCase()}`,
+            text: `${currentPlayer.name.toUpperCase()}`,
             style: {
                 fontSize: '1rem',
                 color: playerColorCSS,

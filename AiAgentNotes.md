@@ -78,7 +78,7 @@ This file contains notes about my learnings from using an AI Agent to help me bu
 ## 19 July 3 hours
 - half of teleport feature implementation
 
-## 20 July 3 hours
+## 20 July 5 hours
 - remaining teleport feature
 
 # Odd Agent Behaviour

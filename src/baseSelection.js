@@ -148,11 +148,14 @@ export function initializeTeleportBaseSelection(scene, gameState, flatBases) {
         const currentPlayerNum = getCurrentPlayer(gameState);
         const currentPlayerKey = `player${currentPlayerNum}`;
         
+        // Get player name from playerData array (playerData is an array indexed 0-based, playerNum is 1-based)
+        const playerName = scene.playerData?.[currentPlayerNum - 1]?.name || `Player ${currentPlayerNum}`;
+        
         // Create mock player object to reuse existing base selection logic
         /** @type {PlayerData} */
         const mockPlayer = {
             id: currentPlayerKey,
-            name: scene.playerData[currentPlayerKey]?.name || `Player ${currentPlayerNum}`,
+            name: playerName,
             team: currentPlayerKey,
             baseIndex: null,
             health: 100,
@@ -224,7 +227,7 @@ function startSinglePlayerBaseSelection(scene, player, flatBases, availableBases
     let resizeHandler = null;
     
     // Create and show panel
-    currentPanel = createBaseSelectionPanel(scene, player, 0, 1);
+    currentPanel = createBaseSelectionPanel(scene, player);
     positionBaseSelectionPanel(currentPanel, scene.cameras.main.width, isTeleportMode);
     
     // Handle window resize to reposition panel
