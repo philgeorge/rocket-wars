@@ -36,25 +36,19 @@ This feature requires integration with multiple existing systems and should be i
 - Integrate with existing turn timer (continues counting during teleport)
 - Handle ESC key cancellation to exit teleport mode and return to normal turn
 
-### Step 4: Modify base selection system for mid-game teleportation
+### Step 4: Modify base selection system for mid-game teleportation ✅
 - Extract reusable functions from `baseSelection.js` for single-player base selection
-- Create new function to handle teleport base selection (only current player, different panel positioning)
+- If needed, create new function to handle teleport base selection (only current player, different panel positioning)
 - Adapt base availability logic to exclude occupied bases during teleport
 - Ensure base selection panel positions lower on screen to avoid UI overlap
 
-### Step 5: Add mouse click detection for flat base teleportation
-- Extend `mouseInput.js` to detect clicks on flat base sections during teleport mode
-- Add collision detection for clicks on landscape flat bases using existing `flatBases` data
-- Ensure mouse teleport initiation only works for current player during their turn
-- Prevent conflicts with existing turret clicking and camera panning
-
-### Step 6: Implement turret movement and turn ending
+### Step 5: Implement turret movement and turn ending
 - Create function to move turret from current base to selected new base
 - Remove turret from old position and place on new base using existing turret placement logic
 - End current player's turn when teleport is completed (similar to shooting)
 - Update turret team references and ensure proper cleanup
 
-### Step 7: Handle edge cases and integration testing
+### Step 6: Handle edge cases and integration testing
 - Prevent teleport to the same base the turret is already on
 - Handle teleport timeout (turn timer runs out) by advancing to next player without moving
 - Ensure teleport mode is properly cancelled if ESC is pressed (player can continue with remaining turn time)

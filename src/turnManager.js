@@ -1,6 +1,8 @@
 // turnManager.js
 // Turn and round management system for Rocket Wars
 
+import { initializeTeleportBaseSelection } from './baseSelection.js';
+
 /**
  * Initialize game state with rounds and turns tracking
  * @param {Object} [config] - Game configuration from form
@@ -392,6 +394,8 @@ export function enterTeleportMode(gameState, scene) {
     console.log(`🔄 Player ${currentPlayer} entered teleport mode`);
     console.log(`Turn timer continues running: ${gameState.turnStartTime ? 'YES' : 'NO'}`);
     
+    startTeleportBaseSelection(gameState, scene);
+    
     return true;
 }
 
@@ -460,4 +464,76 @@ export function isTeleportMode(gameState) {
  */
 export function isPlayerInTeleportMode(gameState, playerNum) {
     return gameState.teleportMode && gameState.teleportPlayerNum === playerNum;
+}
+
+/**
+ * Start teleport base selection for the current player
+ * @param {Object} gameState - Game state object
+ * @param {Object} scene - Scene object with landscape data and turrets
+ */
+function startTeleportBaseSelection(gameState, scene) {
+    console.log('🔄 Starting teleport base selection...');
+    
+    // Get scene data needed for base selection
+    const sceneAny = /** @type {any} */ (scene);
+    const flatBases = sceneAny.landscapeData?.flatBases;
+    const turrets = sceneAny.turrets;
+    
+    if (!flatBases || !turrets) {
+        console.error('❌ Missing landscape data or turrets for teleport base selection');
+        exitTeleportMode(gameState, scene);
+        return;
+    }
+    
+    // Start the teleport base selection process
+    initializeTeleportBaseSelection(scene, gameState, flatBases, turrets)
+        .then((selection) => {
+            console.log('✅ Teleport base selected:', selection);
+            // TODO: Move turret to new base and complete teleport
+            handleTeleportBaseSelected(gameState, scene, selection);
+        })
+        .catch((error) => {
+            console.log('🚫 Teleport base selection cancelled or failed:', error.message);
+            // Exit teleport mode but don't advance turn (player can continue)
+            exitTeleportMode(gameState, scene);
+        });
+}
+
+/**
+ * Handle teleport base selection completion
+ * @param {Object} gameState - Game state object
+ * @param {Object} scene - Scene object
+ * @param {Object} selection - Selected base data {baseIndex, basePosition}
+ */
+function handleTeleportBaseSelected(gameState, scene, selection) {
+    const currentPlayerNum = getCurrentPlayer(gameState);
+    const currentPlayerKey = `player${currentPlayerNum}`;
+    
+    console.log(`🔄 Moving Player ${currentPlayerNum} turret to base ${selection.baseIndex}`);
+    
+    // Find current player's turret
+    const sceneAny = /** @type {any} */ (scene);
+    const turrets = sceneAny.turrets;
+    const currentTurret = turrets.find(turret => turret.team === currentPlayerKey);
+    
+    if (!currentTurret) {
+        console.error('❌ Could not find current player turret for teleportation');
+        exitTeleportMode(gameState, scene);
+        return;
+    }
+    
+    // Move turret to new position
+    const newX = selection.basePosition.x;
+    const newY = selection.basePosition.y - 20; // Offset for turret positioning
+    
+    currentTurret.x = newX;
+    currentTurret.y = newY;
+    
+    console.log(`✅ Turret moved to (${newX}, ${newY})`);
+    
+    // Focus camera on the moved turret
+    scene.cameras.main.pan(newX, newY - 100, 1000, 'Power2');
+    
+    // Complete the teleport (this ends the turn)
+    completeTeleport(gameState);
 }
