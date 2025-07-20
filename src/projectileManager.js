@@ -4,7 +4,7 @@
 import { updateProjectileTrail, drawProjectileTrail, checkProjectileCollisions, cleanupProjectile, calculateDamage, calculateAOEDamage, calculateVelocityFactor, createExplosion } from './projectile.js';
 import { applyDamage, getCurrentPlayer, advanceToNextPlayer, advanceToNextRound, shouldGameEnd, updateWindForNewTurn, removePlayer, startPlayerTurn, stopTurnTimer } from './turnManager.js';
 import { updateProjectileCamera } from './camera.js';
-import { handleGameEnd } from './main.js';
+import { handleGameEnd } from './gameLifecycle.js';
 
 /**
  * Update all projectiles in the scene

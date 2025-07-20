@@ -4,7 +4,7 @@
 import { setupWorldLandscape } from './landscape.js';
 import { placeTurretsOnBases } from './turret.js';
 import { createProjectile } from './projectile.js';
-import { createEnvironmentPanel, createPlayerStatsPanel, positionEnvironmentPanel, positionPlayerStatsPanel, createResultsPanel, positionResultsPanel, setupResultsPanelRestart, createAimingInstructionsPanel, hideAimingInstructionsPanel, showAimingInstructionsIfNeeded, positionPanel } from './ui/index.js';
+import { createEnvironmentPanel, createPlayerStatsPanel, positionEnvironmentPanel, positionPlayerStatsPanel, createAimingInstructionsPanel, hideAimingInstructionsPanel, showAimingInstructionsIfNeeded, positionPanel } from './ui/index.js';
 import { createGameState, updateWindForNewTurn, startPlayerTurn, getCurrentPlayer, advanceToNextPlayer, advanceToNextRound, shouldGameEnd, getRemainingTurnTime, stopTurnTimer, getRankedPlayers, enterTeleportMode, exitTeleportMode, completeTeleport, isTeleportMode } from './turnManager.js';
 import { focusCameraOnActivePlayer } from './projectileManager.js';
 import { initializeGameSetup } from './gameSetup.js';
@@ -13,6 +13,7 @@ import { WORLD_HEIGHT, calculateWorldWidth } from './constants.js';
 import { setupCameraAndInput, updateKeyboardCamera, setupWorldBounds } from './camera.js';
 import { updateProjectiles } from './projectileManager.js';
 import { logDeviceInfo } from './deviceDetection.js';
+import { handleGameEnd } from './gameLifecycle.js';
 
 // Game configuration and world dimensions will be set from form
 let gameConfig = null;
@@ -130,48 +131,6 @@ function shootFromTurret(scene, turret, shootData) {
     // Update teleport button since projectiles are now in flight
     scene.environmentPanel?.updateTeleportButton?.(scene.gameState, scene);
 
-}
-
-/**
- * Handle end of game - show results panel and focus on winner
- * @param {any} scene - The Phaser scene
- * @param {string} reason - Reason for game end ('max_rounds' or 'last_player')
- */
-export function handleGameEnd(scene, reason) {
-    console.log(`🏁 Game ended: ${reason}`);
-    
-    // Set game ended flag for keyboard input handling
-    scene.gameEnded = true;
-    
-    // Update teleport button to disable it since game has ended
-    scene.environmentPanel?.updateTeleportButton?.(scene.gameState, scene);
-    
-    // Stop any active turn timer
-    stopTurnTimer(scene.gameState);
-    
-    // Hide aiming instructions panel if it's still visible
-    if (scene.aimingInstructionsPanel) {
-        hideAimingInstructionsPanel(scene.aimingInstructionsPanel);
-    }
-    
-    // Create and show results panel
-    scene.resultsPanel = createResultsPanel(scene, scene.gameState, scene.playerData);
-    positionResultsPanel(scene.resultsPanel, scene.cameras.main.width, scene.cameras.main.height);
-    
-    // Set up restart functionality
-    setupResultsPanelRestart(scene, scene.resultsPanel);
-    
-    // Focus camera on the winner (first player in results)
-    const winner = getRankedPlayers(scene.gameState, scene.playerData)[0];
-    if (winner && scene.turrets) {
-        const winnerTurret = scene.turrets.find(turret => turret.team === `player${winner.number}`);
-        if (winnerTurret) {
-            // Smooth pan to winner's turret
-            scene.cameras.main.pan(winnerTurret.x, winnerTurret.y - 100, 2000, 'Power2');
-        }
-    }
-    
-    console.log(`🎊 Game complete! Winner: Player ${winner ? winner.number : 'Unknown'}`);
 }
 
 /**
