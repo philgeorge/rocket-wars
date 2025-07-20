@@ -124,13 +124,9 @@ export function setupResultsPanelRestart(scene, panel) {
         }
     };
     
-    // Handle both click and key input
-    const handleInput = (event) => {
+    // Handle both click and any ey input
+    const handleInput = () => {
         if (!restarted) {
-            // For keyboard events, only respond to Enter key
-            if (event.code && event.code !== 'Enter') {
-                return;
-            }
             handleRestart();
         }
     };

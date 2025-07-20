@@ -175,13 +175,9 @@ export function showAimingInstructionsIfNeeded(scene, onDismiss = null) {
         // Auto-hide after 10 seconds (increased from 5)
         const autoHideTimer = scene.time.delayedCall(20000, hideInstructions);
         
-        // Handle both click and key input
-        const handleInput = (event) => {
+        // Handle both click and any key input
+        const handleInput = () => {
             if (!dismissed) {
-                // For keyboard events, only respond to Enter key
-                if (event.code && event.code !== 'Enter') {
-                    return;
-                }
                 autoHideTimer.remove(); // Cancel auto-hide timer
                 hideInstructions();
             }
