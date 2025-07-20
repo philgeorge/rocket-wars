@@ -132,10 +132,9 @@ function startBaseSelection(scene, players, flatBases, resolve) {
  * @param {Scene} scene - The Phaser scene instance with custom properties
  * @param {GameState} gameState - Current game state
  * @param {FlatBase[]} flatBases - Array of available flat base locations
- * @param {TurretContainer[]} existingTurrets - Array of existing turrets to exclude their bases
  * @returns {Promise<{baseIndex: number, basePosition: Object}>} Promise that resolves with selected base data
  */
-export function initializeTeleportBaseSelection(scene, gameState, flatBases, existingTurrets) {
+export function initializeTeleportBaseSelection(scene, gameState, flatBases) {
     console.log('🔄 Starting teleport base selection...');
     
     return new Promise((resolve, reject) => {
@@ -161,24 +160,29 @@ export function initializeTeleportBaseSelection(scene, gameState, flatBases, exi
             turret: null
         };
         
-        // Calculate available bases (exclude occupied ones except current player's)
-        const currentTurret = existingTurrets.find(turret => turret.team === currentPlayerKey);
-        const occupiedBaseIndices = existingTurrets
-            .filter(turret => turret !== currentTurret)
-            .map(turret => {
-                return flatBases.findIndex(base => {
-                    const baseCenter = calculateBaseCenterFromPoints(base, landscapePoints);
-                    const distance = Phaser.Math.Distance.Between(turret.x, turret.y + 20, baseCenter.x, baseCenter.y);
-                    return distance < 50;
-                });
-            })
-            .filter(index => index !== -1);
+        // Calculate available bases (exclude occupied ones and current player's current base)
+        // Use game state to get occupied base indices - much simpler than distance calculations!
+        const occupiedBaseIndices = [];
+        
+        // Check each player's current base index
+        for (let i = 1; i <= gameState.numPlayers; i++) {
+            const playerKey = `player${i}`;
+            const playerState = gameState[playerKey];
+            
+            // Skip eliminated players (health <= 0 or not in playersAlive)
+            if (playerState.health <= 0 || !gameState.playersAlive.includes(i)) continue;
+            
+            // Add their base index to occupied list (including current player's own base)
+            if (playerState.baseIndex !== null && playerState.baseIndex !== undefined) {
+                occupiedBaseIndices.push(playerState.baseIndex);
+            }
+        }
         
         const availableBases = flatBases
             .map((_, index) => index)
             .filter(index => !occupiedBaseIndices.includes(index));
         
-        console.log(`🔄 Available bases for teleport: ${availableBases.length}/${flatBases.length}`);
+        console.log(`🔄 Available bases for teleport: ${availableBases.length}/${flatBases.length} (occupied: [${occupiedBaseIndices.join(', ')}])`);
         
         if (availableBases.length === 0) {
             console.log('🚫 No available bases for teleportation');

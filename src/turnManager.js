@@ -151,6 +151,13 @@ export function removePlayer(gameState, playerNum) {
     if (playerIndex !== -1) {
         gameState.playersAlive.splice(playerIndex, 1);
         
+        // Clear the eliminated player's base index to free up their base for teleportation
+        const playerKey = `player${playerNum}`;
+        if (gameState[playerKey]) {
+            gameState[playerKey].baseIndex = null;
+            console.log(`📍 Cleared base index for eliminated Player ${playerNum}`);
+        }
+        
         // Adjust current player index if needed
         if (playerIndex < gameState.currentPlayerIndex) {
             // If we removed a player before the current player, shift the index down by 1
@@ -476,16 +483,15 @@ function startTeleportBaseSelection(gameState, scene) {
     
     // Get scene data needed for base selection
     const flatBases = scene.landscapeData?.flatBases;
-    const turrets = scene.turrets;
     
-    if (!flatBases || !turrets) {
-        console.error('❌ Missing landscape data or turrets for teleport base selection');
+    if (!flatBases) {
+        console.error('❌ Missing landscape data for teleport base selection');
         exitTeleportMode(gameState, scene);
         return;
     }
     
     // Start the teleport base selection process
-    initializeTeleportBaseSelection(scene, gameState, flatBases, turrets)
+    initializeTeleportBaseSelection(scene, gameState, flatBases)
         .then((selection) => {
             console.log('✅ Teleport base selected:', selection);
             // TODO: Move turret to new base and complete teleport
@@ -527,7 +533,10 @@ function handleTeleportBaseSelected(gameState, scene, selection) {
     currentTurret.x = newX;
     currentTurret.y = newY;
     
-    console.log(`✅ Turret moved to (${newX}, ${newY})`);
+    // Update base index in game state
+    gameState[currentPlayerKey].baseIndex = selection.baseIndex;
+    
+    console.log(`✅ Turret moved to (${newX}, ${newY}) - Base index updated to ${selection.baseIndex}`);
     
     // Focus camera on the moved turret
     scene.cameras.main.pan(newX, newY - 100, 1000, 'Power2');

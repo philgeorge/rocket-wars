@@ -251,6 +251,18 @@ function create() {
         this.gameState = createGameState(gameConfig);
         console.log('🎮 Game state initialized:', this.gameState);
         
+        // Sync base indices from player data to game state
+        playerData.forEach((player, index) => {
+            if (player.baseIndex !== null && player.baseIndex !== undefined) {
+                const playerNum = index + 1;
+                const playerKey = `player${playerNum}`;
+                if (this.gameState[playerKey]) {
+                    this.gameState[playerKey].baseIndex = player.baseIndex;
+                    console.log(`📍 Player ${playerNum} base index synced: ${player.baseIndex}`);
+                }
+            }
+        });
+        
         // Add teleport management functions to scene for easy access
         /** @type {any} */ (this).enterTeleportMode = () => enterTeleportMode(this.gameState, this);
         /** @type {any} */ (this).exitTeleportMode = () => exitTeleportMode(this.gameState, this);

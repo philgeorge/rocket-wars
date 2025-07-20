@@ -17,6 +17,7 @@ declare global {
     health: number; // Player health (0-100)
     kills: number; // Number of kills
     deaths: number; // Number of deaths
+    baseIndex?: number | null; // Current base index (null if eliminated/not placed)
   }
   
   interface GameState {
