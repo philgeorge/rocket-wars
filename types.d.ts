@@ -45,9 +45,14 @@ declare global {
   }
   
   interface PlayerData {
-    name: string;
-    color?: string;
-    baseIndex?: number | null;
+    id?: string; // Player identifier (player1, player2, etc.)
+    name: string; // User-entered name
+    color?: string; // Player color
+    team?: string; // Team identifier for colors
+    baseIndex?: number | null; // Index of chosen flat base
+    basePosition?: { x: number; y: number }; // Calculated base center position
+    health?: number; // Player health
+    turret?: TurretContainer | null; // Turret object reference
   }
   
   interface FlatBase {

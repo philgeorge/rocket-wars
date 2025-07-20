@@ -10,20 +10,9 @@ import { getCurrentPlayer } from './turnManager.js';
  * Base selection stage state management
  * @typedef {Object} SetupState
  * @property {number} currentPlayerIndex - Current player being processed (0-based)
- * @property {Array} players - Array of player data objects
- * @property {Array<number>} availableBases - Array of unused flat base indices
+ * @property {PlayerData[]} players - Array of player data objects
+ * @property {number[]} availableBases - Array of unused flat base indices
  * @property {boolean} isComplete - Whether all players have completed base selection
- */
-
-/**
- * Player data structure
- * @typedef {Object} PlayerData
- * @property {string} id - Player identifier (player1, player2, etc.)
- * @property {string} name - User-entered name (max 10 chars)
- * @property {string} team - Team identifier for colors
- * @property {number|null} baseIndex - Index of chosen flat base
- * @property {number} health - Starting health
- * @property {Object|null} turret - Will hold turret object reference
  */
 
 /**
@@ -66,8 +55,8 @@ export function initializeBaseSelection(scene, gameConfig, flatBases) {
 /**
  * Start the base selection process using Phaser panels
  * @param {Scene} scene - The Phaser scene with custom properties
- * @param {Array} players - Array of player data
- * @param {Array} flatBases - Array of available flat base locations
+ * @param {PlayerData[]} players - Array of player data
+ * @param {FlatBase[]} flatBases - Array of available flat base locations
  * @param {Function} resolve - Promise resolve function
  */
 function startBaseSelection(scene, players, flatBases, resolve) {
@@ -162,9 +151,14 @@ export function initializeTeleportBaseSelection(scene, gameState, flatBases, exi
         const currentPlayerKey = `player${currentPlayerNum}`;
         
         // Create mock player object to reuse existing base selection logic
+        /** @type {PlayerData} */
         const mockPlayer = {
+            id: currentPlayerKey,
             name: `Player ${currentPlayerNum}`,
-            team: currentPlayerKey
+            team: currentPlayerKey,
+            baseIndex: null,
+            health: 100,
+            turret: null
         };
         
         // Calculate available bases (exclude occupied ones except current player's)
@@ -209,12 +203,12 @@ export function initializeTeleportBaseSelection(scene, gameState, flatBases, exi
 
 /**
  * Reusable single-player base selection logic
- * @param {Phaser.Scene} scene - The Phaser scene
- * @param {Object} player - Player data object
- * @param {Array} flatBases - Array of flat base locations
- * @param {Array} availableBases - Array of available base indices
- * @param {Array} landscapePoints - Landscape points for calculations
- * @param {Object} callbacks - Callback functions for completion/cancellation
+ * @param {Scene} scene - The Phaser scene
+ * @param {PlayerData} player - Player data object
+ * @param {FlatBase[]} flatBases - Array of flat base locations
+ * @param {number[]} availableBases - Array of available base indices
+ * @param {Array<{x: number, y: number}>} landscapePoints - Landscape points for calculations
+ * @param {{onBaseSelected: Function, onCancelled: Function, isTeleportMode?: boolean}} callbacks - Callback functions for completion/cancellation
  */
 function startSinglePlayerBaseSelection(scene, player, flatBases, availableBases, landscapePoints, callbacks) {
     // Shared state management
@@ -463,9 +457,9 @@ function startSinglePlayerBaseSelection(scene, player, flatBases, availableBases
 
 /**
  * Helper function to calculate base center from landscape points (shared version)
- * @param {Object} base - Base object with start/end indices
- * @param {Array} landscapePoints - Array of landscape points
- * @returns {Object} Base center position {x, y}
+ * @param {FlatBase} base - Base object with start/end indices
+ * @param {Array<{x: number, y: number}>} landscapePoints - Array of landscape points
+ * @returns {{x: number, y: number}} Base center position
  */
 function calculateBaseCenterFromPoints(base, landscapePoints) {
     const startPoint = landscapePoints[base.start];
