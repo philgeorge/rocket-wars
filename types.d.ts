@@ -160,6 +160,7 @@ declare global {
     onShoot?: (turret: TurretContainer, shootData: { angle: number; power: number }) => void;
     startPlayerAiming?: (isKeyboardMode: boolean) => boolean;
     stopAimingAndShoot?: (isKeyboardMode: boolean) => void;
+    handleTurnTimeout?: () => void;
   }
 }
 

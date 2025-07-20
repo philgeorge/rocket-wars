@@ -43,15 +43,14 @@ This feature requires integration with multiple existing systems and should be i
 - Ensure base selection panel positions lower on screen to avoid UI overlap
 
 ### Step 5: Implement turret movement and turn ending
-- Create function to move turret from current base to selected new base
-- Remove turret from old position and place on new base using existing turret placement logic
 - End current player's turn when teleport is completed (similar to shooting)
-- Update turret team references and ensure proper cleanup
+- Properly cancel base selection when teleport mode is exited via T button, T key, or ESC key (player can continue with remaining turn time)
+- Ensure base selection highlights and UI are cleaned up when cancelling teleport mode
+- Verify turret movement integration works correctly with turn management
 
 ### Step 6: Handle edge cases and integration testing
 - Prevent teleport to the same base the turret is already on
 - Handle teleport timeout (turn timer runs out) by advancing to next player without moving
-- Ensure teleport mode is properly cancelled if ESC is pressed (player can continue with remaining turn time)
 - Test interaction with projectile collisions and game end conditions
 - Verify teleport works correctly with 2, 3, and 4 player games
 - Test that "T" button in environment panel works identically to T key press

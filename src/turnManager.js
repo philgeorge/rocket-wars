@@ -433,9 +433,10 @@ export function exitTeleportMode(gameState, scene = null) {
 /**
  * Complete teleport and end current player's turn
  * @param {Object} gameState - Game state object
+ * @param {Scene} scene - Scene object for UI updates and turn progression
  * @returns {boolean} True if teleport was completed successfully
  */
-export function completeTeleport(gameState) {
+export function completeTeleport(gameState, scene) {
     if (!gameState.teleportMode) {
         console.log('🚫 Cannot complete teleport - not in teleport mode');
         return false;
@@ -444,14 +445,40 @@ export function completeTeleport(gameState) {
     const playerNum = gameState.teleportPlayerNum;
     
     // Exit teleport mode
-    exitTeleportMode(gameState);
+    exitTeleportMode(gameState, scene);
     
     // Mark turn as completed (similar to firing)
     gameState.hasPlayerFiredThisTurn = true;
     
-    console.log(`✅ Player ${playerNum} completed teleport - turn ended`);
+    console.log(`✅ Player ${playerNum} completed teleport - ending turn`);
+    
+    // Advance to next player (similar to projectile impact logic)
+    // Use a small delay for smoother transition
+    scene.time.delayedCall(500, () => {
+        handleTurnAdvancement(gameState, scene);
+    });
     
     return true;
+}
+
+/**
+ * Handle turn advancement after teleport completion
+ * @param {Object} gameState - Game state object
+ * @param {Scene} scene - Scene object for UI updates
+ */
+function handleTurnAdvancement(gameState, scene) {
+    // Use the existing turn timeout handler from main.js scene
+    // This already handles all game end checks, round progression, UI updates, etc.
+    const timeoutHandler = scene.handleTurnTimeout;
+    
+    if (timeoutHandler) {
+        console.log('🎯 Using existing turn timeout handler for teleport advancement');
+        timeoutHandler();
+    } else {
+        console.warn('⚠️ No turn timeout handler found on scene - teleport advancement may not work properly');
+        // Fallback: at least advance to next player
+        advanceToNextPlayer(gameState);
+    }
 }
 
 /**
@@ -542,5 +569,5 @@ function handleTeleportBaseSelected(gameState, scene, selection) {
     scene.cameras.main.pan(newX, newY - 100, 1000, 'Power2');
     
     // Complete the teleport (this ends the turn)
-    completeTeleport(gameState);
+    completeTeleport(gameState, scene);
 }
