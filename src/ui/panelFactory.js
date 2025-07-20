@@ -1,6 +1,8 @@
 // panelFactory.js
 // Base panel creation utilities for consistent UI panels
 
+import { isTouchDevice } from '../deviceDetection.js';
+
 /**
  * Default panel styling options
  */
@@ -78,7 +80,7 @@ export function createBasePanel(scene, options = {}) {
  * Add text content to a panel with automatic sizing
  * @param {Phaser.Scene} scene - The Phaser scene
  * @param {Phaser.GameObjects.Container} panel - The panel container
- * @param {Array<{key: string, text: string, style: Object, x?: number, y?: number}>} textItems - Text configuration
+ * @param {Array<{key?: string, text: string, style?: Object, x?: number, y?: number}>} textItems - Text configuration (key and style are optional, will auto-generate key and use default style if not provided)
  * @param {Object} [options] - Layout options
  * @param {number} [options.startX=10] - Starting X position
  * @param {number} [options.startY=10] - Starting Y position
@@ -100,16 +102,47 @@ export function addPanelText(scene, panel, textItems, options = {}) {
     let currentY = startY;
     let maxTextWidth = 0;
     
-    // Create text elements
-    textItems.forEach(item => {
+    // Get current touch device status
+    const isTouch = isTouchDevice();
+    const keyboardWords = ['keyboard', 'Tab', 'Enter', 'ESC', 'key', 'keys'];
+    
+    // Filter text items based on touchDevice property
+    const filteredTextItems = textItems.filter(item => {
+        if (isTouch) {
+            // probably no keyboard, so don't show keyboard instructions
+            if (keyboardWords.some(word => new RegExp(`\\b${word}\\b`, 'i').test(item.text))) {
+                console.log(`📜 Filtering out keyboard instruction: ${item.text}`);
+                return false;
+            }
+        }
+        return true;
+    });
+    console.log(`📜 Adding ${filteredTextItems} text items to panel (touch: ${isTouch})`);
+
+    // modify words in instructions to suit touch devices over mouse
+    const wordReplacements = {
+        "click": "tap",
+        "Click": "Tap"
+    }
+
+    // Create text elements for filtered items
+    filteredTextItems.forEach((item, index) => {
         const x = item.x !== undefined ? item.x : startX;
         const y = item.y !== undefined ? item.y : currentY;
-        
-        const textElement = scene.add.text(x, y, item.text, item.style);
+
+        // Replace mouse-specific words with touch-friendly alternatives on touch devices
+        if (isTouch) {
+            for (const [original, replacement] of Object.entries(wordReplacements)) {
+                item.text = item.text.replace(new RegExp(`\\b${original}\\b`, 'g'), replacement);
+            }
+        }
+
+        const textElement = scene.add.text(x, y, item.text, item.style || {});
         panel.add(textElement);
         
-        // Store reference by key
-        textElements[item.key] = textElement;
+        // Store reference by key (auto-generate if not provided)
+        const elementKey = item.key || `text_${index}`;
+        textElements[elementKey] = textElement;
         
         // Track maximum width
         const textWidth = textElement.width + x;

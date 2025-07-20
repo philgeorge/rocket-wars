@@ -22,13 +22,12 @@ export function createBaseSelectionPanel(scene, currentPlayer, playerIndex, tota
     // Get player-specific styling
     const playerColorName = getTeamColorName(currentPlayer.team);
     const playerColorCSS = getTeamColorCSS(currentPlayer.team);
-    const progressText = `(${playerIndex + 1} of ${totalPlayers})`;
-    
+    const progressText = totalPlayers > 1 ? `(${playerIndex + 1} of ${totalPlayers}) ` : '';
+
     // Define text content for the panel
     const textItems = [
         {
-            key: 'title',
-            text: `${progressText} ${currentPlayer.name.toUpperCase()}`,
+            text: `${progressText}${currentPlayer.name.toUpperCase()}`,
             style: {
                 fontSize: '1rem',
                 color: playerColorCSS,
@@ -36,7 +35,6 @@ export function createBaseSelectionPanel(scene, currentPlayer, playerIndex, tota
             }
         },
         {
-            key: 'instruction1',
             text: `Click a ${playerColorName.toLowerCase()} circle`,
             style: {
                 fontSize: '1rem',
@@ -44,16 +42,14 @@ export function createBaseSelectionPanel(scene, currentPlayer, playerIndex, tota
             }
         },
         {
-            key: 'instruction2',
-            text: `to position your base,`,
+            text: `to position your base.`,
             style: {
                 fontSize: '1rem',
                 color: playerColorCSS
             }
         },
         {
-            key: 'instruction3',
-            text: `or use Tab and Enter keys.`,
+            text: `Or use Tab and Enter keys.`,
             style: {
                 fontSize: '1rem',
                 color: playerColorCSS

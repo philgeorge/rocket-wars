@@ -22,7 +22,6 @@ export function createResultsPanel(scene, gameState, playerData = null) {
     // Define text content starting with title
     const textItems = [
         {
-            key: 'title',
             text: 'GAME RESULTS',
             style: {
                 fontSize: '1.2rem',
@@ -66,7 +65,6 @@ export function createResultsPanel(scene, gameState, playerData = null) {
         const playerName = player.name || `PLAYER ${player.number}`;
         
         textItems.push({
-            key: `player${player.number}`,
             text: `${position}. ${statusIcon} ${playerName} (${player.health}%)`,
             style: {
                 fontSize: '1rem',
@@ -78,8 +76,15 @@ export function createResultsPanel(scene, gameState, playerData = null) {
     
     // Add restart instruction
     textItems.push({
-        key: 'restart',
-        text: 'Click or press Enter to restart...',
+        text: 'Click to restart.',
+        style: {
+            fontSize: '0.9rem',
+            color: '#888888',
+            fontStyle: 'italic'
+        }
+    },
+    {
+        text: 'Or press any key.',
         style: {
             fontSize: '0.9rem',
             color: '#888888',
@@ -88,14 +93,11 @@ export function createResultsPanel(scene, gameState, playerData = null) {
     });
     
     // Add text elements and auto-size panel
-    const textElements = addPanelText(scene, panel, textItems, {
+    addPanelText(scene, panel, textItems, {
         minWidth: 250,
         maxWidth: 400,
         lineHeight: 22
     });
-    
-    // Store text elements reference
-    /** @type {any} */ (panel).textElements = textElements;
     
     return /** @type {any} */ (panel);
 }

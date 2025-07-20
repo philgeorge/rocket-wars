@@ -152,7 +152,7 @@ export function initializeTeleportBaseSelection(scene, gameState, flatBases) {
         /** @type {PlayerData} */
         const mockPlayer = {
             id: currentPlayerKey,
-            name: `Player ${currentPlayerNum}`,
+            name: scene.playerData[currentPlayerKey]?.name || `Player ${currentPlayerNum}`,
             team: currentPlayerKey,
             baseIndex: null,
             health: 100,

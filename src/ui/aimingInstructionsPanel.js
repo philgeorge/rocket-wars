@@ -17,7 +17,6 @@ export function createAimingInstructionsPanel(scene) {
     // Define text content for the panel
     const textItems = [
         {
-            key: 'title',
             text: 'AIMING CONTROLS',
             style: {
                 fontSize: '1.2rem',
@@ -26,23 +25,20 @@ export function createAimingInstructionsPanel(scene) {
             }
         },
         {
-            key: 'instruction1',
-            text: 'Mouse: Click and drag,',
+            text: 'Click and drag,',
             style: {
                 fontSize: '1rem',
                 color: '#cccccc'
             }
         },
         {
-            key: 'instruction2',
-            text: 'then release to fire',
+            text: 'then release to fire.',
             style: {
                 fontSize: '1rem',
                 color: '#cccccc'
             }
         },
         {
-            key: 'instruction3',
             text: 'Keyboard: Enter and arrow keys,',
             style: {
                 fontSize: '1rem',
@@ -50,7 +46,6 @@ export function createAimingInstructionsPanel(scene) {
             }
         },
         {
-            key: 'instruction4',
             text: 'then Enter again to fire!',
             style: {
                 fontSize: '1rem',
@@ -58,7 +53,6 @@ export function createAimingInstructionsPanel(scene) {
             }
         },
         {
-            key: 'instruction5',
             text: 'ESC to cancel aiming.',
             style: {
                 fontSize: '1rem',
@@ -66,16 +60,42 @@ export function createAimingInstructionsPanel(scene) {
             }
         },
         {
-            key: 'dismiss',
-            text: '',
+            text: ''
+        },
+        {
+            text: 'Click "T" button to teleport',
             style: {
                 fontSize: '0.9rem',
-                color: '#888888'
+                color: '#00ff00'
             }
         },
         {
-            key: 'dismissInstruction',
-            text: 'Click or press Enter to continue...',
+            text: '(and again to cancel).',
+            style: {
+                fontSize: '0.9rem',
+                color: '#00ff00'
+            }
+        },
+        {
+            text: 'Or press "T" key (again to cancel).',
+            style: {
+                fontSize: '0.9rem',
+                color: '#00ff00'
+            }
+        },
+        {
+            text: ''
+        },
+        {
+            text: 'Click to continue.',
+            style: {
+                fontSize: '0.9rem',
+                color: '#888888',
+                fontStyle: 'italic'
+            }
+        },
+        {
+            text: 'Or press any key.',
             style: {
                 fontSize: '0.9rem',
                 color: '#888888',

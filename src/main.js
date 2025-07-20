@@ -270,7 +270,7 @@ function create() {
         // Add teleport management functions to scene for easy access
         /** @type {any} */ (this).enterTeleportMode = () => enterTeleportMode(this.gameState, this);
         /** @type {any} */ (this).exitTeleportMode = () => exitTeleportMode(this.gameState, this);
-        /** @type {any} */ (this).completeTeleport = () => completeTeleport(this.gameState);
+        /** @type {any} */ (this).completeTeleport = () => completeTeleport(this.gameState, this);
         /** @type {any} */ (this).isTeleportMode = () => isTeleportMode(this.gameState);
         
         this.environmentPanel = createEnvironmentPanel(this, this.gameState);
