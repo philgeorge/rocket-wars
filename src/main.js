@@ -137,11 +137,14 @@ function shootFromTurret(scene, turret, shootData) {
  * @param {any} scene - The Phaser scene
  * @param {string} reason - Reason for game end ('max_rounds' or 'last_player')
  */
-function handleGameEnd(scene, reason) {
+export function handleGameEnd(scene, reason) {
     console.log(`🏁 Game ended: ${reason}`);
     
     // Set game ended flag for keyboard input handling
     scene.gameEnded = true;
+    
+    // Update teleport button to disable it since game has ended
+    scene.environmentPanel?.updateTeleportButton?.(scene.gameState, scene);
     
     // Stop any active turn timer
     stopTurnTimer(scene.gameState);
