@@ -7,6 +7,78 @@
 declare global {
   const Phaser: typeof import('phaser');
   
+  // Game state interfaces
+  interface WindState {
+    current: number; // Current wind value (-100 to +100)
+    variation: number; // Wind variation percentage (0-100%)
+  }
+  
+  interface PlayerState {
+    health: number; // Player health (0-100)
+    kills: number; // Number of kills
+    deaths: number; // Number of deaths
+  }
+  
+  interface GameState {
+    // Environment settings
+    wind: WindState;
+    gravity: number;
+    numPlayers: number;
+    
+    // Rounds and turns tracking
+    currentRound: number;
+    maxRounds: number;
+    currentPlayerIndex: number; // 0-based index into playersAlive array
+    playersAlive: number[]; // Array of player numbers still in the game
+    turnTimeLimit: number; // Turn time limit in seconds
+    turnStartTime: number | null; // Timestamp when current turn began
+    hasPlayerFiredThisTurn: boolean; // Prevent multiple shots per turn
+    turnTimer: any; // Timer ID for countdown
+    lastRemainingTime: number | null; // Last remaining time when timer was stopped
+    
+    // Teleport state management
+    teleportMode: boolean; // True when current player is in teleport mode
+    teleportPlayerNum: number | null; // Player number who initiated teleport
+    
+    // Dynamic player data (player1, player2, etc.)
+    [key: `player${number}`]: PlayerState;
+  }
+  
+  interface PlayerData {
+    name: string;
+    color?: string;
+    baseIndex?: number | null;
+  }
+  
+  interface FlatBase {
+    start: number; // Starting point index in landscape
+    end: number; // Ending point index in landscape
+  }
+  
+  interface LandscapeData {
+    points: Array<{ x: number; y: number }>;
+    flatBases: FlatBase[];
+  }
+  
+  // UI Panel interfaces
+  interface EnvironmentPanel extends Phaser.GameObjects.Container {
+    updateDisplay: (gameState: GameState) => void;
+    updateTimer: (gameState: GameState) => void;
+    updateTeleportButton: (gameState: GameState, scene: Scene) => void;
+    textElements: any;
+    teleportButton: any;
+  }
+  
+  interface PlayerStatsPanel extends Phaser.GameObjects.Container {
+    updateDisplay: (gameState: GameState) => void;
+    playerElements: any[];
+  }
+  
+  interface ResultsPanel extends Phaser.GameObjects.Container {
+    updateDisplay: (gameState: GameState) => void;
+    textElements: any;
+  }
+  
   // Custom Turret interface extending Phaser Container
   interface TurretContainer extends Phaser.GameObjects.Container {
     // Turret component references
@@ -63,6 +135,22 @@ declare global {
   
   // Scene extension for custom properties
   interface Scene extends Phaser.Scene {
+    // Game state and lifecycle
+    gameState?: GameState;
+    gameEnded?: boolean;
+    playerData?: PlayerData[];
+    
+    // Game objects and landscape
+    turrets?: TurretContainer[];
+    currentPlayerTurret?: TurretContainer | null;
+    landscapeData?: LandscapeData;
+    
+    // UI panels
+    environmentPanel?: EnvironmentPanel;
+    playerStatsPanel?: PlayerStatsPanel;
+    resultsPanel?: ResultsPanel;
+    
+    // Callback functions
     onShoot?: (turret: TurretContainer, shootData: { angle: number; power: number }) => void;
     startPlayerAiming?: (isKeyboardMode: boolean) => boolean;
     stopAimingAndShoot?: (isKeyboardMode: boolean) => void;

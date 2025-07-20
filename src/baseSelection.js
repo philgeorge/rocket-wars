@@ -27,11 +27,11 @@ import { getCurrentPlayer } from './turnManager.js';
  */
 
 /**
- * Initialize the base selection stage using Phaser panels
- * @param {Phaser.Scene} scene - The Phaser scene instance
- * @param {Object} gameConfig - Game configuration from form
- * @param {Array} flatBases - Array of available flat base locations
- * @returns {Promise<{players: Array<PlayerData>, turrets: Array}>} Promise that resolves with player data and turrets when base selection is complete
+ * Initialize base selection for multiple players (full game setup)
+ * @param {Scene} scene - The Phaser scene instance
+ * @param {Object} gameConfig - Game configuration object
+ * @param {FlatBase[]} flatBases - Array of available flat base locations
+ * @returns {Promise<PlayerData[]>} Promise that resolves with player selection data
  */
 export function initializeBaseSelection(scene, gameConfig, flatBases) {
     console.log('🎮 Starting Phaser-based base selection stage...');
@@ -65,14 +65,13 @@ export function initializeBaseSelection(scene, gameConfig, flatBases) {
 
 /**
  * Start the base selection process using Phaser panels
- * @param {Phaser.Scene} scene - The Phaser scene
+ * @param {Scene} scene - The Phaser scene with custom properties
  * @param {Array} players - Array of player data
  * @param {Array} flatBases - Array of available flat base locations
  * @param {Function} resolve - Promise resolve function
  */
 function startBaseSelection(scene, players, flatBases, resolve) {
-    const sceneAny = /** @type {any} */ (scene);
-    const landscapePoints = sceneAny.landscapeData?.points;
+    const landscapePoints = scene.landscapeData?.points;
     if (!landscapePoints) {
         console.error('❌ No landscape points available in scene');
         return;
@@ -141,18 +140,17 @@ function startBaseSelection(scene, players, flatBases, resolve) {
 
 /**
  * Initialize base selection for teleportation (single player)
- * @param {Phaser.Scene} scene - The Phaser scene instance
- * @param {Object} gameState - Current game state
- * @param {Array} flatBases - Array of available flat base locations
- * @param {Array} existingTurrets - Array of existing turrets to exclude their bases
+ * @param {Scene} scene - The Phaser scene instance with custom properties
+ * @param {GameState} gameState - Current game state
+ * @param {FlatBase[]} flatBases - Array of available flat base locations
+ * @param {TurretContainer[]} existingTurrets - Array of existing turrets to exclude their bases
  * @returns {Promise<{baseIndex: number, basePosition: Object}>} Promise that resolves with selected base data
  */
 export function initializeTeleportBaseSelection(scene, gameState, flatBases, existingTurrets) {
     console.log('🔄 Starting teleport base selection...');
     
     return new Promise((resolve, reject) => {
-        const sceneAny = /** @type {any} */ (scene);
-        const landscapePoints = sceneAny.landscapeData?.points;
+        const landscapePoints = scene.landscapeData?.points;
         if (!landscapePoints) {
             console.error('❌ No landscape points available in scene');
             reject(new Error('No landscape points available'));

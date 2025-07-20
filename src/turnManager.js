@@ -76,7 +76,7 @@ export function createGameState(config = {}) {
 
 /**
  * Update wind value for new turn (changes by at most +/-10 units)
- * @param {Object} gameState - Game state object
+ * @param {GameState} gameState - Game state object
  */
 export function updateWindForNewTurn(gameState) {
     // Wind can only change by up to +/-10 units per turn
@@ -111,7 +111,7 @@ export function applyDamage(gameState, playerKey, damage) {
 
 /**
  * Get the current active player number
- * @param {Object} gameState - Game state object
+ * @param {GameState} gameState - Game state object
  * @returns {number} Current player number (1, 2, 3, or 4)
  */
 export function getCurrentPlayer(gameState) {
@@ -357,8 +357,8 @@ export function getRankedPlayers(gameState, playerData = null) {
 
 /**
  * Enter teleport mode for the current player
- * @param {Object} gameState - Game state object
- * @param {Object} scene - Scene object for validation and UI updates
+ * @param {GameState} gameState - Game state object
+ * @param {Scene} scene - Scene object for validation and UI updates
  * @returns {boolean} True if teleport mode was successfully entered
  */
 export function enterTeleportMode(gameState, scene) {
@@ -402,7 +402,7 @@ export function enterTeleportMode(gameState, scene) {
 /**
  * Exit teleport mode and return to normal turn
  * @param {Object} gameState - Game state object
- * @param {Object} [scene] - Optional scene for UI updates
+ * @param {Scene} [scene] - Optional scene for UI updates
  * @returns {boolean} True if teleport mode was successfully exited
  */
 export function exitTeleportMode(gameState, scene = null) {
@@ -469,15 +469,14 @@ export function isPlayerInTeleportMode(gameState, playerNum) {
 /**
  * Start teleport base selection for the current player
  * @param {Object} gameState - Game state object
- * @param {Object} scene - Scene object with landscape data and turrets
+ * @param {Scene} scene - Scene object with landscape data and turrets
  */
 function startTeleportBaseSelection(gameState, scene) {
     console.log('🔄 Starting teleport base selection...');
     
     // Get scene data needed for base selection
-    const sceneAny = /** @type {any} */ (scene);
-    const flatBases = sceneAny.landscapeData?.flatBases;
-    const turrets = sceneAny.turrets;
+    const flatBases = scene.landscapeData?.flatBases;
+    const turrets = scene.turrets;
     
     if (!flatBases || !turrets) {
         console.error('❌ Missing landscape data or turrets for teleport base selection');
@@ -502,7 +501,7 @@ function startTeleportBaseSelection(gameState, scene) {
 /**
  * Handle teleport base selection completion
  * @param {Object} gameState - Game state object
- * @param {Object} scene - Scene object
+ * @param {Scene} scene - Scene object
  * @param {Object} selection - Selected base data {baseIndex, basePosition}
  */
 function handleTeleportBaseSelected(gameState, scene, selection) {
@@ -512,9 +511,8 @@ function handleTeleportBaseSelected(gameState, scene, selection) {
     console.log(`🔄 Moving Player ${currentPlayerNum} turret to base ${selection.baseIndex}`);
     
     // Find current player's turret
-    const sceneAny = /** @type {any} */ (scene);
-    const turrets = sceneAny.turrets;
-    const currentTurret = turrets.find(turret => turret.team === currentPlayerKey);
+    const turrets = scene.turrets;
+    const currentTurret = turrets?.find(turret => turret.team === currentPlayerKey);
     
     if (!currentTurret) {
         console.error('❌ Could not find current player turret for teleportation');
