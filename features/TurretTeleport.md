@@ -42,7 +42,7 @@ This feature requires integration with multiple existing systems and should be i
 - Adapt base availability logic to exclude occupied bases during teleport
 - Ensure base selection panel positions lower on screen to avoid UI overlap
 
-### Step 5: Implement turret movement and turn ending
+### Step 5: Implement turret movement and turn ending ✅
 - End current player's turn when teleport is completed (similar to shooting)
 - Properly cancel base selection when teleport mode is exited via T button, T key, or ESC key (player can continue with remaining turn time)
 - Ensure base selection highlights and UI are cleaned up when cancelling teleport mode

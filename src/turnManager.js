@@ -175,15 +175,16 @@ export function removePlayer(gameState, playerNum) {
 /**
  * Advance to the next player's turn
  * @param {Object} gameState - Game state object
+ * @param {Scene} scene - Scene object for UI cleanup
  * @returns {boolean} True if advanced to next player, false if round completed
  */
-export function advanceToNextPlayer(gameState) {
+export function advanceToNextPlayer(gameState, scene) {
     console.log(`🔄 Advancing from player index ${gameState.currentPlayerIndex} (Player ${getCurrentPlayer(gameState)})`);
     
     // Exit teleport mode if active (player's turn is ending)
     if (gameState.teleportMode) {
         console.log('🔄 Automatically exiting teleport mode due to turn advancement');
-        exitTeleportMode(gameState);
+        exitTeleportMode(gameState, scene);
     }
     
     // Stop current turn timer and reset turn state
@@ -461,30 +462,13 @@ export function completeTeleport(gameState, scene) {
     // Advance to next player (similar to projectile impact logic)
     // Use a small delay for smoother transition
     scene.time.delayedCall(500, () => {
-        handleTurnAdvancement(gameState, scene);
+        // Use the existing turn timeout handler from main.js scene
+        // This already handles all game end checks, round progression, UI updates, etc.
+        console.log('🎯 Using existing turn timeout handler for teleport advancement');
+        scene.handleTurnTimeout();
     });
     
     return true;
-}
-
-/**
- * Handle turn advancement after teleport completion
- * @param {Object} gameState - Game state object
- * @param {Scene} scene - Scene object for UI updates
- */
-function handleTurnAdvancement(gameState, scene) {
-    // Use the existing turn timeout handler from main.js scene
-    // This already handles all game end checks, round progression, UI updates, etc.
-    const timeoutHandler = scene.handleTurnTimeout;
-    
-    if (timeoutHandler) {
-        console.log('🎯 Using existing turn timeout handler for teleport advancement');
-        timeoutHandler();
-    } else {
-        console.warn('⚠️ No turn timeout handler found on scene - teleport advancement may not work properly');
-        // Fallback: at least advance to next player
-        advanceToNextPlayer(gameState);
-    }
 }
 
 /**

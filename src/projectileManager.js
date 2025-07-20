@@ -334,7 +334,7 @@ function handleTurnProgression(gameState, scene) {
     }
     
     // Advance to next player or next round
-    const stillInSameRound = advanceToNextPlayer(gameState);
+    const stillInSameRound = advanceToNextPlayer(gameState, scene);
     console.log(`After advancing player: stillInSameRound=${stillInSameRound}`);
     
     if (!stillInSameRound) {

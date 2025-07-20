@@ -290,7 +290,7 @@ function create() {
             console.log(`⏰ Time's up! Advancing from Player ${getCurrentPlayer(this.gameState)}`);
             
             // Advance to next player/round
-            const continueRound = advanceToNextPlayer(this.gameState);
+            const continueRound = advanceToNextPlayer(this.gameState, this);
             if (!continueRound) {
                 // Round completed, advance to next round
                 const continueGame = advanceToNextRound(this.gameState);
