@@ -108,9 +108,8 @@ function startBaseSelection(scene, players, flatBases, resolve) {
             onCancelled: () => {
                 console.log('🚫 Base selection cancelled - this should not happen in initial setup');
                 // In initial setup, cancellation shouldn't happen, but we could handle it
-            },
-            isTeleportMode: false
-        });
+            }
+        }, false);
     }
     
     function completeSetup() {
@@ -199,9 +198,8 @@ export function initializeTeleportBaseSelection(scene, gameState, flatBases) {
             onCancelled: () => {
                 console.log('🚫 Teleport base selection cancelled');
                 reject(new Error('Teleport cancelled by user'));
-            },
-            isTeleportMode: true
-        });
+            }
+        }, true);
     });
 }
 
@@ -212,9 +210,10 @@ export function initializeTeleportBaseSelection(scene, gameState, flatBases) {
  * @param {FlatBase[]} flatBases - Array of flat base locations
  * @param {number[]} availableBases - Array of available base indices
  * @param {Array<{x: number, y: number}>} landscapePoints - Landscape points for calculations
- * @param {{onBaseSelected: Function, onCancelled: Function, isTeleportMode?: boolean}} callbacks - Callback functions for completion/cancellation
+ * @param {{onBaseSelected: Function, onCancelled: Function}} callbacks - Callback functions for completion/cancellation
+ * @param {boolean} isTeleportMode - Whether this is teleport mode (affects panel positioning)
  */
-function startSinglePlayerBaseSelection(scene, player, flatBases, availableBases, landscapePoints, callbacks) {
+function startSinglePlayerBaseSelection(scene, player, flatBases, availableBases, landscapePoints, callbacks, isTeleportMode = false) {
     // Shared state management
     let baseHighlights = [];
     let currentPanel = null;
@@ -222,10 +221,19 @@ function startSinglePlayerBaseSelection(scene, player, flatBases, availableBases
     let previewTurret = null;
     let keyboardHandlers = [];
     let isSelectionActive = true;
+    let resizeHandler = null;
     
     // Create and show panel
     currentPanel = createBaseSelectionPanel(scene, player, 0, 1);
-    positionBaseSelectionPanel(currentPanel, scene.cameras.main.width);
+    positionBaseSelectionPanel(currentPanel, scene.cameras.main.width, isTeleportMode);
+    
+    // Handle window resize to reposition panel
+    resizeHandler = () => {
+        if (currentPanel && isSelectionActive) {
+            positionBaseSelectionPanel(currentPanel, scene.cameras.main.width, isTeleportMode);
+        }
+    };
+    window.addEventListener('resize', resizeHandler);
     
     // Show base highlights using existing function
     showBaseHighlights();
@@ -447,6 +455,12 @@ function startSinglePlayerBaseSelection(scene, player, flatBases, availableBases
             }
         });
         keyboardHandlers = [];
+        
+        // Remove resize handler
+        if (resizeHandler) {
+            window.removeEventListener('resize', resizeHandler);
+            resizeHandler = null;
+        }
         
         // Clear preview turret
         clearPreviewTurret();

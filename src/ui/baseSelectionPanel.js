@@ -80,15 +80,25 @@ export function createBaseSelectionPanel(scene, currentPlayer, playerIndex, tota
 
 
 /**
- * Position the base selection panel at the top center of the screen
- * @param {Phaser.GameObjects.Container} panel - The panel container
+ * Position the base selection panel on screen
+ * @param {Object} panel - The panel object
  * @param {number} screenWidth - Current screen width
+ * @param {boolean} [isTeleportMode] - Whether this is teleport mode (positions lower on mobile)
  */
-export function positionBaseSelectionPanel(panel, screenWidth) {
+export function positionBaseSelectionPanel(panel, screenWidth, isTeleportMode = false) {
     // Use the factory's positioning utility with custom positioning
     const panelWidth = /** @type {any} */ (panel).panelWidth || 280;
     const panelX = (screenWidth - panelWidth) / 2; // Center horizontally
-    const panelY = 20; // 20px from top
+    
+    // Adjust Y position based on mode and screen size
+    let panelY = 20; // Default: 20px from top
+    
+    if (isTeleportMode && screenWidth < 750) {
+        // On mobile devices during teleport, position lower to avoid overlap with environment panel
+        panelY+= 180; // Move down to avoid UI overlap
+        console.log(`📱 Positioning teleport panel lower for mobile (Y=${panelY})`);
+    }
+    
     panel.setPosition(panelX, panelY);
 }
 
