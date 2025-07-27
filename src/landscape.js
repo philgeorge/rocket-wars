@@ -2,6 +2,7 @@
 // Landscape generation and drawing utilities for Rocket Wars
 
 import { WORLD_HEIGHT } from './constants.js';
+import { setupChunkedLandscape } from './chunkedLandscape.js';
 
 /**
  * Generate landscape points with alternating flat and mountainous sections
@@ -227,11 +228,18 @@ export function drawLandscape(graphics, points, worldWidth, worldHeight, flatBas
  * @param {number} worldWidth - World width in pixels
  * @param {number} worldHeight - World height in pixels  
  * @param {Object} gameConfig - Game configuration object
- * @returns {{landscapeData: {points: Array, flatBases: Array}, graphics: Phaser.GameObjects.Graphics}} Landscape setup result
+ * @param {boolean} [useChunkedTerrain=false] - Whether to use chunked terrain system
+ * @returns {{landscapeData: {points: Array, flatBases: Array, chunks?: Array}, graphics: Phaser.GameObjects.Graphics}} Landscape setup result
  */
-export function setupWorldLandscape(scene, worldWidth, worldHeight, gameConfig) {
-    console.log(`Setting up world landscape: ${worldWidth}x${worldHeight}px for ${gameConfig.numPlayers} players`);
+export function setupWorldLandscape(scene, worldWidth, worldHeight, gameConfig, useChunkedTerrain = false) {
+    console.log(`Setting up world landscape: ${worldWidth}x${worldHeight}px for ${gameConfig.numPlayers} players${useChunkedTerrain ? ' (CHUNKED)' : ''}`);
     
+    if (useChunkedTerrain) {
+        // Use the new chunked terrain system
+        return setupChunkedLandscape(scene, worldWidth, worldHeight, gameConfig);
+    }
+    
+    // Original point-based system
     // Create graphics object for drawing
     const graphics = scene.add.graphics();
     graphics.fillStyle(0x3a5c2c, 1); // greenish color for landscape

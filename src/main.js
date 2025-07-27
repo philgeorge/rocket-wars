@@ -176,7 +176,9 @@ function create() {
     window.addEventListener('resize', handleResize);
 
     // Set up world landscape (generation, drawing, and boundaries)
-    const { landscapeData } = setupWorldLandscape(this, WORLD_WIDTH, WORLD_HEIGHT, gameConfig);
+    // TEMP: Enable chunked terrain system for testing destructible landscape
+    const useChunkedTerrain = true; // Set to false to use original point-based terrain
+    const { landscapeData } = setupWorldLandscape(this, WORLD_WIDTH, WORLD_HEIGHT, gameConfig, useChunkedTerrain);
 
     // Store landscape data for collision detection
     this.landscapeData = landscapeData;
