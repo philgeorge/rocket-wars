@@ -34,8 +34,8 @@ export function generateLandscapePoints(width, baseY, numPoints, numPlayers = 2)
         
         // Create varied terrain: some sections flat, some mountainous
         if (sectionIndex % 2 === 0) {
-            // Even sections: flatter terrain
-            y = baseY + Math.floor(Math.random() * 80 - 40); // -40 to +40px variation
+            // Even sections: flatter terrain with reduced variation
+            y = baseY + Math.floor(Math.random() * 40 - 20); // ±20px variation
         } else {
             // Odd sections: mountainous terrain (50-80% of world height)
             // Calculate mountain height: 50-80% of world height from top = 400-640px from top
@@ -49,11 +49,33 @@ export function generateLandscapePoints(width, baseY, numPoints, numPlayers = 2)
             // Calculate how far down from baseY this mountain should go
             const mountainDepth = baseY - (WORLD_HEIGHT - sectionMountainHeight);
             
-            // Use sine wave for mountain shape with the calculated depth
-            y = baseY - mountainDepth * Math.sin(Math.PI * sectionProgress) + Math.floor(Math.random() * 40 - 20); // ±20px noise
+            // Use sine wave for mountain shape with reduced noise
+            y = baseY - mountainDepth * Math.sin(Math.PI * sectionProgress) + Math.floor(Math.random() * 20 - 10); // ±10px noise
         }
         
         points.push({ x, y });
+    }
+
+    // 2. Apply smoothing to reduce spikiness between adjacent points
+    console.log('Applying smoothing to landscape points...');
+    for (let i = 1; i < points.length - 1; i++) {
+        const prev = points[i - 1];
+        const curr = points[i];
+        const next = points[i + 1];
+        
+        // Calculate maximum allowed height difference (25px per 30px horizontal distance)
+        const maxHeightDiff = 25; // Maximum height change between adjacent 30px points
+        
+        // Check if current point creates too sharp a transition
+        const heightDiffToPrev = Math.abs(curr.y - prev.y);
+        const heightDiffToNext = Math.abs(curr.y - next.y);
+        
+        if (heightDiffToPrev > maxHeightDiff || heightDiffToNext > maxHeightDiff) {
+            // Smooth this point by averaging with neighbors (weighted)
+            const smoothedY = (prev.y * 0.25 + curr.y * 0.5 + next.y * 0.25);
+            curr.y = Math.round(smoothedY);
+            console.log(`🏔️ Smoothed point ${i}: was ${points[i].y}, now ${curr.y}`);
+        }
     }
 
     // Set flat base length in pixels

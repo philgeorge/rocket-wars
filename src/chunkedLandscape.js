@@ -23,10 +23,10 @@ import { generateLandscapePoints } from './landscape.js';
  * @param {Array<{x: number, y: number}>} points - Landscape points
  * @param {number} worldWidth - World width in pixels
  * @param {number} worldHeight - World height in pixels
- * @param {number} [chunkWidth=25] - Width of each chunk in pixels
+ * @param {number} [chunkWidth=30] - Width of each chunk in pixels (aligned with landscape points)
  * @returns {{chunks: TerrainChunk[], graphics: Phaser.GameObjects.Graphics}} Chunk data and graphics
  */
-export function createChunkedLandscape(scene, points, worldWidth, worldHeight, chunkWidth = 15) {
+export function createChunkedLandscape(scene, points, worldWidth, worldHeight, chunkWidth = 30) {
     console.log('🏔️ Converting landscape points to chunks...');
     
     const chunks = [];
@@ -37,24 +37,14 @@ export function createChunkedLandscape(scene, points, worldWidth, worldHeight, c
     const graphics = scene.add.graphics();
     graphics.fillStyle(0x3a5c2c, 1); // Same green as original landscape
     
-    console.log(`Creating ${numChunks} chunks, each ${actualChunkWidth}px wide`);
+    console.log(`Creating ${numChunks} chunks, each ${actualChunkWidth}px wide (aligned with landscape points)`);
     
-    // Convert points to chunks
-    for (let i = 0; i < numChunks; i++) {
+    // Convert points to chunks - now with 1:1 alignment!
+    for (let i = 0; i < numChunks && i < points.length; i++) {
         const chunkX = i * actualChunkWidth;
-        const chunkCenterX = chunkX + actualChunkWidth / 2;
         
-        // Find the landscape height at this chunk's center position
-        let terrainY = worldHeight - 100; // Default ground level
-        
-        // Interpolate between landscape points to find height
-        for (let j = 0; j < points.length - 1; j++) {
-            if (points[j].x <= chunkCenterX && points[j + 1].x >= chunkCenterX) {
-                const t = (chunkCenterX - points[j].x) / (points[j + 1].x - points[j].x);
-                terrainY = points[j].y + t * (points[j + 1].y - points[j].y);
-                break;
-            }
-        }
+        // Direct alignment: use landscape point height directly (no interpolation needed!)
+        const terrainY = points[i].y;
         
         // Create chunk that extends from terrain surface down to bottom of world
         const chunk = {
@@ -81,7 +71,7 @@ export function createChunkedLandscape(scene, points, worldWidth, worldHeight, c
 }
 
 /**
- * Draw the chunked landscape
+ * Draw the chunked landscape with smooth edge transitions
  * @param {Phaser.GameObjects.Graphics} graphics - Graphics object to draw with
  * @param {TerrainChunk[]} chunks - Array of terrain chunks
  */
@@ -91,12 +81,70 @@ export function drawChunkedLandscape(graphics, chunks) {
     // Set fill style for green terrain chunks
     graphics.fillStyle(0x3a5c2c, 1); // Same green as original landscape
     
+    if (chunks.length === 0) return;
+    
+    // Calculate world dimensions from chunks
+    const worldWidth = chunks.length > 0 ? chunks[chunks.length - 1].x + chunks[chunks.length - 1].width : 1000;
+    const worldHeight = chunks.length > 0 ? chunks[0].height + chunks[0].y : 800; // Approximate from first chunk
+    
+    // Create smooth terrain shape
+    graphics.beginPath();
+    graphics.moveTo(0, worldHeight); // Start at bottom-left
+    
+    // Build array of chunk top points for smoothing
+    const topPoints = [];
     chunks.forEach(chunk => {
         if (!chunk.destroyed) {
-            // Draw chunk as a filled rectangle
-            graphics.fillRect(chunk.x, chunk.y, chunk.width, chunk.height);
+            topPoints.push({
+                x: chunk.x + chunk.width / 2, // Center of chunk
+                y: chunk.y
+            });
         }
     });
+    
+    if (topPoints.length === 0) {
+        // No chunks left, draw empty
+        graphics.closePath();
+        graphics.fillPath();
+        return;
+    }
+    
+    // Draw smooth interpolated line through chunk tops
+    graphics.lineTo(topPoints[0].x, topPoints[0].y);
+    
+    // Create smooth transitions by adding interpolated points
+    for (let i = 1; i < topPoints.length; i++) {
+        const prev = topPoints[i - 1];
+        const curr = topPoints[i];
+        
+        // Add intermediate points for smoother curves
+        const steps = 3; // Number of interpolation steps
+        for (let step = 1; step <= steps; step++) {
+            const t = step / (steps + 1);
+            
+            // Simple interpolation with slight curve
+            const interpX = prev.x + (curr.x - prev.x) * t;
+            const interpY = prev.y + (curr.y - prev.y) * t;
+            
+            // Add slight curve by adjusting Y slightly
+            const midPointAdjustment = Math.sin(t * Math.PI) * 2; // Small curve adjustment
+            const adjustedY = interpY - midPointAdjustment;
+            
+            graphics.lineTo(interpX, adjustedY);
+        }
+        
+        // Finally draw to the actual chunk top
+        graphics.lineTo(curr.x, curr.y);
+    }
+    
+    // Complete the shape by going to bottom-right and back to start
+    const lastPoint = topPoints[topPoints.length - 1];
+    
+    graphics.lineTo(worldWidth, lastPoint.y);
+    graphics.lineTo(worldWidth, worldHeight);
+    graphics.lineTo(0, worldHeight);
+    graphics.closePath();
+    graphics.fillPath();
 }
 
 /**
@@ -279,13 +327,14 @@ export function checkChunkedTerrainCollision(projectile, chunks) {
 export function setupChunkedLandscape(scene, worldWidth, worldHeight, gameConfig) {
     console.log(`🏔️ Setting up chunked landscape: ${worldWidth}x${worldHeight}px for ${gameConfig.numPlayers} players`);
     
-    // First generate points using existing system
+    // Generate points with same spacing as chunks for perfect alignment
     const baseY = worldHeight - 100;
-    const numPoints = Math.floor(worldWidth / 50);
+    const chunkWidth = 30; // Match landscape point spacing for better granularity
+    const numPoints = Math.floor(worldWidth / chunkWidth);
     const { points, flatBases } = generateLandscapePoints(worldWidth, baseY, numPoints, gameConfig.numPlayers);
     
-    // Convert to chunks
-    const { chunks, graphics } = createChunkedLandscape(scene, points, worldWidth, worldHeight);
+    // Convert to chunks with perfect 1:1 alignment
+    const { chunks, graphics } = createChunkedLandscape(scene, points, worldWidth, worldHeight, chunkWidth);
     
     // Store flat bases info for compatibility (chunked system includes original points and flatBases)
     const landscapeData = { points, flatBases, chunks };
