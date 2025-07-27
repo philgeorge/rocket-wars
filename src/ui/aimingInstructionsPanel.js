@@ -1,7 +1,7 @@
 // aimingInstructionsPanel.js
 // Panel for displaying aiming instructions at the start of each game
 
-import { createBasePanel, addPanelText, positionPanel } from './panelFactory.js';
+import { createBasePanel, addPanelText, positionPanel, setupPanelInputDismissal } from './panelFactory.js';
 
 /**
  * Create an aiming instructions panel for players at the start of each game
@@ -10,9 +10,6 @@ import { createBasePanel, addPanelText, positionPanel } from './panelFactory.js'
  */
 export function createAimingInstructionsPanel(scene) {
     console.log('🎯 Creating aiming instructions panel...');
-    
-    // Create base panel using factory
-    const panel = createBasePanel(scene);
     
     // Define text content for the panel
     const textItems = [
@@ -104,18 +101,22 @@ export function createAimingInstructionsPanel(scene) {
         }
     ];
     
-    // Add text elements and auto-size panel
+    // Create base panel
+    const panel = createBasePanel(scene);
+    
+    // Add text content and auto-size panel
     addPanelText(scene, panel, textItems, {
         minWidth: 300,
         maxWidth: 400,
         lineHeight: 24
     });
     
-    // Position panel at center of screen
+    // Position panel at center
     positionPanel(panel, 'center', scene.cameras.main.width, scene.cameras.main.height);
     
-    // Set panel depth to appear above game objects
+    // Set panel depth and initially hidden
     panel.setDepth(1000);
+    panel.setVisible(false);
     
     console.log('📝 Created aiming instructions panel');
     
@@ -155,39 +156,18 @@ export function showAimingInstructionsIfNeeded(scene, onDismiss = null) {
         console.log('📋 Showing aiming instructions for this game');
         scene.aimingInstructionsPanel.setVisible(true);
         
-        let dismissed = false;
-        
-        // Auto-hide after 10 seconds or when user interacts
-        const hideInstructions = () => {
-            if (!dismissed && scene.aimingInstructionsPanel) {
-                dismissed = true;
-                // Clean up both event listeners
-                scene.input.off('pointerdown', handleInput);
-                scene.input.keyboard?.off('keydown', handleInput);
-                hideAimingInstructionsPanel(scene.aimingInstructionsPanel);
-                console.log('📋 Aiming instructions dismissed');
-                if (onDismiss) {
-                    onDismiss();
-                }
+        // Use the reusable utility function for input handling
+        setupPanelInputDismissal(scene, () => {
+            hideAimingInstructionsPanel(scene.aimingInstructionsPanel);
+            console.log('📋 Aiming instructions dismissed');
+            if (onDismiss) {
+                onDismiss();
             }
-        };
-        
-        // Auto-hide after 10 seconds (increased from 5)
-        const autoHideTimer = scene.time.delayedCall(20000, hideInstructions);
-        
-        // Handle both click and any key input
-        const handleInput = () => {
-            if (!dismissed) {
-                autoHideTimer.remove(); // Cancel auto-hide timer
-                hideInstructions();
-            }
-        };
-        
-        // Set up event listeners
-        scene.input.once('pointerdown', handleInput);
-        if (scene.input.keyboard) {
-            scene.input.keyboard.on('keydown', handleInput);
-        }
+        }, {
+            includeKeyboard: true,
+            once: true, // Use 'once' for pointer, but 'on' for keyboard as in original
+            autoHideDelay: 20000 // 20 second auto-hide
+        });
         
         return true; // Panel was shown
     }

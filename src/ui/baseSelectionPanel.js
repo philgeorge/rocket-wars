@@ -2,7 +2,7 @@
 // Phaser-based base selection panel to avoid DOM event conflicts
 
 import { getTeamColorName, getTeamColorCSS } from '../constants.js';
-import { createBasePanel, addPanelText } from './panelFactory.js';
+import { createBasePanel, addPanelText, positionPanel } from './panelFactory.js';
 import { shouldUseMobilePositioning } from '../deviceDetection.js';
 
 /**
@@ -13,9 +13,6 @@ import { shouldUseMobilePositioning } from '../deviceDetection.js';
  */
 export function createBaseSelectionPanel(scene, currentPlayer) {
     console.log(`🎮 Creating base selection panel for ${currentPlayer.name}...`);
-    
-    // Create base panel using factory
-    const panel = createBasePanel(scene);
     
     // Get player-specific styling
     const playerColorName = getTeamColorName(currentPlayer.team);
@@ -54,18 +51,22 @@ export function createBaseSelectionPanel(scene, currentPlayer) {
         }
     ];
     
-    // Add text elements and auto-size panel
+    // Create base panel
+    const panel = createBasePanel(scene);
+    
+    // Add text content and auto-size panel
     addPanelText(scene, panel, textItems, {
         minWidth: 280,
         maxWidth: 320,
         lineHeight: 22
     });
     
-    // Position panel at top-center of screen
+    // Position panel using custom positioning logic
     positionBaseSelectionPanel(panel, scene.cameras.main.width);
     
-    // Set panel depth to appear above game objects
+    // Set panel depth and visibility
     panel.setDepth(1000);
+    panel.setVisible(true);
     
     console.log(`📝 Created panel for ${currentPlayer.name} (${playerColorName}) with color ${playerColorCSS}`);
     

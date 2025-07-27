@@ -1,7 +1,7 @@
 // resultsPanel.js
 // Game results panel for end-of-game display
 
-import { createBasePanel, addPanelText, positionPanel } from './panelFactory.js';
+import { createBasePanel, addPanelText, positionPanel, setupPanelInputDismissal } from './panelFactory.js';
 import { getRankedPlayers } from '../turnManager.js';
 import { getTeamColorCSS } from '../constants.js';
 
@@ -13,9 +13,6 @@ import { getTeamColorCSS } from '../constants.js';
  * @returns {Phaser.GameObjects.Container & {updateDisplay: Function, textElements: Object}}
  */
 export function createResultsPanel(scene, gameState, playerData = null) {
-    // Create base panel
-    const panel = createBasePanel(scene);
-    
     // Calculate ranked players (alive > killed, then by health)
     const rankedPlayers = getRankedPlayers(gameState, playerData);
     
@@ -92,18 +89,28 @@ export function createResultsPanel(scene, gameState, playerData = null) {
         }
     });
     
-    // Add text elements and auto-size panel
+    // Create base panel
+    const panel = createBasePanel(scene);
+    
+    // Add text content and auto-size panel
     addPanelText(scene, panel, textItems, {
         minWidth: 250,
         maxWidth: 400,
         lineHeight: 22
     });
     
+    // Position panel at center
+    positionPanel(panel, 'center', scene.cameras.main.width, scene.cameras.main.height);
+    
+    // Set panel depth and visibility
+    panel.setDepth(1000);
+    panel.setVisible(true);
+    
     return /** @type {any} */ (panel);
 }
 
 /**
- * Setup restart functionality for the results panel (similar to aiming instructions pattern)
+ * Setup restart functionality for the results panel using the reusable utility
  * @param {Phaser.Scene} scene - The Phaser scene
  * @param {Object} panel - The results panel
  */
@@ -112,30 +119,17 @@ export function setupResultsPanelRestart(scene, panel) {
     
     let restarted = false;
     
-    // Function to handle restart
-    const handleRestart = () => {
+    // Use the reusable utility function for input handling
+    setupPanelInputDismissal(scene, () => {
         if (!restarted) {
             restarted = true;
-            // Clean up both event listeners
-            scene.input.off('pointerdown', handleInput);
-            scene.input.keyboard?.off('keydown', handleInput);
             console.log('🔄 Restarting game...');
             window.location.reload();
         }
-    };
-    
-    // Handle both click and any ey input
-    const handleInput = () => {
-        if (!restarted) {
-            handleRestart();
-        }
-    };
-    
-    // Set up event listeners
-    scene.input.on('pointerdown', handleInput);
-    if (scene.input.keyboard) {
-        scene.input.keyboard.on('keydown', handleInput);
-    }
+    }, {
+        includeKeyboard: true,
+        once: false
+    });
 }
 
 /**

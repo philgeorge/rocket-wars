@@ -374,3 +374,56 @@ export function addPanelButton(scene, panel, config) {
         }
     };
 }
+
+/**
+ * Setup reusable input dismissal functionality for panels
+ * @param {Phaser.Scene} scene - The Phaser scene
+ * @param {Function} onDismiss - Callback function called when panel is dismissed
+ * @param {Object} [options] - Configuration options
+ * @param {boolean} [options.includeKeyboard=true] - Whether to listen for keyboard input
+ * @param {boolean} [options.once=false] - Whether to use 'once' instead of 'on' for listeners
+ * @param {number} [options.autoHideDelay=0] - Auto-hide delay in milliseconds (0 = no auto-hide)
+ * @returns {Object} Object with cleanup and dismiss methods
+ */
+export function setupPanelInputDismissal(scene, onDismiss, options = {}) {
+    const { includeKeyboard = true, once = false, autoHideDelay = 0 } = options;
+    let dismissed = false;
+    let autoHideTimer = null;
+    
+    const handleInput = () => {
+        if (!dismissed) {
+            dismissed = true;
+            cleanup();
+            if (autoHideTimer) {
+                autoHideTimer.remove();
+                autoHideTimer = null;
+            }
+            onDismiss();
+        }
+    };
+    
+    const cleanup = () => {
+        scene.input.off('pointerdown', handleInput);
+        if (includeKeyboard && scene.input.keyboard) {
+            scene.input.keyboard.off('keydown', handleInput);
+        }
+    };
+    
+    // Set up event listeners
+    const method = once ? 'once' : 'on';
+    scene.input[method]('pointerdown', handleInput);
+    if (includeKeyboard && scene.input.keyboard) {
+        scene.input.keyboard[method]('keydown', handleInput);
+    }
+    
+    // Set up auto-hide timer if specified
+    if (autoHideDelay > 0) {
+        autoHideTimer = scene.time.delayedCall(autoHideDelay, handleInput);
+    }
+    
+    return { 
+        cleanup, 
+        dismiss: handleInput,
+        isHandled: () => dismissed
+    };
+}
