@@ -64,6 +64,17 @@ declare global {
   interface LandscapeData {
     points: Array<{ x: number; y: number }>;
     flatBases: FlatBase[];
+    chunks?: Array<{
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      destroyed: boolean;
+      falling: boolean;
+      fallSpeed: number;
+      originalY: number;
+      graphics?: any;
+    }>;
   }
   
   // UI Panel interfaces

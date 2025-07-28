@@ -1,6 +1,8 @@
 // projectile.js
 // Projectile physics and graphics for Rocket Wars
 
+import { checkChunkedTerrainCollision } from './chunkedLandscape.js';
+
 /**
  * Create a projectile with physics and visual trail
  * @param {Phaser.Scene} scene - The Phaser scene
@@ -291,7 +293,7 @@ export function calculateAOEDamage(explosionX, explosionY, explosionRadius, turr
  * Check if projectile collides with terrain, turrets, or world bounds
  * @param {Phaser.Scene} scene - The Phaser scene
  * @param {Phaser.GameObjects.Graphics} projectile - The projectile object
- * @param {{points: Array<{x: number, y: number}>, flatBases: Array}} landscapeData - Landscape collision data
+ * @param {{points: Array<{x: number, y: number}>, flatBases: Array, chunks?: Array}} landscapeData - Landscape collision data
  * @param {Array<any>} turrets - Array of turret objects to check collision against
  * @returns {{terrain: boolean, turret: any|null, turretDistance?: number, worldBounds: boolean}} Collision results
  */
@@ -319,38 +321,49 @@ export function checkProjectileCollisions(scene, projectile, landscapeData, turr
         }
     });
 
-    // Improved terrain collision check using landscape points
-    if (landscapeData && landscapeData.points) {
-        const points = landscapeData.points;
-        const projectileX = projectile.x;
-        const projectileY = projectile.y;
-        
-        // Find the two closest landscape points to interpolate between
-        let leftPoint = null;
-        let rightPoint = null;
-        
-        for (let i = 0; i < points.length - 1; i++) {
-            if (points[i].x <= projectileX && points[i + 1].x >= projectileX) {
-                leftPoint = points[i];
-                rightPoint = points[i + 1];
-                break;
-            }
-        }
-        
-        if (leftPoint && rightPoint) {
-            // Linear interpolation to find ground height at projectile X position
-            const t = (projectileX - leftPoint.x) / (rightPoint.x - leftPoint.x);
-            const groundY = leftPoint.y + t * (rightPoint.y - leftPoint.y);
+    // Terrain collision check - support both chunked and point-based systems
+    if (landscapeData) {
+        // Check for chunked terrain first (if available)
+        if (landscapeData.chunks) {
+            console.log(`🔍 Checking chunked terrain collision for projectile at (${projectile.x.toFixed(1)}, ${projectile.y.toFixed(1)})`);
+            console.log(`🔍 Total chunks available: ${landscapeData.chunks.length}`);
+            collisions.terrain = checkChunkedTerrainCollision(projectile, landscapeData.chunks);
+            console.log(`🔍 Chunked terrain collision result: ${collisions.terrain}`);
+        } 
+        // Fallback to point-based terrain collision
+        else if (landscapeData.points) {
+            console.log(`🔍 Using point-based terrain collision (no chunks available)`);
+            const points = landscapeData.points;
+            const projectileX = projectile.x;
+            const projectileY = projectile.y;
             
-            // Check if projectile is below ground level (with small tolerance)
-            if (projectileY >= groundY - 3) {
-                collisions.terrain = true;
+            // Find the two closest landscape points to interpolate between
+            let leftPoint = null;
+            let rightPoint = null;
+            
+            for (let i = 0; i < points.length - 1; i++) {
+                if (points[i].x <= projectileX && points[i + 1].x >= projectileX) {
+                    leftPoint = points[i];
+                    rightPoint = points[i + 1];
+                    break;
+                }
             }
-        } else {
-            // Fallback to simple ground level check if points not found
-            const fallbackGroundLevel = worldBounds.height - 100;
-            if (projectileY > fallbackGroundLevel) {
-                collisions.terrain = true;
+            
+            if (leftPoint && rightPoint) {
+                // Linear interpolation to find ground height at projectile X position
+                const t = (projectileX - leftPoint.x) / (rightPoint.x - leftPoint.x);
+                const groundY = leftPoint.y + t * (rightPoint.y - leftPoint.y);
+                
+                // Check if projectile is below ground level (with small tolerance)
+                if (projectileY >= groundY - 3) {
+                    collisions.terrain = true;
+                }
+            } else {
+                // Fallback to simple ground level check if points not found
+                const fallbackGroundLevel = worldBounds.height - 100;
+                if (projectileY > fallbackGroundLevel) {
+                    collisions.terrain = true;
+                }
             }
         }
     }

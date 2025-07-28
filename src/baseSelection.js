@@ -20,7 +20,7 @@ import { getCurrentPlayer } from './turnManager.js';
  * @param {Scene} scene - The Phaser scene instance
  * @param {Object} gameConfig - Game configuration object
  * @param {FlatBase[]} flatBases - Array of available flat base locations
- * @returns {Promise<PlayerData[]>} Promise that resolves with player selection data
+ * @returns {Promise<{players: PlayerData[], turrets: any[]}>} Promise that resolves with player selection data and created turrets
  */
 export function initializeBaseSelection(scene, gameConfig, flatBases) {
     console.log('🎮 Starting Phaser-based base selection stage...');

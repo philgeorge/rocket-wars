@@ -5,6 +5,7 @@ import { updateProjectileTrail, drawProjectileTrail, checkProjectileCollisions, 
 import { applyDamage, getCurrentPlayer, advanceToNextPlayer, advanceToNextRound, shouldGameEnd, updateWindForNewTurn, removePlayer, startPlayerTurn, stopTurnTimer } from './turnManager.js';
 import { updateProjectileCamera } from './camera.js';
 import { handleGameEnd } from './gameLifecycle.js';
+import { createTerrainDestruction, updateFallingChunks } from './chunkedLandscape.js';
 
 /**
  * Update all projectiles in the scene
@@ -18,6 +19,12 @@ import { handleGameEnd } from './gameLifecycle.js';
 export function updateProjectiles(scene, projectiles, gameState, landscapeData, turrets, cameraControls) {
     // Camera follows projectiles with smooth following
     updateProjectileCamera(scene, projectiles);
+
+    // Update falling chunks physics if chunked terrain is active
+    const sceneAny = /** @type {any} */ (scene);
+    if (landscapeData && landscapeData.chunks && sceneAny.landscapeGraphics) {
+        updateFallingChunks(scene, landscapeData.chunks, sceneAny.landscapeGraphics);
+    }
 
     // Update each projectile
     for (let i = projectiles.length - 1; i >= 0; i--) {
@@ -125,6 +132,22 @@ function handleTerrainCollision(scene, projectile, gameState, turrets, environme
 
     console.log(`🌍 Terrain explosion: velocity factor ${(velocityFactor * 100).toFixed(1)}%, size: ${terrainExplosionSize.toFixed(1)}px`);
     createExplosion(scene, projectile.x, projectile.y, terrainExplosionSize, 'terrain');
+
+    // Apply terrain destruction if chunked terrain is active
+    const sceneAny = /** @type {any} */ (scene);
+    console.log('🔍 Checking terrain destruction conditions:');
+    console.log('- landscapeData exists:', !!sceneAny.landscapeData);
+    console.log('- chunks exist:', !!(sceneAny.landscapeData && sceneAny.landscapeData.chunks));
+    console.log('- landscapeGraphics exists:', !!sceneAny.landscapeGraphics);
+    console.log('- chunks length:', sceneAny.landscapeData?.chunks?.length || 0);
+    
+    if (sceneAny.landscapeData && sceneAny.landscapeData.chunks && sceneAny.landscapeGraphics) {
+        console.log('💥 Applying chunked terrain destruction...');
+        createTerrainDestruction(scene, sceneAny.landscapeData.chunks, sceneAny.landscapeGraphics, 
+                                projectile.x, projectile.y);
+    } else {
+        console.log('⚠️ Chunked terrain destruction skipped - conditions not met');
+    }
 
     // Check for AOE damage to nearby turrets
     const affectedTurrets = calculateAOEDamage(projectile.x, projectile.y, terrainExplosionSize, turrets);

@@ -58,3 +58,30 @@ export function saveGameConfig(config) {
         console.warn('Failed to save game config:', error);
     }
 }
+
+/**
+ * Load debug settings from localStorage
+ * @param {Object} debugSettings - Debug settings object to update
+ */
+export function loadDebugSettings(debugSettings) {
+    try {
+        // Enumerate all properties in the debugSettings object
+        for (const propertyName in debugSettings) {
+            if (debugSettings.hasOwnProperty(propertyName)) {
+                const storageKey = `debug.${propertyName}`;
+                const setting = localStorage.getItem(storageKey);
+                
+                if (setting === 'true') {
+                    debugSettings[propertyName] = true;
+                    console.log(`🐛 Debug: ${propertyName} ENABLED via localStorage`);
+                } else if (setting === 'false') {
+                    debugSettings[propertyName] = false;
+                    console.log(`🐛 Debug: ${propertyName} DISABLED via localStorage`);
+                }
+                // If setting is null/undefined, keep the default value
+            }
+        }
+    } catch (error) {
+        console.warn('Failed to load debug settings from localStorage:', error);
+    }
+}

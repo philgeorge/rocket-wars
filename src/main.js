@@ -135,7 +135,7 @@ function shootFromTurret(scene, turret, shootData) {
 
 /**
  * Create the game scene
- * @this {Phaser.Scene & {turrets: any[], currentPlayerTurret: any, projectiles: any[], landscapeData: any, gameState: any, environmentPanel: any, playerStatsPanel: any, aimingInstructionsPanel: any, cameraControls: any}}
+ * @this {Phaser.Scene & {turrets: any[], currentPlayerTurret: any, projectiles: any[], landscapeData: any, landscapeGraphics: any, gameState: any, environmentPanel: any, playerStatsPanel: any, aimingInstructionsPanel: any, cameraControls: any}}
  */
 function create() {
     // Set up world bounds (camera and physics)
@@ -178,10 +178,11 @@ function create() {
     // Set up world landscape (generation, drawing, and boundaries)
     // TEMP: Enable chunked terrain system for testing destructible landscape
     const useChunkedTerrain = true; // Set to false to use original point-based terrain
-    const { landscapeData } = setupWorldLandscape(this, WORLD_WIDTH, WORLD_HEIGHT, gameConfig, useChunkedTerrain);
+    const { landscapeData, graphics } = setupWorldLandscape(this, WORLD_WIDTH, WORLD_HEIGHT, gameConfig, useChunkedTerrain);
 
     // Store landscape data for collision detection
     this.landscapeData = landscapeData;
+    this.landscapeGraphics = graphics;
 
     this.projectiles = [];
 
@@ -326,7 +327,7 @@ function create() {
 
 /**
  * Update the game scene
- * @this {Phaser.Scene & {turrets: any[], currentPlayerTurret: any, projectiles: any[], landscapeData: any, gameState: any, environmentPanel: any, playerStatsPanel: any, cameraControls: any, resultsPanel?: any, gameEnded?: boolean}}
+ * @this {Phaser.Scene & {turrets: any[], currentPlayerTurret: any, projectiles: any[], landscapeData: any, landscapeGraphics: any, gameState: any, environmentPanel: any, playerStatsPanel: any, cameraControls: any, resultsPanel?: any, gameEnded?: boolean}}
  */
 function update() {
     // Update projectiles (now handled by projectile manager)

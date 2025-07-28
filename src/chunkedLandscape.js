@@ -3,6 +3,17 @@
 
 import { WORLD_HEIGHT } from './constants.js';
 import { generateLandscapePoints } from './landscape.js';
+import { loadDebugSettings } from './storage.js';
+
+/**
+ * Debug settings for chunked landscape
+ */
+const debugSettings = {
+    landscapeChunkOutlines: false
+};
+
+// Load debug settings on module initialization
+loadDebugSettings(debugSettings);
 
 /**
  * @typedef {Object} TerrainChunk
@@ -145,6 +156,50 @@ export function drawChunkedLandscape(graphics, chunks) {
     graphics.lineTo(0, worldHeight);
     graphics.closePath();
     graphics.fillPath();
+    
+    // DEBUG: Draw chunk boundaries and smoothed line for visibility (conditional)
+    if (debugSettings.landscapeChunkOutlines) {
+        graphics.lineStyle(2, 0xff0000, 0.7); // Red lines for chunk boundaries
+        chunks.forEach(chunk => {
+            if (!chunk.destroyed) {
+                // Draw chunk boundary rectangle
+                graphics.strokeRect(chunk.x, chunk.y, chunk.width, chunk.height);
+                
+                // Draw a small marker at the chunk top center
+                const centerX = chunk.x + chunk.width / 2;
+                graphics.fillStyle(0xff0000, 1);
+                graphics.fillCircle(centerX, chunk.y, 3);
+            }
+        });
+        
+        // Draw the smoothed line in bright blue for visibility
+        if (topPoints.length > 1) {
+            graphics.lineStyle(3, 0x00ffff, 0.9); // Bright cyan line
+            graphics.beginPath();
+            graphics.moveTo(topPoints[0].x, topPoints[0].y);
+            
+            for (let i = 1; i < topPoints.length; i++) {
+                const prev = topPoints[i - 1];
+                const curr = topPoints[i];
+                
+                // Add intermediate points for smoother curves
+                const steps = 3;
+                for (let step = 1; step <= steps; step++) {
+                    const t = step / (steps + 1);
+                    const interpX = prev.x + (curr.x - prev.x) * t;
+                    const interpY = prev.y + (curr.y - prev.y) * t;
+                    const midPointAdjustment = Math.sin(t * Math.PI) * 2;
+                    const adjustedY = interpY - midPointAdjustment;
+                    graphics.lineTo(interpX, adjustedY);
+                }
+                graphics.lineTo(curr.x, curr.y);
+            }
+            graphics.strokePath();
+        }
+        
+        // Reset fill style for future drawing
+        graphics.fillStyle(0x3a5c2c, 1);
+    }
 }
 
 /**
@@ -152,50 +207,87 @@ export function drawChunkedLandscape(graphics, chunks) {
  * @param {Phaser.Scene} scene - The Phaser scene
  * @param {TerrainChunk[]} chunks - Array of terrain chunks
  * @param {Phaser.GameObjects.Graphics} graphics - Graphics object for redrawing
- * @param {number} explosionX - X coordinate of explosion
- * @param {number} explosionY - Y coordinate of explosion
- * @param {number} explosionRadius - Radius of explosion
+ * @param {number} impactX - X coordinate of projectile impact
+ * @param {number} impactY - Y coordinate of projectile impact
  */
-export function createTerrainDestruction(scene, chunks, graphics, explosionX, explosionY, explosionRadius) {
-    console.log(`💥 Creating terrain destruction at (${explosionX}, ${explosionY}) with radius ${explosionRadius}`);
+export function createTerrainDestruction(scene, chunks, graphics, impactX, impactY) {
+    console.log(`💥 Creating terrain destruction at impact point (${impactX}, ${impactY})`);
     
     let chunksAffected = 0;
     let chunksDestroyed = 0;
     let chunksUnsupported = 0;
     
-    // Damage chunks within explosion radius
-    chunks.forEach(chunk => {
-        if (chunk.destroyed) return;
+    // Find the chunk that contains the impact point (based on X coordinate)
+    console.log(`🔍 Finding chunk containing impact point (${impactX}, ${impactY})...`);
+    
+    let closestChunk = null;
+    let closestDistance = Infinity;
+    let closestChunkIndex = -1;
+    
+    for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
+        if (chunk.destroyed) continue;
         
-        // Check if chunk overlaps with explosion circle
-        const chunkCenterX = chunk.x + chunk.width / 2;
-        const chunkCenterY = chunk.y + chunk.height / 2;
-        const distance = Math.sqrt((chunkCenterX - explosionX) ** 2 + (chunkCenterY - explosionY) ** 2);
+        // Check if impact point is within this chunk's X bounds, or very close to the edges
+        const chunkLeft = chunk.x;
+        const chunkRight = chunk.x + chunk.width;
+        const tolerance = 5; // Allow 5 pixels tolerance on X boundaries
+        const withinX = impactX >= (chunkLeft - tolerance) && impactX <= (chunkRight + tolerance);
         
-        if (distance <= explosionRadius) {
-            chunksAffected++;
+        // Debug the first few chunks and chunks around the impact area
+        if (i < 3 || (impactX >= chunk.x - 50 && impactX <= chunk.x + chunk.width + 50)) {
+            console.log(`🔍 Chunk ${i}: pos(${chunk.x.toFixed(1)}, ${chunk.y.toFixed(1)}), size(${chunk.width.toFixed(1)}x${chunk.height.toFixed(1)}), withinX: ${withinX}`);
+        }
+        
+        // For chunks with matching X coordinate, calculate distance to impact point
+        if (withinX) {
+            // Calculate distance from impact point to closest point on chunk
+            const chunkCenterX = chunk.x + chunk.width / 2;
+            const chunkCenterY = chunk.y + chunk.height / 2;
             
-            // Calculate damage amount based on distance from explosion center
-            const damageIntensity = 1 - (distance / explosionRadius); // 1.0 at center, 0.0 at edge
-            const maxDamagePerExplosion = 40; // Maximum pixels of height to remove
-            const actualDamage = maxDamagePerExplosion * damageIntensity;
+            // Find closest point on chunk to impact point
+            const closestX = Math.max(chunk.x, Math.min(impactX, chunk.x + chunk.width));
+            const closestY = Math.max(chunk.y, Math.min(impactY, chunk.y + chunk.height));
             
-            // Reduce chunk height from the top
-            const oldHeight = chunk.height;
-            chunk.height = Math.max(0, chunk.height - actualDamage);
-            const heightReduction = oldHeight - chunk.height;
-            chunk.y += heightReduction; // Move top down as height decreases
+            const distanceToChunk = Math.sqrt((impactX - closestX) ** 2 + (impactY - closestY) ** 2);
             
-            console.log(`💥 Damaged chunk at x=${chunk.x.toFixed(1)}: reduced height by ${heightReduction.toFixed(1)}px (${chunk.height.toFixed(1)}px remaining)`);
+            console.log(`   → X matches! Center(${chunkCenterX.toFixed(1)}, ${chunkCenterY.toFixed(1)}), closest point(${closestX.toFixed(1)}, ${closestY.toFixed(1)}), distance: ${distanceToChunk.toFixed(1)}`);
             
-            // Destroy chunk if it becomes too small
-            if (chunk.height <= 5) {
-                chunk.destroyed = true;
-                chunksDestroyed++;
-                console.log(`💀 Chunk at x=${chunk.x.toFixed(1)} completely destroyed (too small)`);
+            // Keep track of the closest chunk
+            if (distanceToChunk < closestDistance) {
+                closestDistance = distanceToChunk;
+                closestChunk = chunk;
+                closestChunkIndex = i;
             }
         }
-    });
+    }
+    
+    // Damage the closest chunk if we found one
+    if (closestChunk) {
+        console.log(`🎯 Selected closest chunk at index ${closestChunkIndex}: pos(${closestChunk.x.toFixed(1)}, ${closestChunk.y.toFixed(1)}), distance: ${closestDistance.toFixed(1)}`);
+        
+        chunksAffected++;
+        
+        // Remove a square block from the top of the chunk
+        const squareBlockDamage = closestChunk.width; // Remove full chunk width in height
+        
+        // Apply damage from top
+        const oldHeight = closestChunk.height;
+        closestChunk.height = Math.max(0, closestChunk.height - squareBlockDamage);
+        const heightReduction = oldHeight - closestChunk.height;
+        closestChunk.y += heightReduction; // Move top down as height decreases
+        
+        console.log(`💥 Damaged chunk at x=${closestChunk.x.toFixed(1)}: removed ${heightReduction.toFixed(1)}px square block (${closestChunk.height.toFixed(1)}px remaining)`);
+        
+        // Destroy chunk if it becomes too small
+        if (closestChunk.height <= 15) {
+            closestChunk.destroyed = true;
+            chunksDestroyed++;
+            console.log(`💀 Chunk at x=${closestChunk.x.toFixed(1)} completely destroyed (too small)`);
+        }
+    } else {
+        console.log(`⚠️ No chunk found with matching X coordinate for impact at (${impactX.toFixed(1)}, ${impactY.toFixed(1)})`);
+    }
     
     // Make unsupported chunks fall
     chunks.forEach(chunk => {
