@@ -5,7 +5,7 @@ import { updateProjectileTrail, drawProjectileTrail, checkProjectileCollisions, 
 import { applyDamage, getCurrentPlayer, advanceToNextPlayer, advanceToNextRound, shouldGameEnd, updateWindForNewTurn, removePlayer, startPlayerTurn, stopTurnTimer } from './turnManager.js';
 import { updateProjectileCamera } from './camera.js';
 import { handleGameEnd } from './gameLifecycle.js';
-import { createTerrainDestruction, updateChunkAnimations } from './chunkedLandscape.js';
+import { createTerrainDestruction, updateChunkAnimations, handleTurretFalling } from './chunkedLandscape.js';
 
 /**
  * Update all projectiles in the scene
@@ -23,7 +23,21 @@ export function updateProjectiles(scene, projectiles, gameState, landscapeData, 
     // Update chunk animations if chunked terrain is active
     const sceneAny = /** @type {any} */ (scene);
     if (landscapeData && landscapeData.chunks && sceneAny.landscapeGraphics) {
-        updateChunkAnimations(scene, landscapeData.chunks, sceneAny.landscapeGraphics);
+        const stillAnimating = updateChunkAnimations(scene, landscapeData.chunks, sceneAny.landscapeGraphics);
+        
+        // Track animation state to detect when animations complete
+        if (!sceneAny.chunksWereAnimating) {
+            sceneAny.chunksWereAnimating = false;
+        }
+        
+        // If animations just finished, check for turret falling
+        if (sceneAny.chunksWereAnimating && !stillAnimating) {
+            console.log('🔍 Chunk animations completed - checking turrets for falling...');
+            handleTurretFalling(scene, landscapeData.chunks, turrets);
+        }
+        
+        // Update animation state for next frame
+        sceneAny.chunksWereAnimating = stillAnimating;
     }
 
     // Update each projectile
@@ -143,8 +157,12 @@ function handleTerrainCollision(scene, projectile, gameState, turrets, environme
     
     if (sceneAny.landscapeData && sceneAny.landscapeData.chunks && sceneAny.landscapeGraphics) {
         console.log('💥 Applying chunked terrain destruction...');
+        console.log(`🔍 DEBUG: Passing ${turrets.length} turrets to createTerrainDestruction`);
+        turrets.forEach((turret, i) => {
+            console.log(`  Turret ${i}: ${turret.team} at (${turret.x.toFixed(1)}, ${turret.y.toFixed(1)})`);
+        });
         createTerrainDestruction(scene, sceneAny.landscapeData.chunks, sceneAny.landscapeGraphics, 
-                                projectile.x, projectile.y);
+                                projectile.x, projectile.y, turrets);
     } else {
         console.log('⚠️ Chunked terrain destruction skipped - conditions not met');
     }

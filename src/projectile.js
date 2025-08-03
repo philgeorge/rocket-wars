@@ -325,10 +325,7 @@ export function checkProjectileCollisions(scene, projectile, landscapeData, turr
     if (landscapeData) {
         // Check for chunked terrain first (if available)
         if (landscapeData.chunks) {
-            console.log(`🔍 Checking chunked terrain collision for projectile at (${projectile.x.toFixed(1)}, ${projectile.y.toFixed(1)})`);
-            console.log(`🔍 Total chunks available: ${landscapeData.chunks.length}`);
             collisions.terrain = checkChunkedTerrainCollision(projectile, landscapeData.chunks);
-            console.log(`🔍 Chunked terrain collision result: ${collisions.terrain}`);
         } 
         // Fallback to point-based terrain collision
         else if (landscapeData.points) {

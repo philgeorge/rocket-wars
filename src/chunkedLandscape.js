@@ -6,7 +6,7 @@ import { generateLandscapePoints } from './landscape.js';
 import { loadDebugSettings } from './storage.js';
 
 /**
- * Debug settings for chunked landsca        console.log(`💥 Starting animated damage for chunk at x=${closestChunk.x.toFixed(1)}: will remove ${heightReduction.toFixed(1)}px over 0.5 seconds (${newHeight.toFixed(1)}px will remain)`);e
+ * Debug settings for chunked landscape
  */
 const debugSettings = {
     landscapeChunkOutlines: false
@@ -209,14 +209,181 @@ export function drawChunkedLandscape(graphics, chunks) {
 }
 
 /**
+ * Calculate landscape support percentage for a turret based on chunks beneath it
+ * @param {any} turret - The turret object
+ * @param {TerrainChunk[]} chunks - Array of terrain chunks
+ * @returns {number} Percentage of turret width that has landscape support (0-100)
+ */
+function calculateTurretSupport(turret, chunks) {
+    const turretWidth = 40; // Turret width in pixels
+    const turretLeft = turret.x - (turretWidth / 2);
+    const turretRight = turret.x + (turretWidth / 2);
+    const turretBottom = turret.y + 25; // Turret sits 25px above base
+    
+    console.log(`🔍 Calculating support for turret at (${turret.x.toFixed(1)}, ${turret.y.toFixed(1)}) - team ${turret.team}`);
+    console.log(`🔍 Turret spans from x=${turretLeft.toFixed(1)} to x=${turretRight.toFixed(1)}, bottom at y=${turretBottom.toFixed(1)}`);
+    
+    let supportedWidth = 0;
+    const samplePoints = 8; // Sample support every 5px across turret width
+    
+    for (let i = 0; i < samplePoints; i++) {
+        const sampleX = turretLeft + (i / (samplePoints - 1)) * turretWidth;
+        let hasSupport = false;
+        
+        // Check if any chunk provides support at this X position
+        for (const chunk of chunks) {
+            if (chunk.destroyed) continue;
+            
+            // Check if this chunk is at the right X position and extends up to support the turret
+            const chunkLeft = chunk.x;
+            const chunkRight = chunk.x + chunk.width;
+            const chunkTop = chunk.y;
+            const chunkBottom = chunk.y + chunk.height;
+            
+            if (sampleX >= chunkLeft && sampleX <= chunkRight && chunkTop <= turretBottom + 5) {
+                hasSupport = true;
+                break;
+            }
+        }
+        
+        if (hasSupport) {
+            supportedWidth += turretWidth / samplePoints;
+        }
+    }
+    
+    const supportPercentage = (supportedWidth / turretWidth) * 100;
+    console.log(`🔍 Turret support: ${supportedWidth.toFixed(1)}px of ${turretWidth}px supported (${supportPercentage.toFixed(1)}%)`);
+    return supportPercentage;
+}
+
+/**
+ * Find the new landing position for a falling turret
+ * @param {any} turret - The turret object
+ * @param {TerrainChunk[]} chunks - Array of terrain chunks
+ * @returns {number|null} New Y position for turret, or null if no valid landing spot
+ */
+function findTurretLandingPosition(turret, chunks) {
+    const turretWidth = 40;
+    const turretLeft = turret.x - (turretWidth / 2);
+    const turretRight = turret.x + (turretWidth / 2);
+    
+    console.log(`🔍 Finding landing position for turret at x=${turret.x.toFixed(1)} (spans ${turretLeft.toFixed(1)} to ${turretRight.toFixed(1)})`);
+    
+    // Find the highest terrain level that can support at least 50% of the turret
+    let bestLandingY = null;
+    let bestSupportPercentage = 0;
+    
+    // Create a list of potential landing levels from existing chunk tops
+    const potentialLevels = new Set();
+    for (const chunk of chunks) {
+        if (!chunk.destroyed && chunk.height > 10) {
+            potentialLevels.add(chunk.y);
+        }
+    }
+    
+    // Sort levels from highest (lowest Y value) to lowest
+    const sortedLevels = Array.from(potentialLevels).sort((a, b) => a - b);
+    
+    for (const level of sortedLevels) {
+        // Calculate support at this level
+        let supportedWidth = 0;
+        const samplePoints = 8;
+        
+        for (let i = 0; i < samplePoints; i++) {
+            const sampleX = turretLeft + (i / (samplePoints - 1)) * turretWidth;
+            
+            // Check if any chunk provides support at this X position and level
+            for (const chunk of chunks) {
+                if (chunk.destroyed) continue;
+                
+                const chunkLeft = chunk.x;
+                const chunkRight = chunk.x + chunk.width;
+                const chunkTop = chunk.y;
+                
+                if (sampleX >= chunkLeft && sampleX <= chunkRight && 
+                    chunkTop <= level + 5 && (chunkTop + chunk.height) >= level) {
+                    supportedWidth += turretWidth / samplePoints;
+                    break;
+                }
+            }
+        }
+        
+        const supportPercentage = (supportedWidth / turretWidth) * 100;
+        console.log(`🔍 Level y=${level.toFixed(1)}: ${supportPercentage.toFixed(1)}% support`);
+        
+        if (supportPercentage >= 50 && supportPercentage > bestSupportPercentage) {
+            bestLandingY = level - 25; // Position turret 25px above surface
+            bestSupportPercentage = supportPercentage;
+            console.log(`✅ New best landing position: y=${bestLandingY.toFixed(1)} with ${supportPercentage.toFixed(1)}% support`);
+        }
+    }
+    
+    return bestLandingY;
+}
+
+/**
+ * Animate turret falling to new position
+ * @param {Phaser.Scene} scene - The Phaser scene
+ * @param {any} turret - The turret object
+ * @param {number} targetY - Target Y position
+ */
+function animateTurretFalling(scene, turret, targetY) {
+    console.log(`🪂 Animating turret fall from y=${turret.y.toFixed(1)} to y=${targetY.toFixed(1)}`);
+    
+    // Animate the turret falling with gravity-like easing
+    scene.tweens.add({
+        targets: turret,
+        y: targetY,
+        duration: 800, // 0.8 seconds for falling animation
+        ease: 'Bounce.easeOut', // Bouncy landing effect
+        onComplete: () => {
+            console.log(`🎯 Turret ${turret.team} landed at y=${turret.y.toFixed(1)}`);
+        }
+    });
+}
+
+/**
+ * Check all turrets for loss of landscape support and handle falling
+ * @param {Phaser.Scene} scene - The Phaser scene
+ * @param {TerrainChunk[]} chunks - Array of terrain chunks
+ * @param {any[]} turrets - Array of turrets to check
+ */
+export function handleTurretFalling(scene, chunks, turrets) {
+    console.log(`🔍 Checking ${turrets.length} turrets for landscape support after terrain destruction...`);
+    
+    turrets.forEach(turret => {
+        const supportPercentage = calculateTurretSupport(turret, chunks);
+        
+        if (supportPercentage < 50) {
+            console.log(`⚠️ Turret ${turret.team} has insufficient support (${supportPercentage.toFixed(1)}% < 50%) - initiating fall`);
+            
+            const newPosition = findTurretLandingPosition(turret, chunks);
+            
+            if (newPosition !== null && newPosition > turret.y) {
+                console.log(`🪂 Turret ${turret.team} will fall to new position y=${newPosition.toFixed(1)}`);
+                animateTurretFalling(scene, turret, newPosition);
+            } else if (newPosition === null) {
+                console.log(`💀 Turret ${turret.team} has no valid landing position - would be destroyed`);
+                // Could implement turret destruction here if needed
+            } else {
+                console.log(`🚫 Turret ${turret.team} cannot fall upward - staying at current position`);
+            }
+        } else {
+            console.log(`✅ Turret ${turret.team} has sufficient support (${supportPercentage.toFixed(1)}% >= 50%)`);
+        }
+    });
+}
+
+/**
  * Create explosion damage to terrain chunks with animated reduction
  * @param {Phaser.Scene} scene - The Phaser scene
  * @param {TerrainChunk[]} chunks - Array of terrain chunks
  * @param {Phaser.GameObjects.Graphics} graphics - Graphics object for redrawing
  * @param {number} impactX - X coordinate of projectile impact
  * @param {number} impactY - Y coordinate of projectile impact
+ * @param {any[]} [turrets] - Array of turrets to check for falling (optional)
  */
-export function createTerrainDestruction(scene, chunks, graphics, impactX, impactY) {
+export function createTerrainDestruction(scene, chunks, graphics, impactX, impactY, turrets = []) {
     console.log(`💥 Creating terrain destruction at impact point (${impactX}, ${impactY})`);
     
     let chunksAffected = 0;
