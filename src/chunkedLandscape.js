@@ -414,7 +414,7 @@ export function checkChunkedTerrainCollision(projectile, chunks) {
  * @param {number} worldWidth - World width in pixels
  * @param {number} worldHeight - World height in pixels
  * @param {Object} gameConfig - Game configuration
- * @returns {{landscapeData: {chunks: TerrainChunk[]}, graphics: Phaser.GameObjects.Graphics}} Chunked landscape
+ * @returns {{landscapeData: {points: Array, flatBases: Array, chunks: TerrainChunk[]}, graphics: Phaser.GameObjects.Graphics}} Chunked landscape
  */
 export function setupChunkedLandscape(scene, worldWidth, worldHeight, gameConfig) {
     console.log(`🏔️ Setting up chunked landscape: ${worldWidth}x${worldHeight}px for ${gameConfig.numPlayers} players`);

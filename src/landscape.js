@@ -2,7 +2,6 @@
 // Landscape generation and drawing utilities for Rocket Wars
 
 import { WORLD_HEIGHT } from './constants.js';
-import { setupChunkedLandscape } from './chunkedLandscape.js';
 
 /**
  * Generate landscape points with alternating flat and mountainous sections
@@ -186,96 +185,4 @@ export function generateLandscapePoints(width, baseY, numPoints, numPlayers = 2)
     console.log(`📊 Flat bases summary:`, flatBases.map((base, index) => `Base ${index}: points ${base.start}-${base.end} (width: ${base.end - base.start + 1} points)`));
 
     return { points, flatBases };
-}
-
-/**
- * Draw the landscape using Phaser graphics
- * @param {Phaser.GameObjects.Graphics} graphics - Phaser graphics object to draw with
- * @param {Array<{x: number, y: number}>} points - Array of landscape points
- * @param {number} worldWidth - World width in pixels
- * @param {number} worldHeight - World height in pixels
- * @param {Array<{start: number, end: number}>} flatBases - Array of flat base sections
- * @returns {void}
- */
-export function drawLandscape(graphics, points, worldWidth, worldHeight, flatBases) {
-    // Draw green landscape
-    graphics.beginPath();
-    graphics.moveTo(0, worldHeight);
-    points.forEach(pt => graphics.lineTo(pt.x, pt.y));
-    graphics.lineTo(worldWidth, worldHeight);
-    graphics.closePath();
-    graphics.fillPath();
-
-    // Draw brown lines for flat base areas
-    graphics.lineStyle(2, 0x8B4513, 1); // thinner brown line (4px)
-    flatBases.forEach((base, index) => {
-        // Draw a brown line along the flat base
-        const start = points[base.start];
-        const end = points[base.end];
-        if (start && end) {
-            // Verify the flat base is actually flat
-            let isFlat = true;
-            let maxDifference = 0;
-            const expectedY = start.y;
-            
-            for (let i = base.start; i <= base.end; i++) {
-                const difference = Math.abs(points[i].y - expectedY);
-                maxDifference = Math.max(maxDifference, difference);
-                if (difference > 0.1) { // Allow tiny floating point differences
-                    isFlat = false;
-                }
-            }
-            
-            if (!isFlat) {
-                console.warn(`Flat base ${index} is not actually flat! Points ${base.start}-${base.end}, max difference: ${maxDifference}px`);
-                // Log the actual Y values for debugging
-                const yValues = [];
-                for (let i = base.start; i <= base.end; i++) {
-                    yValues.push(Math.round(points[i].y * 100) / 100);
-                }
-                console.warn(`Y values: [${yValues.join(', ')}]`);
-            }
-            
-            graphics.beginPath();
-            graphics.moveTo(start.x, start.y);
-            graphics.lineTo(end.x, end.y);
-            graphics.strokePath();
-        }
-    });
-}
-
-/**
- * Setup the complete world landscape including generation, drawing, and boundaries
- * @param {Phaser.Scene} scene - The Phaser scene
- * @param {number} worldWidth - World width in pixels
- * @param {number} worldHeight - World height in pixels  
- * @param {Object} gameConfig - Game configuration object
- * @param {boolean} [useChunkedTerrain=false] - Whether to use chunked terrain system
- * @returns {{landscapeData: {points: Array, flatBases: Array, chunks?: Array}, graphics: Phaser.GameObjects.Graphics}} Landscape setup result
- */
-export function setupWorldLandscape(scene, worldWidth, worldHeight, gameConfig, useChunkedTerrain = false) {
-    console.log(`Setting up world landscape: ${worldWidth}x${worldHeight}px for ${gameConfig.numPlayers} players${useChunkedTerrain ? ' (CHUNKED)' : ''}`);
-    
-    if (useChunkedTerrain) {
-        // Use the new chunked terrain system
-        return setupChunkedLandscape(scene, worldWidth, worldHeight, gameConfig);
-    }
-    
-    // Original point-based system
-    // Create graphics object for drawing
-    const graphics = scene.add.graphics();
-    graphics.fillStyle(0x3a5c2c, 1); // greenish color for landscape
-    
-    // Generate and draw random landscape
-    const baseY = worldHeight - 100;
-    const numPoints = Math.floor(worldWidth / 50); // Calculate points based on world width
-    console.log(`Generating landscape with world width: ${worldWidth}px, height: ${worldHeight}px, points: ${numPoints}`);
-    
-    const { points, flatBases } = generateLandscapePoints(worldWidth, baseY, numPoints, gameConfig.numPlayers);
-    drawLandscape(graphics, points, worldWidth, worldHeight, flatBases);
-    
-    
-    // Return landscape data for collision detection and graphics object
-    const landscapeData = { points, flatBases };
-    return { landscapeData, graphics };
 }

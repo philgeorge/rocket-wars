@@ -1,7 +1,7 @@
 // main.js
 // Entry point for Rocket Wars game logic
 
-import { setupWorldLandscape } from './landscape.js';
+import { setupChunkedLandscape } from './chunkedLandscape.js';
 import { placeTurretsOnBases } from './turret.js';
 import { createProjectile } from './projectile.js';
 import { createEnvironmentPanel, createPlayerStatsPanel, positionEnvironmentPanel, positionPlayerStatsPanel, createAimingInstructionsPanel, hideAimingInstructionsPanel, showAimingInstructionsIfNeeded, positionPanel } from './ui/index.js';
@@ -176,9 +176,7 @@ function create() {
     window.addEventListener('resize', handleResize);
 
     // Set up world landscape (generation, drawing, and boundaries)
-    // TEMP: Enable chunked terrain system for testing destructible landscape
-    const useChunkedTerrain = true; // Set to false to use original point-based terrain
-    const { landscapeData, graphics } = setupWorldLandscape(this, WORLD_WIDTH, WORLD_HEIGHT, gameConfig, useChunkedTerrain);
+    const { landscapeData, graphics } = setupChunkedLandscape(this, WORLD_WIDTH, WORLD_HEIGHT, gameConfig);
 
     // Store landscape data for collision detection
     this.landscapeData = landscapeData;
