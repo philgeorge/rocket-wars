@@ -4,6 +4,7 @@
 import { WORLD_HEIGHT } from './constants.js';
 import { generateLandscapePoints } from './landscape.js';
 import { loadDebugSettings } from './storage.js';
+import { applyDamage } from './turnManager.js';
 
 /**
  * Debug settings for chunked landscape
@@ -309,7 +310,6 @@ function findTurretLandingPosition(turret, chunks) {
         }
         
         const supportPercentage = (supportedWidth / turretWidth) * 100;
-        console.log(`🔍 Level y=${level.toFixed(1)}: ${supportPercentage.toFixed(1)}% support`);
         
         if (supportPercentage >= 50 && supportPercentage > bestSupportPercentage) {
             bestLandingY = level - 25; // Position turret 25px above surface
@@ -326,9 +326,20 @@ function findTurretLandingPosition(turret, chunks) {
  * @param {Phaser.Scene} scene - The Phaser scene
  * @param {any} turret - The turret object
  * @param {number} targetY - Target Y position
+ * @param {any} gameState - Current game state
  */
-function animateTurretFalling(scene, turret, targetY) {
+function animateTurretFalling(scene, turret, targetY, gameState) {
     console.log(`🪂 Animating turret fall from y=${turret.y.toFixed(1)} to y=${targetY.toFixed(1)}`);
+    
+    // Apply 10 points of falling damage
+    const FALL_DAMAGE = 10;
+    applyDamage(gameState, turret.team, FALL_DAMAGE);
+    console.log(`💥 Turret ${turret.team} took ${FALL_DAMAGE} falling damage, health now: ${gameState[turret.team].health}%`);
+    
+    // Update turret visual health indicator
+    if (turret.updateHealthDisplay) {
+        turret.updateHealthDisplay(gameState[turret.team].health);
+    }
     
     // Animate the turret falling with gravity-like easing
     scene.tweens.add({
@@ -338,6 +349,13 @@ function animateTurretFalling(scene, turret, targetY) {
         ease: 'Bounce.easeOut', // Bouncy landing effect
         onComplete: () => {
             console.log(`🎯 Turret ${turret.team} landed at y=${turret.y.toFixed(1)}`);
+            
+            // Check if the turret/player is still alive after falling damage
+            if (gameState[turret.team].health <= 0) {
+                console.log(`💀 Turret ${turret.team} was destroyed by falling damage!`);
+                // Note: Player elimination will be handled by the existing game systems
+                // when the main game loop checks for dead players
+            }
         }
     });
 }
@@ -347,9 +365,13 @@ function animateTurretFalling(scene, turret, targetY) {
  * @param {Phaser.Scene} scene - The Phaser scene
  * @param {TerrainChunk[]} chunks - Array of terrain chunks
  * @param {any[]} turrets - Array of turrets to check
+ * @param {any} gameState - Current game state
+ * @returns {boolean} True if any turrets took falling damage
  */
-export function handleTurretFalling(scene, chunks, turrets) {
+export function handleTurretFalling(scene, chunks, turrets, gameState) {
     console.log(`🔍 Checking ${turrets.length} turrets for landscape support after terrain destruction...`);
+    
+    let anyTurretFell = false;
     
     turrets.forEach(turret => {
         const supportPercentage = calculateTurretSupport(turret, chunks);
@@ -361,7 +383,8 @@ export function handleTurretFalling(scene, chunks, turrets) {
             
             if (newPosition !== null && newPosition > turret.y) {
                 console.log(`🪂 Turret ${turret.team} will fall to new position y=${newPosition.toFixed(1)}`);
-                animateTurretFalling(scene, turret, newPosition);
+                animateTurretFalling(scene, turret, newPosition, gameState);
+                anyTurretFell = true;
             } else if (newPosition === null) {
                 console.log(`💀 Turret ${turret.team} has no valid landing position - would be destroyed`);
                 // Could implement turret destruction here if needed
@@ -372,6 +395,8 @@ export function handleTurretFalling(scene, chunks, turrets) {
             console.log(`✅ Turret ${turret.team} has sufficient support (${supportPercentage.toFixed(1)}% >= 50%)`);
         }
     });
+    
+    return anyTurretFell;
 }
 
 /**

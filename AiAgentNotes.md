@@ -81,6 +81,9 @@ This file contains notes about my learnings from using an AI Agent to help me bu
 ## 20 July 5 hours
 - remaining teleport feature
 
+## 27 July, 3 August 5 hours
+- chunked, desructible landscape, falling turrets
+
 # Odd Agent Behaviour
 
 - Choosing technology and shaping the look of the game went very well. This is kind of like competitor analysis and market research for a product.

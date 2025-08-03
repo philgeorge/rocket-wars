@@ -33,7 +33,13 @@ export function updateProjectiles(scene, projectiles, gameState, landscapeData, 
         // If animations just finished, check for turret falling
         if (sceneAny.chunksWereAnimating && !stillAnimating) {
             console.log('🔍 Chunk animations completed - checking turrets for falling...');
-            handleTurretFalling(scene, landscapeData.chunks, turrets);
+            const fallDamageOccurred = handleTurretFalling(scene, landscapeData.chunks, turrets, gameState);
+            
+            // Update UI panels if any falling damage occurred
+            if (fallDamageOccurred && sceneAny.environmentPanel && sceneAny.playerStatsPanel) {
+                sceneAny.environmentPanel.update?.(gameState);
+                sceneAny.playerStatsPanel.update?.(gameState);
+            }
         }
         
         // Update animation state for next frame
