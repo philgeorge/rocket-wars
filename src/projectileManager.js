@@ -5,7 +5,7 @@ import { updateProjectileTrail, drawProjectileTrail, checkProjectileCollisions, 
 import { applyDamage, getCurrentPlayer, advanceToNextPlayer, advanceToNextRound, shouldGameEnd, updateWindForNewTurn, removePlayer, startPlayerTurn, stopTurnTimer } from './turnManager.js';
 import { updateProjectileCamera } from './camera.js';
 import { handleGameEnd } from './gameLifecycle.js';
-import { createTerrainDestruction, updateFallingChunks } from './chunkedLandscape.js';
+import { createTerrainDestruction, updateChunkAnimations } from './chunkedLandscape.js';
 
 /**
  * Update all projectiles in the scene
@@ -20,10 +20,10 @@ export function updateProjectiles(scene, projectiles, gameState, landscapeData, 
     // Camera follows projectiles with smooth following
     updateProjectileCamera(scene, projectiles);
 
-    // Update falling chunks physics if chunked terrain is active
+    // Update chunk animations if chunked terrain is active
     const sceneAny = /** @type {any} */ (scene);
     if (landscapeData && landscapeData.chunks && sceneAny.landscapeGraphics) {
-        updateFallingChunks(scene, landscapeData.chunks, sceneAny.landscapeGraphics);
+        updateChunkAnimations(scene, landscapeData.chunks, sceneAny.landscapeGraphics);
     }
 
     // Update each projectile

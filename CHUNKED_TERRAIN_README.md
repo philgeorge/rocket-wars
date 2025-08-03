@@ -51,7 +51,7 @@ Each chunk is **25px wide** by default (vs 50px spacing in original), giving you
 The chunked system includes these destructible terrain functions (ready to integrate):
 
 1. **`createTerrainDestruction()`** - Destroy chunks in explosion radius
-2. **`updateFallingChunks()`** - Make unsupported chunks fall with gravity
+2. **`updateChunkAnimations()`** - Animate chunk damage over 0.5 seconds
 3. **`checkChunkedTerrainCollision()`** - Collision detection for projectiles
 
 ## Testing

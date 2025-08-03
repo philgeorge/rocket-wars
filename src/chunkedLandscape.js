@@ -6,7 +6,7 @@ import { generateLandscapePoints } from './landscape.js';
 import { loadDebugSettings } from './storage.js';
 
 /**
- * Debug settings for chunked landscape
+ * Debug settings for chunked landsca        console.log(`💥 Starting animated damage for chunk at x=${closestChunk.x.toFixed(1)}: will remove ${heightReduction.toFixed(1)}px over 0.5 seconds (${newHeight.toFixed(1)}px will remain)`);e
  */
 const debugSettings = {
     landscapeChunkOutlines: false
@@ -22,9 +22,12 @@ loadDebugSettings(debugSettings);
  * @property {number} width - Width of chunk
  * @property {number} height - Height of chunk
  * @property {boolean} destroyed - Whether chunk is destroyed
- * @property {boolean} falling - Whether chunk is currently falling
- * @property {number} fallSpeed - Current fall velocity
- * @property {number} originalY - Original Y position before falling
+ * @property {boolean} animating - Whether chunk is currently animating damage
+ * @property {number} startY - Starting Y position for animation
+ * @property {number} startHeight - Starting height for animation
+ * @property {number} targetY - Target Y position for animation
+ * @property {number} targetHeight - Target height for animation
+ * @property {number} animationStartTime - When the animation started
  * @property {Phaser.GameObjects.Graphics} graphics - Visual representation
  */
 
@@ -64,9 +67,12 @@ export function createChunkedLandscape(scene, points, worldWidth, worldHeight, c
             width: actualChunkWidth,
             height: worldHeight - terrainY,
             destroyed: false,
-            falling: false,
-            fallSpeed: 0,
-            originalY: terrainY,
+            animating: false,
+            startY: terrainY,
+            startHeight: worldHeight - terrainY,
+            targetY: terrainY,
+            targetHeight: worldHeight - terrainY,
+            animationStartTime: 0,
             graphics: null // Will be set when drawing
         };
         
@@ -203,7 +209,7 @@ export function drawChunkedLandscape(graphics, chunks) {
 }
 
 /**
- * Create explosion damage to terrain chunks
+ * Create explosion damage to terrain chunks with animated reduction
  * @param {Phaser.Scene} scene - The Phaser scene
  * @param {TerrainChunk[]} chunks - Array of terrain chunks
  * @param {Phaser.GameObjects.Graphics} graphics - Graphics object for redrawing
@@ -215,7 +221,6 @@ export function createTerrainDestruction(scene, chunks, graphics, impactX, impac
     
     let chunksAffected = 0;
     let chunksDestroyed = 0;
-    let chunksUnsupported = 0;
     
     // Find the chunk that contains the impact point (based on X coordinate)
     console.log(`🔍 Finding chunk containing impact point (${impactX}, ${impactY})...`);
@@ -268,116 +273,81 @@ export function createTerrainDestruction(scene, chunks, graphics, impactX, impac
         
         chunksAffected++;
         
-        // Remove a square block from the top of the chunk
+        // Set up animated damage reduction
         const squareBlockDamage = closestChunk.width; // Remove full chunk width in height
+        const newHeight = Math.max(0, closestChunk.height - squareBlockDamage);
+        const heightReduction = closestChunk.height - newHeight;
+        const newY = closestChunk.y + heightReduction; // Move top down as height decreases
         
-        // Apply damage from top
-        const oldHeight = closestChunk.height;
-        closestChunk.height = Math.max(0, closestChunk.height - squareBlockDamage);
-        const heightReduction = oldHeight - closestChunk.height;
-        closestChunk.y += heightReduction; // Move top down as height decreases
+        // Start animation
+        closestChunk.animating = true;
+        closestChunk.startY = closestChunk.y;
+        closestChunk.startHeight = closestChunk.height;
+        closestChunk.targetY = newY;
+        closestChunk.targetHeight = newHeight;
+        closestChunk.animationStartTime = scene.time.now;
         
-        console.log(`💥 Damaged chunk at x=${closestChunk.x.toFixed(1)}: removed ${heightReduction.toFixed(1)}px square block (${closestChunk.height.toFixed(1)}px remaining)`);
+        console.log(`� Starting animated damage for chunk at x=${closestChunk.x.toFixed(1)}: will remove ${heightReduction.toFixed(1)}px over 1 second (${newHeight.toFixed(1)}px will remain)`);
         
-        // Destroy chunk if it becomes too small
-        if (closestChunk.height <= 15) {
-            closestChunk.destroyed = true;
-            chunksDestroyed++;
-            console.log(`💀 Chunk at x=${closestChunk.x.toFixed(1)} completely destroyed (too small)`);
+        // Check if chunk will be destroyed after animation
+        if (newHeight <= 15) {
+            console.log(`💀 Chunk at x=${closestChunk.x.toFixed(1)} will be destroyed after animation (too small)`);
         }
     } else {
         console.log(`⚠️ No chunk found with matching X coordinate for impact at (${impactX.toFixed(1)}, ${impactY.toFixed(1)})`);
     }
     
-    // Make unsupported chunks fall
-    chunks.forEach(chunk => {
-        if (chunk.destroyed || chunk.falling) return;
-        
-        // Check if chunk has support (any non-destroyed chunk below it)
-        const hasSupport = chunks.some(otherChunk => {
-            return !otherChunk.destroyed &&
-                   otherChunk !== chunk &&
-                   Math.abs(otherChunk.x - chunk.x) < chunk.width && // Same X position
-                   otherChunk.y > chunk.y && // Below this chunk
-                   otherChunk.y < chunk.y + chunk.height + 50; // Within reasonable distance
-        });
-        
-        // Also check if chunk is resting on ground level
-        const isOnGround = (chunk.y + chunk.height) >= scene.physics.world.bounds.height - 50;
-        
-        if (!hasSupport && !isOnGround) {
-            chunk.falling = true;
-            chunk.fallSpeed = 0;
-            chunksUnsupported++;
-            console.log(`⬇️ Chunk at x=${chunk.x.toFixed(1)} is now falling (no support)`);
-        }
-    });
-    
-    // Redraw landscape
-    drawChunkedLandscape(graphics, chunks);
-    
-    console.log(`🏔️ Destruction complete: ${chunksAffected} chunks affected, ${chunksDestroyed} destroyed, ${chunksUnsupported} falling`);
+    console.log(`🏔️ Destruction setup complete: ${chunksAffected} chunks will be animated`);
 }
 
 /**
- * Update physics for falling chunks
+ * Update animations for damaged chunks
  * @param {Phaser.Scene} scene - The Phaser scene
  * @param {TerrainChunk[]} chunks - Array of terrain chunks
  * @param {Phaser.GameObjects.Graphics} graphics - Graphics object for redrawing
  */
-export function updateFallingChunks(scene, chunks, graphics) {
-    let anyChunkFalling = false;
-    const gravity = 0.8; // Pixels per frame squared
-    const groundLevel = scene.physics.world.bounds.height - 20;
+export function updateChunkAnimations(scene, chunks, graphics) {
+    let anyChunkAnimating = false;
+    const animationDuration = 500; // 0.5 seconds in milliseconds
     
     chunks.forEach(chunk => {
-        if (!chunk.falling) return;
+        if (!chunk.animating) return;
         
-        anyChunkFalling = true;
+        anyChunkAnimating = true;
         
-        // Apply gravity
-        chunk.fallSpeed += gravity;
-        chunk.y += chunk.fallSpeed;
+        // Calculate animation progress (0 to 1)
+        const elapsed = scene.time.now - chunk.animationStartTime;
+        const progress = Math.min(elapsed / animationDuration, 1);
         
-        // Check for collision with ground or other chunks
-        let hasLanded = false;
+        // Use easing function for smoother animation (ease-out)
+        const easedProgress = 1 - Math.pow(1 - progress, 3);
         
-        // Check ground collision
-        if (chunk.y + chunk.height >= groundLevel) {
-            chunk.y = groundLevel - chunk.height;
-            hasLanded = true;
-        }
+        // Interpolate between start and target values
+        chunk.y = chunk.startY + (chunk.targetY - chunk.startY) * easedProgress;
+        chunk.height = chunk.startHeight + (chunk.targetHeight - chunk.startHeight) * easedProgress;
         
-        // Check collision with other non-falling chunks
-        if (!hasLanded) {
-            chunks.forEach(otherChunk => {
-                if (otherChunk === chunk || otherChunk.destroyed || otherChunk.falling) return;
-                
-                // Check if chunks overlap horizontally
-                const horizontalOverlap = !(chunk.x + chunk.width <= otherChunk.x || 
-                                          chunk.x >= otherChunk.x + otherChunk.width);
-                
-                if (horizontalOverlap && chunk.y + chunk.height >= otherChunk.y) {
-                    // Land on top of other chunk
-                    chunk.y = otherChunk.y - chunk.height;
-                    hasLanded = true;
-                }
-            });
-        }
-        
-        if (hasLanded) {
-            chunk.falling = false;
-            chunk.fallSpeed = 0;
-            console.log(`🏁 Chunk at x=${chunk.x.toFixed(1)} has landed`);
+        // Check if animation is complete
+        if (progress >= 1) {
+            chunk.animating = false;
+            chunk.y = chunk.targetY;
+            chunk.height = chunk.targetHeight;
+            
+            // Destroy chunk if it's too small
+            if (chunk.height <= 15) {
+                chunk.destroyed = true;
+                console.log(`💀 Chunk at x=${chunk.x.toFixed(1)} destroyed after animation (too small)`);
+            }
+            
+            console.log(`✅ Animation complete for chunk at x=${chunk.x.toFixed(1)}`);
         }
     });
     
-    // Redraw if any chunks moved
-    if (anyChunkFalling) {
+    // Redraw if any chunks are animating
+    if (anyChunkAnimating) {
         drawChunkedLandscape(graphics, chunks);
     }
     
-    return anyChunkFalling;
+    return anyChunkAnimating;
 }
 
 /**
