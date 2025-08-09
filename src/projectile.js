@@ -3,6 +3,7 @@
 
 import { checkChunkedTerrainCollision } from './chunkedLandscape.js';
 import { info, trace } from './logger.js';
+import { getTeamColorHex } from './constants.js';
 
 /**
  * Create a projectile with physics and visual trail
@@ -11,14 +12,34 @@ import { info, trace } from './logger.js';
  * @param {number} startY - Starting Y position
  * @param {number} angle - Launch angle in radians
  * @param {number} power - Launch power (0.1 to 1.0)
- * @returns {Phaser.GameObjects.Graphics & {trail: Array<{x: number, y: number, time: number}>, maxTrailLength: number, isProjectile: boolean, startTime: number, maxFlightTime: number, trailGraphics?: Phaser.GameObjects.Graphics, firingTurret?: any}}
+ * @param {string} [team] - Team key of firing turret so projectile/trail use player colour
+ * @returns {Phaser.GameObjects.Graphics & {trail: Array<{x: number, y: number, time: number}>, maxTrailLength: number, isProjectile: boolean, startTime: number, maxFlightTime: number, trailGraphics?: Phaser.GameObjects.Graphics, firingTurret?: any, baseColor?: number}}
  */
-export function createProjectile(scene, startX, startY, angle, power) {
+export function createProjectile(scene, startX, startY, angle, power, team) {
     // Create projectile graphics (small rocket/bullet)
-    const projectile = /** @type {Phaser.GameObjects.Graphics & {trail: Array<{x: number, y: number, time: number}>, maxTrailLength: number, isProjectile: boolean, startTime: number, maxFlightTime: number, trailGraphics?: Phaser.GameObjects.Graphics, firingTurret?: any}} */ (scene.add.graphics());
-    projectile.fillStyle(0xff6b6b, 1); // Reddish color for projectile
+    const projectile = /** @type {Phaser.GameObjects.Graphics & {trail: Array<{x: number, y: number, time: number}>, maxTrailLength: number, isProjectile: boolean, startTime: number, maxFlightTime: number, trailGraphics?: Phaser.GameObjects.Graphics, firingTurret?: any, baseColor?: number}} */ (scene.add.graphics());
+
+    // Resolve team colour (fallback to existing red if not supplied)
+    const baseColor = team ? getTeamColorHex(team) : 0xff6b6b;
+    projectile.baseColor = baseColor;
+
+    // Derive lighter & darker variants for simple contrast
+    const colorObj = Phaser.Display.Color.ValueToColor(baseColor);
+    const lighter = Phaser.Display.Color.ObjectToColor({
+        r: Math.min(255, colorObj.red + 40),
+        g: Math.min(255, colorObj.green + 40),
+        b: Math.min(255, colorObj.blue + 40)
+    }).color;
+    const darker = Phaser.Display.Color.ObjectToColor({
+        r: Math.max(0, colorObj.red - 40),
+        g: Math.max(0, colorObj.green - 40),
+        b: Math.max(0, colorObj.blue - 40)
+    }).color;
+
+    // Draw projectile using team colour theme
+    projectile.fillStyle(lighter, 1);
     projectile.fillCircle(0, 0, 3); // 3px radius circle
-    projectile.lineStyle(1, 0xff4444, 1);
+    projectile.lineStyle(1, darker, 1);
     projectile.strokeCircle(0, 0, 3);
     
     // Position at start location
@@ -78,7 +99,7 @@ export function updateProjectileTrail(projectile) {
 /**
  * Draw projectile trail as a single connected path with gradient effect
  * @param {Phaser.Scene} scene - The Phaser scene
- * @param {Phaser.GameObjects.Graphics & {trail: Array<{x: number, y: number, time: number}>, trailGraphics?: Phaser.GameObjects.Graphics}} projectile
+ * @param {Phaser.GameObjects.Graphics & {trail: Array<{x: number, y: number, time: number}>, trailGraphics?: Phaser.GameObjects.Graphics, baseColor?: number}} projectile
  */
 export function drawProjectileTrail(scene, projectile) {
     if (!projectile.trailGraphics) {
@@ -102,7 +123,8 @@ export function drawProjectileTrail(scene, projectile) {
         const alpha = (seg + 1) / numSegments; // Fade from 0 to 1
         const lineWidth = alpha * 2; // Thicker lines at front of trail
         
-        projectile.trailGraphics.lineStyle(lineWidth, 0xff6b6b, alpha * 0.6);
+        // Use the stored baseColor (player colour). Slightly fade earlier segments.
+        projectile.trailGraphics.lineStyle(lineWidth, projectile.baseColor || 0xff6b6b, alpha * 0.6);
         projectile.trailGraphics.beginPath();
         
         // Start the path

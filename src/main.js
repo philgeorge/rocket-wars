@@ -117,7 +117,7 @@ function shootFromTurret(scene, turret, shootData) {
     
     // Launch projectile from turret gun tip
     const tipPosition = turret.getGunTipPosition();
-    const projectile = createProjectile(scene, tipPosition.x, tipPosition.y, shootData.angle, shootData.power);
+    const projectile = createProjectile(scene, tipPosition.x, tipPosition.y, shootData.angle, shootData.power, turret.team);
 
     // Store reference to firing turret for tooltip management
     projectile.firingTurret = turret;
