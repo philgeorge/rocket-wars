@@ -6,8 +6,7 @@
   "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "check-syntax": "for file in src/*.js src/**/*.js; do echo \"Checking $file...\"; node --input-type=module -c < \"$file\" || echo \"Error in $file\"; done",
-    "check-file": "node --input-type=module -c <",
+  "check-file": "FILES=\"$@\"; if [ -z \"$FILES\" ]; then FILES=\"$(find src -type f -name '*.js')\"; fi; for file in $FILES; do echo Checking $file...; node --input-type=module -c < \"$file\" || echo Error in $file; done",
     "update-version": "node update-version"
   },
   "repository": {

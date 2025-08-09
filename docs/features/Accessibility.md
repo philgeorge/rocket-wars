@@ -1,6 +1,7 @@
-# MOVED: Accessibility Enhancements
+# Accessibility Enhancements
 
-File moved to `../docs/features/Accessibility.md`.
+This is a list of accesibility enhancements that will make the game easier to interact with.
+They should be implemented one at a time.
 
 ## Base Selection using keyboard ✅
 

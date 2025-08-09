@@ -14,7 +14,7 @@ A browser-based artillery game where players fire rockets at each other's bases.
 
 ### Playing the Game
 
-1. **Local Development**: Open `index.html` (root) in your browser with a local server
+1. **Local Development**: Open `src/index.html` in your browser with a local server
 2. **Live Version**: Visit the [GitHub Pages deployment](https://philgeorge.github.io/rocket-wars/)
 
 ### Game Controls
@@ -30,14 +30,23 @@ A browser-based artillery game where players fire rockets at each other's bases.
 
 ## Development
 
-### Key Files / Folders
+### Project Structure
 
-- [`index.html`](./index.html) – Entry point served by GitHub Pages / local server
-- [`src/`](./src) – All game source (scenes, systems, UI, input, physics)
-- [`docs/`](./docs) – General documentation (design, refactors, syntax notes)
-- [`docs/features/`](./docs/features) – Feature design & implementation notes
-- [`docs/GameDesignDocument.md`](./docs/GameDesignDocument.md) – Full game design document
-- [`update-version.js`](./update-version.js) – Cache-busting utility for deployments
+```
+rocket-wars/
+├── index.html              # Main HTML file (GitHub Pages entry point)
+├── src/
+│   ├── main.js             # Game entry point and scene management
+│   ├── landscape.js        # Terrain generation and rendering
+│   ├── turret.js          # Turret logic and aiming system
+│   ├── projectile.js      # Physics, trails, explosions
+│   ├── ui.js              # Game state, status panel, wind system
+│   ├── gameSetup.js       # Pre-game configuration form
+│   ├── constants.js       # Game constants and calculations
+│   └── style.css          # Game styling
+├── update-version.js      # Cache-busting utility
+└── README.md             # This file
+```
 
 ### Deployment & Cache-Busting
 
@@ -57,12 +66,12 @@ This automatically updates the version parameters in `index.html`:
 
 #### Deployment Workflow
 
-1. Make changes on the `main` branch
-2. Update version numbers:
+1. **Make changes** on the `main` branch
+2. **Update version numbers**:
    ```bash
    node update-version.js
    ```
-3. Commit and deploy:
+3. **Commit and deploy**:
    ```bash
    git add .
    git commit -m "Add new features + version bump"
@@ -81,12 +90,10 @@ The live site will update within a few minutes without caching issues.
 - **Pure Functions**: Preferred over classes where possible
 - **Single Responsibility**: Each file handles one main game system
 
-Syntax check all JS: `npm run check-file` (runs a Node parse over every .js file in src/ or pass specific files as args).
-
 ## Game Design
 
-For detailed game mechanics and design principles, see [`docs/GameDesignDocument.md`](./docs/GameDesignDocument.md).
+For detailed game mechanics and design principles, see `GameDesignDocument.md`.
 
 ## License
 
-GPL-3.0 - See `LICENSE` file for details.
+GPL-3.0 - See LICENSE file for details.

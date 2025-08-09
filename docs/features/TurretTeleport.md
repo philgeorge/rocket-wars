@@ -1,6 +1,6 @@
-# MOVED: Turret Teleport Feature
+# Turret Teleport Feature
 
-File moved to `../docs/features/TurretTeleport.md`.
+This is a feature that allows the user to move their turret to a different base, instead of taking a shot. The purpose of this is to avoid a player being trapped in a location that's easy for others to hit, or a location that's out of range of other players and therefore cannot get involved in shooting.
 
 ## Controls
 
@@ -54,5 +54,3 @@ This feature requires integration with multiple existing systems and should be i
 - Test interaction with projectile collisions and game end conditions
 - Verify teleport works correctly with 2, 3, and 4 player games
 - Test that "T" button in environment panel works identically to T key press
-
-

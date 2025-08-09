@@ -1,6 +1,6 @@
-# MOVED: Player Setup Implementation - Complete
+# Player Setup Implementation - Complete
 
-File moved to `../docs/features/PLAYER_SETUP_IMPLEMENTATION.md`.
+## What's Implemented
 
 ✅ **Two-Step Player Setup Process**
 - Step 1: Name input using DOM overlay (no Phaser keyboard conflicts)

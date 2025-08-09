@@ -9,7 +9,7 @@
 ## Specific Instructions
 1. Do not tell me to start python http.server or run the command yourself - I am using live server and will test changes with this.
 2. If you are not sure something will work, or I tell you it's not working, then use `console.log` to add debugging information.
-3. Use `npm run check-syntax` after any significant changes to ensure no syntax errors.
+3. Use `npm run check-file` after any significant changes to ensure no syntax errors.
 4. Never modify AiAgentNotes.md or this file.
 
 ## Code Duplication Prevention

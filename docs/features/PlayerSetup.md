@@ -1,6 +1,6 @@
-# MOVED: Player Setup Feature
+# Player Setup Feature
 
-File moved to `../docs/features/PlayerSetup.md`.
+## Feature Overview
 
 Add a second game setup stage called "Player Setup" that occurs after the landscape has been generated but before the actual combat begins. This stage allows players to personalize their experience by choosing their name and turret placement location.
 

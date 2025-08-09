@@ -1,6 +1,6 @@
-# MOVED: Rounds and Turns Feature
+# Rounds and Turns Feature
 
-File moved to `../docs/features/RoundsAndTurns.md`.
+## Feature Overview
 
 Currently the game implementation allows any player's turret to be fired at any time. Instead,
 each player should take turns to fire their projectiles. When all players have taken a turn, then a round has been completed.
@@ -85,4 +85,3 @@ Implement the core turn management mechanics:
 - Rotating "active player" arrow next to active player's name
 - Screen border colour matching active player's colour
 - Allow player to teleport turret to another flat base (including bases vacated by killed players) instead of taking a shot within their turn
-
