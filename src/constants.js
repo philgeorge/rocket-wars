@@ -4,7 +4,7 @@
 /**
  * Game version - updated automatically by update-version.js
  */
-export const GAME_VERSION = '20250809-2238';
+export const GAME_VERSION = '20250810-0939';
 
 /**
  * Team/Player color definitions (2-4 players max)
