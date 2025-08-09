@@ -2,19 +2,9 @@
 // Chunked terrain system for destructible landscape in Rocket Wars
 
 import { generateLandscapePoints } from './landscape.js';
-import { loadDebugSettings } from './storage.js';
+import { loadDebugSetting } from './debugSettings.js';
 import { applyDamage } from './turnManager.js';
 import { info, trace, warn } from './logger.js';
-
-/**
- * Debug settings for chunked landscape
- */
-const debugSettings = {
-    landscapeChunkOutlines: false
-};
-
-// Load debug settings on module initialization
-loadDebugSettings(debugSettings);
 
 /**
  * @typedef {Object} TerrainChunk
@@ -165,7 +155,8 @@ export function drawChunkedLandscape(graphics, chunks) {
     graphics.fillPath();
     
     // DEBUG: Draw chunk boundaries and smoothed line for visibility (conditional)
-    if (debugSettings.landscapeChunkOutlines) {
+    const landscapeChunkOutlines = loadDebugSetting('landscapeChunkOutlines', false);
+    if (landscapeChunkOutlines) {
         graphics.lineStyle(2, 0xff0000, 0.7); // Red lines for chunk boundaries
         chunks.forEach(chunk => {
             if (!chunk.destroyed) {
