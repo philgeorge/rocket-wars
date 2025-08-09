@@ -31,7 +31,7 @@ import { info, trace, warn } from './logger.js';
  * @param {number} [chunkWidth=30] - Width of each chunk in pixels (aligned with landscape points)
  * @returns {{chunks: TerrainChunk[], graphics: Phaser.GameObjects.Graphics}} Chunk data and graphics
  */
-export function createChunkedLandscape(scene, points, worldWidth, worldHeight, chunkWidth = 30) {
+export function createChunkedLandscape(scene, points, worldWidth, worldHeight, chunkWidth = 40) {
     info('🏔️ Converting landscape points to chunks...');
     
     const chunks = [];
@@ -571,7 +571,7 @@ export function setupChunkedLandscape(scene, worldWidth, worldHeight, gameConfig
     
     // Generate points with same spacing as chunks for perfect alignment
     const baseY = worldHeight - 100;
-    const chunkWidth = 30; // Match landscape point spacing for better granularity
+    const chunkWidth = 40; // Match turret width (40px) for simpler alignment & support logic
     const numPoints = Math.floor(worldWidth / chunkWidth);
     const { points, flatBases } = generateLandscapePoints(worldWidth, baseY, numPoints, gameConfig.numPlayers);
     
