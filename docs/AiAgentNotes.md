@@ -1,8 +1,8 @@
-This file contains notes about my learnings from using an AI Agent to help me build this game.
+This file contains notes about my learnings from using an AI Agent to help me build this game. I've noted down unhelpful or unexpected Agent behaviour.
 
-# Odd Agent Behaviour
+# GPT4 and Claude Sonnet 4
 
-I starter with GPT4 but switch to Claude Sonnet 4 after the first couple of days.
+I started with GPT4 but switched to Claude Sonnet 4 after the first couple of days.
 
 - Choosing technology and shaping the look of the game went very well. This is kind of like competitor analysis and market research for a product.
 - Pretty early on I hit bugs that didn't seem to get fixed. For example, making at least 3 flat areas on the landscape, or being unable to scroll the browser window where the canvas element is. My agent kept trying, often trying the same thing, and telling me "I've found the issue", but ultimately it either didn't work or broke something else.
@@ -20,3 +20,10 @@ I starter with GPT4 but switch to Claude Sonnet 4 after the first couple of days
 
 # 9 August: GPT 5
 
+- It doesn't sem so sycophantic, e.g. "you're absolutely right!".
+- It naturally breaks down what you ask and only works on a small part of the task before asking you to prompt again, e.g. "continue" or option "1" / "2".
+- It doesn't seem to get as lost after a "summarized conversation history" pause as Claude used to.
+- It seems better at following .copilot-instructions.md, refusing to move a file that I'd told it not to touch when I'd prompted to move all MD files into a docs folder.
+- It is unable to delete files, which makes it really unhelpful for any refactors that involve moving/renaming things.
+- It is very annoyingly using 2-space tabs instead of the 4-spaces that all my files were originally using. This prompted me to install eslint, although I still have to manually run `npm run lint:fix` most of the time. When I asked Agent about this, it suggested I should update my VSCode editor settings, so we'll see if that helps.
+- Agent did some odd things when refactoring according to its own suggestion: it introduced a general purpose updateGameUI() function, but when adding calls to it, didn't remove the calls to previous separate function. Similarly, I asked it to remove unused imports or variables, and it removes them but replaces them with a comment saying "removed unused import" (why?) or just renamed the variable, e.g. "scene" to "_scene".
