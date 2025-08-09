@@ -46,7 +46,7 @@ export function setupMouseInput(scene, startPlayerAiming, stopAimingAndShoot) {
     let isPanning = false;
     let panStartX, panStartY;
     let panCameraStartX, panCameraStartY;
-    let activePointers = new Set(); // Track active touch points
+    const activePointers = new Set(); // Track active touch points
     
     // Function to stop dragging (used by multiple events)
     const stopDragging = () => {

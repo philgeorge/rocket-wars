@@ -32,7 +32,7 @@ export function handleGameEnd(scene, reason) {
     positionResultsPanel(scene.resultsPanel, scene.cameras.main.width, scene.cameras.main.height);
     
     // Set up restart functionality
-    setupResultsPanelRestart(scene, scene.resultsPanel);
+    setupResultsPanelRestart(scene);
     
     // Focus camera on the winner (first player in results)
     const winner = getRankedPlayers(scene.gameState, scene.playerData)[0];

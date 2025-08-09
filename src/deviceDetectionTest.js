@@ -2,8 +2,6 @@
 // Test file to demonstrate device detection capabilities
 
 import { 
-    isTouchDevice,
-    hasPhysicalKeyboard,
     getPrimaryInputMethod,
     getDeviceCategory,
     shouldUseTouchUI,

@@ -69,7 +69,7 @@ function startGame() {
     };
 
     // Start the game
-    const game = new Phaser.Game(config);
+    const _game = new Phaser.Game(config);
 }
 
 /**
@@ -248,12 +248,12 @@ function create() {
         positionEnvironmentPanel(this.environmentPanel, this.cameras.main.width, this.cameras.main.height);
         positionPlayerStatsPanel(this.playerStatsPanel, this.cameras.main.width, this.cameras.main.height);
 
-    // Initialize panel displays (single centralized call)
-    updateGameUI(this, this.gameState, { updateEnvironment: true, updatePlayers: true, updateTeleport: true });
+        // Initialize panel displays (single centralized call)
+        updateGameUI(this, this.gameState, { updateEnvironment: true, updatePlayers: true, updateTeleport: true });
 
         // Create timeout handler for turn time limits
-    // Attach unified turn progression helper to scene
-    /** @type {any} */ (this).progressTurn = (reason, opts) => progressTurn(this, reason, opts);
+        // Attach unified turn progression helper to scene
+        /** @type {any} */ (this).progressTurn = (reason, opts) => progressTurn(this, reason, opts);
 
         // Helper function to start a turn with conditional timer delay
         const startTurnWithInstructions = () => {
@@ -296,7 +296,7 @@ function update() {
     // Update projectiles (now handled by projectile manager)
     if (this.projectiles) {
         updateProjectiles(this, this.projectiles, this.gameState, 
-                         this.landscapeData, this.turrets, this.cameraControls);
+            this.landscapeData, this.turrets, this.cameraControls);
     }
     
     // Only update timer if it's active

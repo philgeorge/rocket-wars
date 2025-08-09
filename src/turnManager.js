@@ -512,7 +512,7 @@ function startTeleportBaseSelection(gameState, scene) {
     }
     
     // Start the teleport base selection process
-    const baseSelectionPromise = initializeTeleportBaseSelection(scene, gameState, flatBases)
+    const _baseSelectionPromise = initializeTeleportBaseSelection(scene, gameState, flatBases)
         .then((selection) => {
             console.log('✅ Teleport base selected:', selection);
             handleTeleportBaseSelected(gameState, scene, selection);

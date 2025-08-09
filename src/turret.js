@@ -1,7 +1,7 @@
 // turret.js
 // Player gun turret graphics and logic for Rocket Wars
 
-import { getTeamColorHex, PLAYER_TEAMS } from './constants.js';
+import { getTeamColorHex } from './constants.js';
 
 /**
  * Create a gun turret with interactive aiming capabilities
@@ -288,7 +288,7 @@ export function createGunTurret(scene, x, y, team = 'player1') {
     };
 
     // Helper method to draw aiming line and update tooltip
-    turret.drawAimingLineAndTooltip = function(angle, power, isKeyboardMode = false) {
+    turret.drawAimingLineAndTooltip = function(angle, power, _isKeyboardMode = false) {
         const turret = /** @type {TurretContainer} */ (this);
         
         // Clear previous aiming line
@@ -409,7 +409,7 @@ export function placeTurretsOnBases(scene, flatBases, points, playerData = []) {
     
     if (playerData.length > 0 && flatBases.length > 0) {
         // Place turrets based on player setup data
-        playerData.forEach((player, playerIndex) => {
+        playerData.forEach((player, _playerIndex) => {
             if (player.baseIndex !== null && player.baseIndex < flatBases.length) {
                 const base = flatBases[player.baseIndex];
                 
@@ -544,7 +544,6 @@ function drawTurretBody(graphics, fillColor, fillAlpha, outlineColor, healthPerc
         // Calculate fill height for the circle (diameter is 24, radius is 12)
         const circleRadius = 12;
         const circleCenterY = -5;
-        const circleTop = circleCenterY - circleRadius; // -17
         const circleBottom = circleCenterY + circleRadius; // 7
         const totalHeight = circleRadius * 2; // 24
         

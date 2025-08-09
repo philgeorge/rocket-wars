@@ -1,7 +1,6 @@
 // chunkedLandscape.js
 // Chunked terrain system for destructible landscape in Rocket Wars
 
-import { WORLD_HEIGHT } from './constants.js';
 import { generateLandscapePoints } from './landscape.js';
 import { loadDebugSettings } from './storage.js';
 import { applyDamage } from './turnManager.js';
@@ -239,7 +238,6 @@ function calculateTurretSupport(turret, chunks) {
             const chunkLeft = chunk.x;
             const chunkRight = chunk.x + chunk.width;
             const chunkTop = chunk.y;
-            const chunkBottom = chunk.y + chunk.height;
             
             if (sampleX >= chunkLeft && sampleX <= chunkRight && chunkTop <= turretBottom + 5) {
                 hasSupport = true;
@@ -406,13 +404,11 @@ export function handleTurretFalling(scene, chunks, turrets, gameState) {
  * @param {Phaser.GameObjects.Graphics} graphics - Graphics object for redrawing
  * @param {number} impactX - X coordinate of projectile impact
  * @param {number} impactY - Y coordinate of projectile impact
- * @param {any[]} [turrets] - Array of turrets to check for falling (optional)
  */
-export function createTerrainDestruction(scene, chunks, graphics, impactX, impactY, turrets = []) {
+export function createTerrainDestruction(scene, chunks, graphics, impactX, impactY) {
     console.log(`💥 Creating terrain destruction at impact point (${impactX}, ${impactY})`);
     
     let chunksAffected = 0;
-    let chunksDestroyed = 0;
     
     // Find the chunk that contains the impact point (based on X coordinate)
     console.log(`🔍 Finding chunk containing impact point (${impactX}, ${impactY})...`);

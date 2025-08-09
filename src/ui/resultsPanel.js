@@ -112,9 +112,8 @@ export function createResultsPanel(scene, gameState, playerData = null) {
 /**
  * Setup restart functionality for the results panel using the reusable utility
  * @param {Phaser.Scene} scene - The Phaser scene
- * @param {Object} panel - The results panel
  */
-export function setupResultsPanelRestart(scene, panel) {
+export function setupResultsPanelRestart(scene) {
     console.log('🎯 Setting up results panel restart functionality');
     
     let restarted = false;

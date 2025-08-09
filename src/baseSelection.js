@@ -3,7 +3,7 @@
 
 import { createGunTurret } from './turret.js';
 import { createBaseSelectionPanel, hideBaseSelectionPanel, positionBaseSelectionPanel } from './ui/index.js';
-import { getTeamColorCSS, TEAM_COLORS, getTeamColorName } from './constants.js';
+import { getTeamColorCSS } from './constants.js';
 import { getCurrentPlayer } from './turnManager.js';
 
 /**
@@ -68,7 +68,7 @@ function startBaseSelection(scene, players, flatBases, resolve) {
     
     let currentPlayerIndex = 0;
     let availableBases = flatBases.map((_, index) => index);
-    let setupTurrets = [];
+    const setupTurrets = [];
     
     function showBaseSelection(playerIndex) {
         const player = players[playerIndex];
@@ -497,22 +497,3 @@ function calculateBaseCenterFromPoints(base, landscapePoints) {
         y: startPoint.y
     };
 }
-
-/**
- * Get player color hex value
- * @param {string} playerKey - Player key (player1, player2, etc.)
- * @returns {number} Hex color value
- */
-function getPlayerColorHex(playerKey) {
-    return TEAM_COLORS[playerKey]?.hex || TEAM_COLORS.player1.hex;
-}
-
-/**
- * Get player color name
- * @param {string} playerKey - Player key (player1, player2, etc.)
- * @returns {string} Color name
- */
-function getPlayerColorName(playerKey) {
-    return TEAM_COLORS[playerKey]?.name || TEAM_COLORS.player1.name;
-}
-

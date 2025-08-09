@@ -83,7 +83,7 @@ export function getDeviceCategory() {
     const screenWidth = window.innerWidth;
     const screenHeight = window.innerHeight;
     const minDimension = Math.min(screenWidth, screenHeight);
-    const maxDimension = Math.max(screenWidth, screenHeight);
+    const _maxDimension = Math.max(screenWidth, screenHeight); // Unused presently; underscore to silence lint
     
     if (!isTouchDevice()) {
         return DeviceCategory.DESKTOP;

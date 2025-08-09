@@ -24,7 +24,7 @@ export function generateLandscapePoints(width, baseY, numPoints, numPlayers = 2)
 
     // 1. Generate initial random landscape with varied terrain across sections
     for (let i = 0; i < numPoints; i++) {
-        let x = Math.floor((i / (numPoints - 1)) * width);
+        const x = Math.floor((i / (numPoints - 1)) * width);
         let y;
         
         // Determine which section this point is in

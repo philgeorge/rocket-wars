@@ -2,7 +2,7 @@
 // Phaser-based base selection panel to avoid DOM event conflicts
 
 import { getTeamColorName, getTeamColorCSS } from '../constants.js';
-import { createBasePanel, addPanelText, positionPanel } from './panelFactory.js';
+import { createBasePanel, addPanelText } from './panelFactory.js';
 import { shouldUseMobilePositioning } from '../deviceDetection.js';
 
 /**

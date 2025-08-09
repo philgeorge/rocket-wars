@@ -168,7 +168,7 @@ function handleTerrainCollision(scene, projectile, gameState, turrets, environme
             console.log(`  Turret ${i}: ${turret.team} at (${turret.x.toFixed(1)}, ${turret.y.toFixed(1)})`);
         });
         createTerrainDestruction(scene, sceneAny.landscapeData.chunks, sceneAny.landscapeGraphics, 
-                                projectile.x, projectile.y, turrets);
+            projectile.x, projectile.y);
     } else {
         console.log('⚠️ Chunked terrain destruction skipped - conditions not met');
     }
@@ -288,17 +288,17 @@ export function cleanupFinishedProjectile(projectile, projectiles, index, camera
             cameraControls.followingProjectile = false;
         }
 
-    // Centralized UI update (only teleport button needed here)
-    updateGameUI(scene, gameState, { updateEnvironment: false, updatePlayers: false, updateTeleport: true });
+        // Centralized UI update (only teleport button needed here)
+        updateGameUI(scene, gameState, { updateEnvironment: false, updatePlayers: false, updateTeleport: true });
         
         // Handle turn progression if game state is available
         if (gameState && scene) {
-                const delay = 1200; // match previous explosion delay
-                if (scene.progressTurn) {
-                    scene.progressTurn('projectile', { delayMs: delay });
-                } else {
-                    console.warn('⚠️ progressTurn not found on scene; turn will not advance automatically');
-                }
+            const delay = 1200; // match previous explosion delay
+            if (scene.progressTurn) {
+                scene.progressTurn('projectile', { delayMs: delay });
+            } else {
+                console.warn('⚠️ progressTurn not found on scene; turn will not advance automatically');
+            }
         } else {
             console.warn('⚠️ Cannot progress turn: missing gameState or scene');
         }
@@ -310,9 +310,7 @@ export function cleanupFinishedProjectile(projectile, projectiles, index, camera
  * @param {any} gameState - Current game state
  * @param {any} scene - The Phaser scene
  */
-function handleTurnProgression(gameState, scene) {
-// (Legacy handleTurnProgression & elimination logic removed; unified in turnFlow.js)
-}
+// Removed legacy handleTurnProgression placeholder (logic unified in turnFlow.js)
 
 /**
  * Check for and handle player eliminations
