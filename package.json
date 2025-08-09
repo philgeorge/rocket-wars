@@ -6,9 +6,10 @@
   "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-  "check-file": "sh -c 'f=\"$1\"; if [ -z \"$f\" ]; then echo \"Usage: npm run check-file -- <file.js>\" >&2; exit 1; fi; echo Checking $f...; node --input-type=module -c < \"$f\"' --",
+    "check-file": "sh -c 'f=\"$1\"; if [ -z \"$f\" ]; then echo \"Usage: npm run check-file -- <file.js>\" >&2; exit 1; fi; echo Checking $f...; node --input-type=module -c < \"$f\"' --",
   "check-files": "sh -c 'for f in $(find src -type f -name \"*.js\" | sort); do echo Checking $f...; node --input-type=module -c < \"$f\" || echo Error in $f; done'",
-    "update-version": "node update-version"
+  "lint": "eslint \"src/**/*.{js,mjs,cjs}\"",
+  "update-version": "node update-version"
   },
   "repository": {
     "type": "git",
@@ -21,7 +22,11 @@
   },
   "homepage": "https://github.com/philgeorge/rocket-wars#readme",
   "devDependencies": {
+    "eslint": "^9.33.0",
     "phaser": "^3.90.0",
     "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=18.18.0"
   }
 }

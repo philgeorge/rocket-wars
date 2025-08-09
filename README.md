@@ -85,6 +85,7 @@ Syntax checks:
 
 - Single file: `npm run check-file -- path/to/file.js`
 - All source files: `npm run check-files`
+- Linting check: `npm run lint`
 
 These commands run a Node parse (`node -c`) to catch syntax errors quickly.
 
