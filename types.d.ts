@@ -175,6 +175,8 @@ declare global {
     startPlayerAiming?: (isKeyboardMode: boolean) => boolean;
     stopAimingAndShoot?: (isKeyboardMode: boolean) => void;
     handleTurnTimeout?: () => void;
+  // Unified turn progression helper
+  progressTurn?: (reason: 'timeout' | 'projectile' | 'teleport' | 'manual', opts?: { delayMs?: number }) => void;
   }
 }
 

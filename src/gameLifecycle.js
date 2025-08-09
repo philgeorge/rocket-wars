@@ -2,6 +2,7 @@
 // Game lifecycle management functions
 
 import { stopTurnTimer, getRankedPlayers } from './turnManager.js';
+import { updateGameUI } from './ui/updateUI.js';
 import { createResultsPanel, positionResultsPanel, setupResultsPanelRestart, hideAimingInstructionsPanel } from './ui/index.js';
 
 /**
@@ -15,8 +16,8 @@ export function handleGameEnd(scene, reason) {
     // Set game ended flag for keyboard input handling
     scene.gameEnded = true;
     
-    // Update teleport button to disable it since game has ended
-    scene.environmentPanel?.updateTeleportButton?.(scene.gameState, scene);
+    // Update UI (teleport button included) to reflect game end state
+    updateGameUI(scene, scene.gameState, { updateEnvironment: false, updatePlayers: false, updateTeleport: true });
     
     // Stop any active turn timer
     stopTurnTimer(scene.gameState);

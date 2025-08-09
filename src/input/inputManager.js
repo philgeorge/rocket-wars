@@ -4,6 +4,7 @@
 import { setupMouseInput } from './mouseInput.js';
 import { setupKeyboardInput } from './keyboardInput.js';
 import { getCurrentPlayer } from '../turnManager.js';
+import { updateGameUI } from '../ui/updateUI.js';
 
 /**
  * Input manager object
@@ -67,8 +68,8 @@ export function setupInputManager(scene, onShoot) {
             mouseInput.stopDragging();
         }
 
-        // Update teleport button since aiming state changed
-        scene.environmentPanel?.updateTeleportButton?.(scene.gameState, scene);
+        // Update teleport UI state (centralized)
+        updateGameUI(scene, scene.gameState, { updateEnvironment: false, updatePlayers: false, updateTeleport: true });
 
         return true;
     };
@@ -89,8 +90,8 @@ export function setupInputManager(scene, onShoot) {
 
         scene.currentPlayerTurret = null;
 
-        // Update teleport button since aiming state changed
-        scene.environmentPanel?.updateTeleportButton?.(scene.gameState, scene);
+        // Update teleport UI state (centralized)
+        updateGameUI(scene, scene.gameState, { updateEnvironment: false, updatePlayers: false, updateTeleport: true });
     };
     
     // Store helper functions on the scene for use in input handlers

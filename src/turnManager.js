@@ -2,6 +2,7 @@
 // Turn and round management system for Rocket Wars
 
 import { initializeTeleportBaseSelection } from './baseSelection.js';
+import { updateGameUI } from './ui/updateUI.js';
 
 /**
  * Initialize game state with rounds and turns tracking
@@ -396,8 +397,8 @@ export function enterTeleportMode(gameState, scene) {
     gameState.teleportMode = true;
     gameState.teleportPlayerNum = currentPlayer;
 
-    // Update teleport button since teleport state changed
-    scene.environmentPanel?.updateTeleportButton?.(gameState, scene);
+    // Refresh teleport button state via centralized UI helper
+    updateGameUI(scene, gameState, { updateEnvironment: false, updatePlayers: false, updateTeleport: true });
     
     console.log(`🔄 Player ${currentPlayer} entered teleport mode`);
     console.log(`Turn timer continues running: ${gameState.turnStartTime ? 'YES' : 'NO'}`);
@@ -429,8 +430,8 @@ export function exitTeleportMode(gameState, scene = null) {
         scene.activeBaseSelectionCleanup();
     }
 
-    // Update teleport button since teleport state changed
-    scene?.environmentPanel?.updateTeleportButton?.(gameState, scene);
+    // Centralized UI refresh (teleport button only)
+    updateGameUI(scene, gameState, { updateEnvironment: false, updatePlayers: false, updateTeleport: true });
     
     console.log(`↩️ Player ${playerNum} exited teleport mode - can continue turn normally`);
     
@@ -462,10 +463,13 @@ export function completeTeleport(gameState, scene) {
     // Advance to next player (similar to projectile impact logic)
     // Use a small delay for smoother transition
     scene.time.delayedCall(500, () => {
-        // Use the existing turn timeout handler from main.js scene
-        // This already handles all game end checks, round progression, UI updates, etc.
-        console.log('🎯 Using existing turn timeout handler for teleport advancement');
-        scene.handleTurnTimeout();
+        console.log('🎯 Advancing turn after teleport via unified progressTurn');
+        const sceneAny = /** @type {any} */ (scene);
+        if (sceneAny.progressTurn) {
+            sceneAny.progressTurn('teleport', { delayMs: 0 });
+        } else if (scene.handleTurnTimeout) { // Fallback for legacy
+            scene.handleTurnTimeout();
+        }
     });
     
     return true;

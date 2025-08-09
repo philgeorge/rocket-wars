@@ -81,7 +81,12 @@ The live site will update within a few minutes without caching issues.
 - **Pure Functions**: Preferred over classes where possible
 - **Single Responsibility**: Each file handles one main game system
 
-Syntax check all JS: `npm run check-file` (runs a Node parse over every .js file in src/ or pass specific files as args).
+Syntax checks:
+
+- Single file: `npm run check-file -- path/to/file.js`
+- All source files: `npm run check-files`
+
+These commands run a Node parse (`node -c`) to catch syntax errors quickly.
 
 ## Game Design
 

@@ -4,8 +4,10 @@
 import { setupChunkedLandscape } from './chunkedLandscape.js';
 import { placeTurretsOnBases } from './turret.js';
 import { createProjectile } from './projectile.js';
-import { createEnvironmentPanel, createPlayerStatsPanel, positionEnvironmentPanel, positionPlayerStatsPanel, createAimingInstructionsPanel, hideAimingInstructionsPanel, showAimingInstructionsIfNeeded, positionPanel } from './ui/index.js';
-import { createGameState, updateWindForNewTurn, startPlayerTurn, getCurrentPlayer, advanceToNextPlayer, advanceToNextRound, shouldGameEnd, getRemainingTurnTime, stopTurnTimer, getRankedPlayers, enterTeleportMode, exitTeleportMode, completeTeleport, isTeleportMode } from './turnManager.js';
+import { createEnvironmentPanel, createPlayerStatsPanel, positionEnvironmentPanel, positionPlayerStatsPanel, createAimingInstructionsPanel, showAimingInstructionsIfNeeded, positionPanel } from './ui/index.js';
+import { createGameState, startPlayerTurn, getCurrentPlayer, stopTurnTimer, enterTeleportMode, exitTeleportMode, completeTeleport, isTeleportMode } from './turnManager.js';
+import { progressTurn } from './turnFlow.js';
+import { updateGameUI } from './ui/updateUI.js';
 import { focusCameraOnActivePlayer } from './projectileManager.js';
 import { initializeGameSetup } from './gameSetup.js';
 import { initializeBaseSelection } from './baseSelection.js';
@@ -13,7 +15,6 @@ import { WORLD_HEIGHT, calculateWorldWidth } from './constants.js';
 import { setupCameraAndInput, updateKeyboardCamera, setupWorldBounds } from './camera.js';
 import { updateProjectiles } from './projectileManager.js';
 import { logDeviceInfo } from './deviceDetection.js';
-import { handleGameEnd } from './gameLifecycle.js';
 
 // Game configuration and world dimensions will be set from form
 let gameConfig = null;
@@ -247,61 +248,25 @@ function create() {
         positionEnvironmentPanel(this.environmentPanel, this.cameras.main.width, this.cameras.main.height);
         positionPlayerStatsPanel(this.playerStatsPanel, this.cameras.main.width, this.cameras.main.height);
 
-        // Initialize panel displays
-        this.environmentPanel.updateDisplay(this.gameState);
-        this.environmentPanel.updateTeleportButton(this.gameState, this);
-        this.playerStatsPanel.updateDisplay(this.gameState);
+    // Initialize panel displays (single centralized call)
+    updateGameUI(this, this.gameState, { updateEnvironment: true, updatePlayers: true, updateTeleport: true });
 
         // Create timeout handler for turn time limits
-        const handleTurnTimeout = () => {
-            console.log(`⏰ Time's up! Advancing from Player ${getCurrentPlayer(this.gameState)}`);
-            
-            // Advance to next player/round
-            const continueRound = advanceToNextPlayer(this.gameState, this);
-            if (!continueRound) {
-                // Round completed, advance to next round
-                const continueGame = advanceToNextRound(this.gameState);
-                if (!continueGame) {
-                    handleGameEnd(this, 'max_rounds');
-                    return;
-                }
-                // Update wind for new round
-                updateWindForNewTurn(this.gameState);
-            }
-            
-            // Check if game should end (only one player left)
-            if (shouldGameEnd(this.gameState)) {
-                handleGameEnd(this, 'last_player');
-                return;
-            }
-            
-            // Update UI for new turn
-            this.environmentPanel.updateDisplay(this.gameState);
-            this.environmentPanel.updateTeleportButton(this.gameState, this);
-            this.playerStatsPanel.updateDisplay(this.gameState);
-            
-            // Focus camera on new active player and start their turn
-            focusCameraOnActivePlayer(this.gameState, this);
-            
-            // Start turn timer immediately for subsequent turns (instructions only show once)
-            startPlayerTurn(this.gameState, handleTurnTimeout);
-        };
-
-        // Store timeout handler on scene for access by projectileManager
-        /** @type {any} */ (this).handleTurnTimeout = handleTurnTimeout;
+    // Attach unified turn progression helper to scene
+    /** @type {any} */ (this).progressTurn = (reason, opts) => progressTurn(this, reason, opts);
 
         // Helper function to start a turn with conditional timer delay
         const startTurnWithInstructions = () => {
             // Check if aiming instructions need to be shown
             const instructionsShown = showAimingInstructionsIfNeeded(this, () => {
-                // Callback when instructions are dismissed - start the turn timer
-                startPlayerTurn(this.gameState, handleTurnTimeout);
+                const sceneAny = /** @type {any} */ (this);
+                startPlayerTurn(this.gameState, () => sceneAny.progressTurn('timeout'));
                 console.log('🎯 Turn timer started after aiming instructions dismissed');
             });
             
             if (!instructionsShown) {
-                // Instructions not shown, start turn timer immediately
-                startPlayerTurn(this.gameState, handleTurnTimeout);
+                const sceneAny = /** @type {any} */ (this);
+                startPlayerTurn(this.gameState, () => sceneAny.progressTurn('timeout'));
             }
         };
 

@@ -2,9 +2,9 @@
 // Projectile update and management system for Rocket Wars
 
 import { updateProjectileTrail, drawProjectileTrail, checkProjectileCollisions, cleanupProjectile, calculateDamage, calculateAOEDamage, calculateVelocityFactor, createExplosion } from './projectile.js';
-import { applyDamage, getCurrentPlayer, advanceToNextPlayer, advanceToNextRound, shouldGameEnd, updateWindForNewTurn, removePlayer, startPlayerTurn, stopTurnTimer } from './turnManager.js';
+import { applyDamage, getCurrentPlayer } from './turnManager.js';
+import { updateGameUI } from './ui/updateUI.js';
 import { updateProjectileCamera } from './camera.js';
-import { handleGameEnd } from './gameLifecycle.js';
 import { createTerrainDestruction, updateChunkAnimations, handleTurretFalling } from './chunkedLandscape.js';
 
 /**
@@ -288,12 +288,17 @@ export function cleanupFinishedProjectile(projectile, projectiles, index, camera
             cameraControls.followingProjectile = false;
         }
 
-        // Update teleport button since projectile state changed
-        scene?.environmentPanel?.updateTeleportButton?.(gameState, scene);
+    // Centralized UI update (only teleport button needed here)
+    updateGameUI(scene, gameState, { updateEnvironment: false, updatePlayers: false, updateTeleport: true });
         
         // Handle turn progression if game state is available
         if (gameState && scene) {
-            handleTurnProgression(gameState, scene);
+                const delay = 1200; // match previous explosion delay
+                if (scene.progressTurn) {
+                    scene.progressTurn('projectile', { delayMs: delay });
+                } else {
+                    console.warn('⚠️ progressTurn not found on scene; turn will not advance automatically');
+                }
         } else {
             console.warn('⚠️ Cannot progress turn: missing gameState or scene');
         }
@@ -306,71 +311,7 @@ export function cleanupFinishedProjectile(projectile, projectiles, index, camera
  * @param {any} scene - The Phaser scene
  */
 function handleTurnProgression(gameState, scene) {
-    console.log('🔄 Starting turn progression...');
-    console.log(`Current state: Round ${gameState.currentRound}/${gameState.maxRounds}, Player ${gameState.currentPlayerIndex + 1} (${gameState.playersAlive[gameState.currentPlayerIndex]})`);
-    
-    // Store the current player before eliminations for logging
-    const currentPlayerBefore = getCurrentPlayer(gameState);
-    const currentIndexBefore = gameState.currentPlayerIndex;
-    
-    // Check for eliminated players first
-    handlePlayerEliminations(gameState, scene);
-    
-    // Log any changes after eliminations
-    if (gameState.currentPlayerIndex !== currentIndexBefore) {
-        console.log(`🔄 Player index adjusted after eliminations: ${currentIndexBefore} → ${gameState.currentPlayerIndex}`);
-        console.log(`🔄 Current player after eliminations: ${currentPlayerBefore} → ${getCurrentPlayer(gameState)}`);
-    }
-    
-    // Check if game should end
-    if (shouldGameEnd(gameState)) {
-        console.log('🏁 Game should end!');
-        handleGameEnd(scene, 'last_player');
-        return;
-    }
-    
-    // Advance to next player or next round
-    const stillInSameRound = advanceToNextPlayer(gameState, scene);
-    console.log(`After advancing player: stillInSameRound=${stillInSameRound}`);
-    
-    if (!stillInSameRound) {
-        // Round completed, advance to next round
-        const gameStillActive = advanceToNextRound(gameState);
-        console.log(`After advancing round: gameStillActive=${gameStillActive}`);
-        
-        if (!gameStillActive) {
-            console.log('🏁 Game ended: Maximum rounds reached');
-            handleGameEnd(scene, 'max_rounds');
-            return;
-        }
-        
-        // Update wind for the new round
-        updateWindForNewTurn(gameState);
-        console.log(`🌪️ New round - wind updated to: ${gameState.wind.current}`);
-    }
-    
-    // Delay all turn progression, UI updates and camera focus to allow explosion effect to complete
-    // This creates a smoother visual transition where all changes happen together
-    const explosionCompletionDelay = 1200; // 1.2 seconds to be safe
-    scene.time.delayedCall(explosionCompletionDelay, () => {
-        // Start the next player's turn (sets turn timer)
-        const timeoutHandler = /** @type {any} */ (scene).handleTurnTimeout || null;
-        startPlayerTurn(gameState, timeoutHandler);
-        console.log(`Turn started for player ${gameState.currentPlayerIndex + 1} (${gameState.playersAlive[gameState.currentPlayerIndex]})`);
-        
-        // Update environment panel (round number, wind, gravity)
-        if (scene.environmentPanel && scene.environmentPanel.updateDisplay) {
-            scene.environmentPanel.updateDisplay(gameState);
-        }
-        
-        // Update player panel (including active player highlighting)
-        if (scene.playerStatsPanel && scene.playerStatsPanel.updateDisplay) {
-            scene.playerStatsPanel.updateDisplay(gameState);
-        }
-        
-        // Start camera pan to active player
-        focusCameraOnActivePlayer(gameState, scene);
-    });
+// (Legacy handleTurnProgression & elimination logic removed; unified in turnFlow.js)
 }
 
 /**
@@ -378,41 +319,6 @@ function handleTurnProgression(gameState, scene) {
  * @param {any} gameState - Current game state
  * @param {any} scene - The Phaser scene
  */
-function handlePlayerEliminations(gameState, scene) {
-    const eliminatedPlayers = [];
-    
-    // Check each player's health
-    for (let i = 1; i <= gameState.numPlayers; i++) {
-        const playerKey = `player${i}`;
-        const player = gameState[playerKey];
-        
-        if (player && player.health <= 0 && gameState.playersAlive.includes(i)) {
-            eliminatedPlayers.push(i);
-        }
-    }
-    
-    console.log(`💀 Players to eliminate: [${eliminatedPlayers.join(', ')}]`);
-    console.log(`💀 Before eliminations - playersAlive: [${gameState.playersAlive.join(', ')}], currentPlayerIndex: ${gameState.currentPlayerIndex}`);
-    
-    // Remove eliminated players
-    eliminatedPlayers.forEach(playerNum => {
-        removePlayer(gameState, playerNum);
-        
-        // Remove the eliminated player's turret from the scene
-        if (scene.turrets) {
-            const playerKey = `player${playerNum}`;
-            const turretIndex = scene.turrets.findIndex(turret => turret.team === playerKey);
-            if (turretIndex !== -1) {
-                const eliminatedTurret = scene.turrets[turretIndex];
-                console.log(`💀 Removing ${playerKey} turret from map`);
-                eliminatedTurret.destroy();
-                scene.turrets.splice(turretIndex, 1);
-            }
-        }
-    });
-    
-    console.log(`💀 After eliminations - playersAlive: [${gameState.playersAlive.join(', ')}], currentPlayerIndex: ${gameState.currentPlayerIndex}`);
-}
 
 /**
  * Move camera to focus on the active player's turret
