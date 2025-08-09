@@ -132,14 +132,15 @@ export function shouldUseMobilePositioning() {
 /**
  * Log device detection results for debugging
  */
+import { info } from './logger.js';
 export function logDeviceInfo() {
-    console.log('🔍 Device Detection Results:');
-    console.log(`  Touch Device: ${isTouchDevice()}`);
-    console.log(`  Physical Keyboard: ${hasPhysicalKeyboard()}`);
-    console.log(`  Primary Input: ${getPrimaryInputMethod()}`);
-    console.log(`  Device Category: ${getDeviceCategory()}`);
-    console.log(`  Use Touch UI: ${shouldUseTouchUI()}`);
-    console.log(`  Use Mobile Positioning: ${shouldUseMobilePositioning()}`);
-    console.log(`  Screen: ${window.innerWidth}x${window.innerHeight}`);
-    console.log(`  Touch Points: ${navigator.maxTouchPoints || 0}`);
+    info('🔍 Device Detection Results:');
+    info(`  Touch Device: ${isTouchDevice()}`);
+    info(`  Physical Keyboard: ${hasPhysicalKeyboard()}`);
+    info(`  Primary Input: ${getPrimaryInputMethod()}`);
+    info(`  Device Category: ${getDeviceCategory()}`);
+    info(`  Use Touch UI: ${shouldUseTouchUI()}`);
+    info(`  Use Mobile Positioning: ${shouldUseMobilePositioning()}`);
+    info(`  Screen: ${window.innerWidth}x${window.innerHeight}`);
+    info(`  Touch Points: ${navigator.maxTouchPoints || 0}`);
 }

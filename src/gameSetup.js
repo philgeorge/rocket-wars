@@ -2,6 +2,7 @@
 // Game startup and configuration form handling for Rocket Wars
 
 import { loadGameConfig, saveGameConfig } from './storage.js';
+import { info, error } from './logger.js';
 import { GAME_VERSION } from './constants.js';
 
 /**
@@ -38,7 +39,7 @@ function initializeFormHandlers(onGameStart) {
     
     if (!form || !windVariationSlider || !windVariationValue || !gravitySlider || !gravityValue || 
         !turnTimeSlider || !turnTimeValue || !roundsSlider || !roundsValue || !numPlayersSelect) {
-        console.error('Could not find required form elements');
+        error('Could not find required form elements');
         return;
     }
     
@@ -90,7 +91,7 @@ function initializeFormHandlers(onGameStart) {
             gravity: parseInt(gravitySlider.value)
         };
         
-        console.log('Starting player name entry with config:', gameConfig);
+        info('Starting player name entry with config:', gameConfig);
         
         // Save updated configuration to localStorage (preserves player names)
         saveGameConfig(gameConfig);
@@ -156,7 +157,7 @@ function showPlayerNamesForm(gameConfig, onGameStart) {
     const playerNameInputsContainer = document.getElementById('player-name-inputs');
     
     if (!configFormContainer || !playerNamesFormContainer || !playerNamesForm || !playerNameInputsContainer) {
-        console.error('Could not find required player names form elements');
+        error('Could not find required player names form elements');
         return;
     }
     
@@ -245,7 +246,7 @@ function showPlayerNamesForm(gameConfig, onGameStart) {
             }
         };
         
-        console.log('Final game config with player names:', finalGameConfig);
+        info('Final game config with player names:', finalGameConfig);
         
         // Save the complete configuration
         saveGameConfig(finalGameConfig);

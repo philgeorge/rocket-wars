@@ -2,6 +2,7 @@
 // Keyboard input handling for Rocket Wars
 
 import { getCurrentPlayer } from '../turnManager.js';
+import { info, trace } from '../logger.js';
 
 /**
  * Keyboard input handler object
@@ -53,21 +54,21 @@ export function setupKeyboardInput(scene, cameraControls) {
         if (tKey && scene.input.keyboard.enabled && scene.gameState && scene.turrets && !scene.gameEnded) {
             // Check if T key was just pressed
             if (Phaser.Input.Keyboard.JustDown(tKey)) {
-                console.log('🔄 T key pressed - toggling teleport mode');
+                info('🔄 T key pressed - toggling teleport mode');
                 
                 // Toggle teleport mode (same logic as the button)
                 if (scene.isTeleportMode && scene.isTeleportMode()) {
                     // Currently in teleport mode - exit it
                     const success = scene.exitTeleportMode();
                     if (success) {
-                        console.log(`↩️ Player exited teleport mode via T key`);
+                        info(`↩️ Player exited teleport mode via T key`);
                     }
                 } else {
                     // Not in teleport mode - enter it
                     const success = scene.enterTeleportMode();
                     if (success) {
                         const currentPlayerNum = getCurrentPlayer(scene.gameState);
-                        console.log(`✅ Player ${currentPlayerNum} entered teleport mode via T key`);
+                        info(`✅ Player ${currentPlayerNum} entered teleport mode via T key`);
                     }
                 }
             }
@@ -79,12 +80,12 @@ export function setupKeyboardInput(scene, cameraControls) {
             if (Phaser.Input.Keyboard.JustDown(escKey)) {
                 // First check for teleport mode cancellation
                 if (scene.gameState && scene.gameState.teleportMode) {
-                    console.log('🚫 ESC key pressed - canceling teleport mode');
+                    info('🚫 ESC key pressed - canceling teleport mode');
                     scene.exitTeleportMode();
                     
                 } else if (scene.currentPlayerTurret) {
                     // Cancel aiming if player is aiming
-                    console.log('🚫 ESC key pressed - canceling keyboard aiming');
+                    info('🚫 ESC key pressed - canceling keyboard aiming');
                     
                     // Cancel aiming without shooting
                     if (scene.currentPlayerTurret.isAiming) {
@@ -120,7 +121,7 @@ export function setupKeyboardInput(scene, cameraControls) {
         update: updateKeyboardInput,
         
         disable: () => {
-            console.log('🚫 Disabling keyboard input');
+            info('🚫 Disabling keyboard input');
             // Disable WASD keys by removing them from the keyboard manager
             scene.input.keyboard.removeKey('W');
             scene.input.keyboard.removeKey('A');
@@ -132,16 +133,16 @@ export function setupKeyboardInput(scene, cameraControls) {
             
             // Also disable global keyboard capture to prevent interference with DOM inputs
             scene.input.keyboard.enabled = false;
-            console.log('🚫 Disabled Phaser keyboard input entirely');
+            trace('🚫 Disabled Phaser keyboard input entirely');
         },
         
         enable: () => {
-            console.log('✅ Re-enabling keyboard input');
+            info('✅ Re-enabling keyboard input');
             // Re-enable global keyboard capture
             scene.input.keyboard.enabled = true;
             // Re-add keys
             // Note: These will be recreated by the caller
-            console.log('✅ Re-enabled Phaser keyboard input');
+            trace('✅ Re-enabled Phaser keyboard input');
         }
     };
 }
@@ -269,7 +270,7 @@ function handleKeyboardAiming(scene, cursors, wasd) {
         const angleInRadians = Phaser.Math.DegToRad(turret.keyboardAngle);
         turret.drawAimingLineAndTooltip(angleInRadians, turret.keyboardPower, true);
         
-        console.log(`⌨️ Keyboard aiming updated - angle: ${turret.keyboardAngle}°, power: ${Math.round(turret.keyboardPower * 100)}%`);
+        trace(`⌨️ Keyboard aiming updated - angle: ${turret.keyboardAngle}°, power: ${Math.round(turret.keyboardPower * 100)}%`);
     }
 }
 

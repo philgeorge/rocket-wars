@@ -15,6 +15,7 @@ import { WORLD_HEIGHT, calculateWorldWidth } from './constants.js';
 import { setupCameraAndInput, updateKeyboardCamera, setupWorldBounds } from './camera.js';
 import { updateProjectiles } from './projectileManager.js';
 import { logDeviceInfo } from './deviceDetection.js';
+import { info, trace, warn, error } from './logger.js';
 
 // Game configuration and world dimensions will be set from form
 let gameConfig = null;
@@ -25,8 +26,8 @@ initializeGameSetup().then((config) => {
     gameConfig = config;
     // Calculate world width based on number of players: 1000 + (numPlayers * 1000)
     WORLD_WIDTH = calculateWorldWidth(gameConfig.numPlayers);
-    console.log(`World width calculated: ${WORLD_WIDTH} pixels for ${gameConfig.numPlayers} players`);
-    console.log(`Gravity set to: ${gameConfig.gravity} (effective: ${gameConfig.gravity * 5} pixels/sec²)`);
+    info(`World width calculated: ${WORLD_WIDTH} pixels for ${gameConfig.numPlayers} players`);
+    info(`Gravity set to: ${gameConfig.gravity} (effective: ${gameConfig.gravity * 5} pixels/sec²)`);
     startGame();
 });
 
@@ -98,20 +99,20 @@ function shootFromTurret(scene, turret, shootData) {
         
         // Verify this is the active player's turret
         if (turret.team !== currentPlayerKey) {
-            console.log(`🚫 Shooting blocked: ${turret.team} tried to shoot but it's Player ${currentPlayerNum}'s turn`);
+            warn(`🚫 Shooting blocked: ${turret.team} tried to shoot but it's Player ${currentPlayerNum}'s turn`);
             return;
         }
         
         // Check if player has already fired this turn
         if (scene.gameState.hasPlayerFiredThisTurn) {
-            console.log(`🚫 Shooting blocked: Player ${currentPlayerNum} has already fired this turn`);
+            warn(`🚫 Shooting blocked: Player ${currentPlayerNum} has already fired this turn`);
             return;
         }
         
         // Mark that this player has fired this turn and stop the turn timer
         scene.gameState.hasPlayerFiredThisTurn = true;
         stopTurnTimer(scene.gameState);
-        console.log(`✅ Player ${currentPlayerNum} fired their shot this turn - timer stopped`);
+        info(`✅ Player ${currentPlayerNum} fired their shot this turn - timer stopped`);
     }
     
     // Launch projectile from turret gun tip
@@ -127,7 +128,7 @@ function shootFromTurret(scene, turret, shootData) {
     }
     scene.projectiles.push(projectile);
 
-    console.log(`Projectile launched from (${Math.round(tipPosition.x)}, ${Math.round(tipPosition.y)})`);
+    trace(`Projectile launched from (${Math.round(tipPosition.x)}, ${Math.round(tipPosition.y)})`);
 
     // Update teleport button since projectiles are now in flight
     scene.environmentPanel?.updateTeleportButton?.(scene.gameState, scene);
@@ -191,9 +192,9 @@ function create() {
     });
 
     // Start base selection stage instead of immediately placing turrets
-    console.log('🎮 Starting base selection stage...');
+    info('🎮 Starting base selection stage...');
     initializeBaseSelection(this, gameConfig, landscapeData.flatBases).then((setupResult) => {
-        console.log('✅ Base selection complete, starting combat phase...');
+        info('✅ Base selection complete, starting combat phase...');
 
         const { players: playerData, turrets: existingTurrets } = setupResult;
 
@@ -206,7 +207,7 @@ function create() {
         }
 
         const turretAny = /** @type {any} */ (turrets);
-        console.log(`Using ${turrets.length} turrets:`, turretAny.map(t => ({ team: t.team, x: t.x, y: t.y })));
+        info(`Using ${turrets.length} turrets:`, turretAny.map(t => ({ team: t.team, x: t.x, y: t.y })));
 
         // Store turrets for access in input handlers
         this.turrets = turrets;
@@ -217,7 +218,7 @@ function create() {
 
         // Initialize game state and UI (moved here to happen after player setup)
         this.gameState = createGameState(gameConfig);
-        console.log('🎮 Game state initialized:', this.gameState);
+        info('🎮 Game state initialized:', this.gameState);
         
         // Sync base indices from player data to game state
         playerData.forEach((player, index) => {
@@ -226,7 +227,7 @@ function create() {
                 const playerKey = `player${playerNum}`;
                 if (this.gameState[playerKey]) {
                     this.gameState[playerKey].baseIndex = player.baseIndex;
-                    console.log(`📍 Player ${playerNum} base index synced: ${player.baseIndex}`);
+                    trace(`📍 Player ${playerNum} base index synced: ${player.baseIndex}`);
                 }
             }
         });
@@ -261,7 +262,7 @@ function create() {
             const instructionsShown = showAimingInstructionsIfNeeded(this, () => {
                 const sceneAny = /** @type {any} */ (this);
                 startPlayerTurn(this.gameState, () => sceneAny.progressTurn('timeout'));
-                console.log('🎯 Turn timer started after aiming instructions dismissed');
+                info('🎯 Turn timer started after aiming instructions dismissed');
             });
             
             if (!instructionsShown) {
@@ -281,10 +282,10 @@ function create() {
             });
         }
 
-        console.log('🚀 Combat phase ready!');
-        console.log(`Game started: Player ${this.gameState.playersAlive[0]} begins Round 1`);
-    }).catch((error) => {
-        console.error('❌ Player setup failed:', error);
+        info('🚀 Combat phase ready!');
+        info(`Game started: Player ${this.gameState.playersAlive[0]} begins Round 1`);
+    }).catch((err) => {
+        error('❌ Player setup failed:', err);
     });
 }
 

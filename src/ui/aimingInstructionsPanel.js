@@ -2,6 +2,7 @@
 // Panel for displaying aiming instructions at the start of each game
 
 import { createBasePanel, addPanelText, positionPanel, setupPanelInputDismissal } from './panelFactory.js';
+import { info, trace } from '../logger.js';
 
 /**
  * Create an aiming instructions panel for players at the start of each game
@@ -9,7 +10,7 @@ import { createBasePanel, addPanelText, positionPanel, setupPanelInputDismissal 
  * @returns {Phaser.GameObjects.Container & {panelWidth?: number, panelHeight?: number}}
  */
 export function createAimingInstructionsPanel(scene) {
-    console.log('🎯 Creating aiming instructions panel...');
+    info('🎯 Creating aiming instructions panel...');
     
     // Define text content for the panel
     const textItems = [
@@ -118,7 +119,7 @@ export function createAimingInstructionsPanel(scene) {
     panel.setDepth(1000);
     panel.setVisible(false);
     
-    console.log('📝 Created aiming instructions panel');
+    trace('📝 Created aiming instructions panel');
     
     return /** @type {any} */ (panel);
 }
@@ -130,7 +131,7 @@ export function createAimingInstructionsPanel(scene) {
 export function hideAimingInstructionsPanel(panel) {
     if (panel && panel.scene) {
         panel.setVisible(false);
-        console.log('🙈 Aiming instructions panel hidden');
+        trace('🙈 Aiming instructions panel hidden');
     }
 }
 
@@ -141,7 +142,7 @@ export function hideAimingInstructionsPanel(panel) {
 export function showAimingInstructionsPanel(panel) {
     if (panel && panel.scene) {
         panel.setVisible(true);
-        console.log('👁️ Aiming instructions panel shown');
+        trace('👁️ Aiming instructions panel shown');
     }
 }
 
@@ -153,13 +154,13 @@ export function showAimingInstructionsPanel(panel) {
 export function showAimingInstructionsIfNeeded(scene, onDismiss = null) {
     // Always show instructions at the start of each game
     if (scene.aimingInstructionsPanel) {
-        console.log('📋 Showing aiming instructions for this game');
+        info('📋 Showing aiming instructions for this game');
         scene.aimingInstructionsPanel.setVisible(true);
         
         // Use the reusable utility function for input handling
         setupPanelInputDismissal(scene, () => {
             hideAimingInstructionsPanel(scene.aimingInstructionsPanel);
-            console.log('📋 Aiming instructions dismissed');
+            info('📋 Aiming instructions dismissed');
             if (onDismiss) {
                 onDismiss();
             }

@@ -4,6 +4,7 @@
 import { generateLandscapePoints } from './landscape.js';
 import { loadDebugSettings } from './storage.js';
 import { applyDamage } from './turnManager.js';
+import { info, trace, warn } from './logger.js';
 
 /**
  * Debug settings for chunked landscape
@@ -41,7 +42,7 @@ loadDebugSettings(debugSettings);
  * @returns {{chunks: TerrainChunk[], graphics: Phaser.GameObjects.Graphics}} Chunk data and graphics
  */
 export function createChunkedLandscape(scene, points, worldWidth, worldHeight, chunkWidth = 30) {
-    console.log('🏔️ Converting landscape points to chunks...');
+    info('🏔️ Converting landscape points to chunks...');
     
     const chunks = [];
     const numChunks = Math.floor(worldWidth / chunkWidth);
@@ -51,7 +52,7 @@ export function createChunkedLandscape(scene, points, worldWidth, worldHeight, c
     const graphics = scene.add.graphics();
     graphics.fillStyle(0x3a5c2c, 1); // Same green as original landscape
     
-    console.log(`Creating ${numChunks} chunks, each ${actualChunkWidth}px wide (aligned with landscape points)`);
+    trace(`Creating ${numChunks} chunks, each ${actualChunkWidth}px wide (aligned with landscape points)`);
     
     // Convert points to chunks - now with 1:1 alignment!
     for (let i = 0; i < numChunks && i < points.length; i++) {
@@ -82,7 +83,7 @@ export function createChunkedLandscape(scene, points, worldWidth, worldHeight, c
     // Draw all chunks
     drawChunkedLandscape(graphics, chunks);
     
-    console.log(`📊 Created ${chunks.length} terrain chunks`);
+    info(`📊 Created ${chunks.length} terrain chunks`);
     
     return { chunks, graphics };
 }
@@ -220,8 +221,8 @@ function calculateTurretSupport(turret, chunks) {
     const turretRight = turret.x + (turretWidth / 2);
     const turretBottom = turret.y + 25; // Turret sits 25px above base
     
-    console.log(`🔍 Calculating support for turret at (${turret.x.toFixed(1)}, ${turret.y.toFixed(1)}) - team ${turret.team}`);
-    console.log(`🔍 Turret spans from x=${turretLeft.toFixed(1)} to x=${turretRight.toFixed(1)}, bottom at y=${turretBottom.toFixed(1)}`);
+    trace(`🔍 Calculating support for turret at (${turret.x.toFixed(1)}, ${turret.y.toFixed(1)}) - team ${turret.team}`);
+    trace(`🔍 Turret spans from x=${turretLeft.toFixed(1)} to x=${turretRight.toFixed(1)}, bottom at y=${turretBottom.toFixed(1)}`);
     
     let supportedWidth = 0;
     const samplePoints = 8; // Sample support every 5px across turret width
@@ -251,7 +252,7 @@ function calculateTurretSupport(turret, chunks) {
     }
     
     const supportPercentage = (supportedWidth / turretWidth) * 100;
-    console.log(`🔍 Turret support: ${supportedWidth.toFixed(1)}px of ${turretWidth}px supported (${supportPercentage.toFixed(1)}%)`);
+    trace(`🔍 Turret support: ${supportedWidth.toFixed(1)}px of ${turretWidth}px supported (${supportPercentage.toFixed(1)}%)`);
     return supportPercentage;
 }
 
@@ -266,7 +267,7 @@ function findTurretLandingPosition(turret, chunks) {
     const turretLeft = turret.x - (turretWidth / 2);
     const turretRight = turret.x + (turretWidth / 2);
     
-    console.log(`🔍 Finding landing position for turret at x=${turret.x.toFixed(1)} (spans ${turretLeft.toFixed(1)} to ${turretRight.toFixed(1)})`);
+    trace(`🔍 Finding landing position for turret at x=${turret.x.toFixed(1)} (spans ${turretLeft.toFixed(1)} to ${turretRight.toFixed(1)})`);
     
     // Find the highest terrain level that can support at least 50% of the turret
     let bestLandingY = null;
@@ -312,7 +313,7 @@ function findTurretLandingPosition(turret, chunks) {
         if (supportPercentage >= 50 && supportPercentage > bestSupportPercentage) {
             bestLandingY = level - 25; // Position turret 25px above surface
             bestSupportPercentage = supportPercentage;
-            console.log(`✅ New best landing position: y=${bestLandingY.toFixed(1)} with ${supportPercentage.toFixed(1)}% support`);
+            trace(`✅ New best landing position: y=${bestLandingY.toFixed(1)} with ${supportPercentage.toFixed(1)}% support`);
         }
     }
     
@@ -327,12 +328,12 @@ function findTurretLandingPosition(turret, chunks) {
  * @param {any} gameState - Current game state
  */
 function animateTurretFalling(scene, turret, targetY, gameState) {
-    console.log(`🪂 Animating turret fall from y=${turret.y.toFixed(1)} to y=${targetY.toFixed(1)}`);
+    info(`🪂 Animating turret fall from y=${turret.y.toFixed(1)} to y=${targetY.toFixed(1)}`);
     
     // Apply 10 points of falling damage
     const FALL_DAMAGE = 10;
     applyDamage(gameState, turret.team, FALL_DAMAGE);
-    console.log(`💥 Turret ${turret.team} took ${FALL_DAMAGE} falling damage, health now: ${gameState[turret.team].health}%`);
+    info(`💥 Turret ${turret.team} took ${FALL_DAMAGE} falling damage, health now: ${gameState[turret.team].health}%`);
     
     // Update turret visual health indicator
     if (turret.updateHealthDisplay) {
@@ -346,11 +347,11 @@ function animateTurretFalling(scene, turret, targetY, gameState) {
         duration: 800, // 0.8 seconds for falling animation
         ease: 'Bounce.easeOut', // Bouncy landing effect
         onComplete: () => {
-            console.log(`🎯 Turret ${turret.team} landed at y=${turret.y.toFixed(1)}`);
+            info(`🎯 Turret ${turret.team} landed at y=${turret.y.toFixed(1)}`);
             
             // Check if the turret/player is still alive after falling damage
             if (gameState[turret.team].health <= 0) {
-                console.log(`💀 Turret ${turret.team} was destroyed by falling damage!`);
+                warn(`💀 Turret ${turret.team} was destroyed by falling damage!`);
                 // Note: Player elimination will be handled by the existing game systems
                 // when the main game loop checks for dead players
             }
@@ -367,7 +368,7 @@ function animateTurretFalling(scene, turret, targetY, gameState) {
  * @returns {boolean} True if any turrets took falling damage
  */
 export function handleTurretFalling(scene, chunks, turrets, gameState) {
-    console.log(`🔍 Checking ${turrets.length} turrets for landscape support after terrain destruction...`);
+    info(`🔍 Checking ${turrets.length} turrets for landscape support after terrain destruction...`);
     
     let anyTurretFell = false;
     
@@ -375,22 +376,22 @@ export function handleTurretFalling(scene, chunks, turrets, gameState) {
         const supportPercentage = calculateTurretSupport(turret, chunks);
         
         if (supportPercentage < 50) {
-            console.log(`⚠️ Turret ${turret.team} has insufficient support (${supportPercentage.toFixed(1)}% < 50%) - initiating fall`);
+            warn(`⚠️ Turret ${turret.team} has insufficient support (${supportPercentage.toFixed(1)}% < 50%) - initiating fall`);
             
             const newPosition = findTurretLandingPosition(turret, chunks);
             
             if (newPosition !== null && newPosition > turret.y) {
-                console.log(`🪂 Turret ${turret.team} will fall to new position y=${newPosition.toFixed(1)}`);
+                info(`🪂 Turret ${turret.team} will fall to new position y=${newPosition.toFixed(1)}`);
                 animateTurretFalling(scene, turret, newPosition, gameState);
                 anyTurretFell = true;
             } else if (newPosition === null) {
-                console.log(`💀 Turret ${turret.team} has no valid landing position - would be destroyed`);
+                warn(`💀 Turret ${turret.team} has no valid landing position - would be destroyed`);
                 // Could implement turret destruction here if needed
             } else {
-                console.log(`🚫 Turret ${turret.team} cannot fall upward - staying at current position`);
+                trace(`🚫 Turret ${turret.team} cannot fall upward - staying at current position`);
             }
         } else {
-            console.log(`✅ Turret ${turret.team} has sufficient support (${supportPercentage.toFixed(1)}% >= 50%)`);
+            trace(`✅ Turret ${turret.team} has sufficient support (${supportPercentage.toFixed(1)}% >= 50%)`);
         }
     });
     
@@ -406,12 +407,12 @@ export function handleTurretFalling(scene, chunks, turrets, gameState) {
  * @param {number} impactY - Y coordinate of projectile impact
  */
 export function createTerrainDestruction(scene, chunks, graphics, impactX, impactY) {
-    console.log(`💥 Creating terrain destruction at impact point (${impactX}, ${impactY})`);
+    info(`💥 Creating terrain destruction at impact point (${impactX}, ${impactY})`);
     
     let chunksAffected = 0;
     
     // Find the chunk that contains the impact point (based on X coordinate)
-    console.log(`🔍 Finding chunk containing impact point (${impactX}, ${impactY})...`);
+    trace(`🔍 Finding chunk containing impact point (${impactX}, ${impactY})...`);
     
     let closestChunk = null;
     let closestDistance = Infinity;
@@ -429,7 +430,7 @@ export function createTerrainDestruction(scene, chunks, graphics, impactX, impac
         
         // Debug the first few chunks and chunks around the impact area
         if (i < 3 || (impactX >= chunk.x - 50 && impactX <= chunk.x + chunk.width + 50)) {
-            console.log(`🔍 Chunk ${i}: pos(${chunk.x.toFixed(1)}, ${chunk.y.toFixed(1)}), size(${chunk.width.toFixed(1)}x${chunk.height.toFixed(1)}), withinX: ${withinX}`);
+            trace(`🔍 Chunk ${i}: pos(${chunk.x.toFixed(1)}, ${chunk.y.toFixed(1)}), size(${chunk.width.toFixed(1)}x${chunk.height.toFixed(1)}), withinX: ${withinX}`);
         }
         
         // For chunks with matching X coordinate, calculate distance to impact point
@@ -444,7 +445,7 @@ export function createTerrainDestruction(scene, chunks, graphics, impactX, impac
             
             const distanceToChunk = Math.sqrt((impactX - closestX) ** 2 + (impactY - closestY) ** 2);
             
-            console.log(`   → X matches! Center(${chunkCenterX.toFixed(1)}, ${chunkCenterY.toFixed(1)}), closest point(${closestX.toFixed(1)}, ${closestY.toFixed(1)}), distance: ${distanceToChunk.toFixed(1)}`);
+            trace(`   → X matches! Center(${chunkCenterX.toFixed(1)}, ${chunkCenterY.toFixed(1)}), closest point(${closestX.toFixed(1)}, ${closestY.toFixed(1)}), distance: ${distanceToChunk.toFixed(1)}`);
             
             // Keep track of the closest chunk
             if (distanceToChunk < closestDistance) {
@@ -457,7 +458,7 @@ export function createTerrainDestruction(scene, chunks, graphics, impactX, impac
     
     // Damage the closest chunk if we found one
     if (closestChunk) {
-        console.log(`🎯 Selected closest chunk at index ${closestChunkIndex}: pos(${closestChunk.x.toFixed(1)}, ${closestChunk.y.toFixed(1)}), distance: ${closestDistance.toFixed(1)}`);
+        info(`🎯 Selected closest chunk at index ${closestChunkIndex}: pos(${closestChunk.x.toFixed(1)}, ${closestChunk.y.toFixed(1)}), distance: ${closestDistance.toFixed(1)}`);
         
         chunksAffected++;
         
@@ -475,17 +476,17 @@ export function createTerrainDestruction(scene, chunks, graphics, impactX, impac
         closestChunk.targetHeight = newHeight;
         closestChunk.animationStartTime = scene.time.now;
         
-        console.log(`� Starting animated damage for chunk at x=${closestChunk.x.toFixed(1)}: will remove ${heightReduction.toFixed(1)}px over 1 second (${newHeight.toFixed(1)}px will remain)`);
+        trace(`� Starting animated damage for chunk at x=${closestChunk.x.toFixed(1)}: will remove ${heightReduction.toFixed(1)}px over 1 second (${newHeight.toFixed(1)}px will remain)`);
         
         // Check if chunk will be destroyed after animation
         if (newHeight <= 15) {
-            console.log(`💀 Chunk at x=${closestChunk.x.toFixed(1)} will be destroyed after animation (too small)`);
+            warn(`💀 Chunk at x=${closestChunk.x.toFixed(1)} will be destroyed after animation (too small)`);
         }
     } else {
-        console.log(`⚠️ No chunk found with matching X coordinate for impact at (${impactX.toFixed(1)}, ${impactY.toFixed(1)})`);
+        warn(`⚠️ No chunk found with matching X coordinate for impact at (${impactX.toFixed(1)}, ${impactY.toFixed(1)})`);
     }
     
-    console.log(`🏔️ Destruction setup complete: ${chunksAffected} chunks will be animated`);
+    info(`🏔️ Destruction setup complete: ${chunksAffected} chunks will be animated`);
 }
 
 /**
@@ -523,10 +524,10 @@ export function updateChunkAnimations(scene, chunks, graphics) {
             // Destroy chunk if it's too small
             if (chunk.height <= 15) {
                 chunk.destroyed = true;
-                console.log(`💀 Chunk at x=${chunk.x.toFixed(1)} destroyed after animation (too small)`);
+                info(`💀 Chunk at x=${chunk.x.toFixed(1)} destroyed after animation (too small)`);
             }
             
-            console.log(`✅ Animation complete for chunk at x=${chunk.x.toFixed(1)}`);
+            trace(`✅ Animation complete for chunk at x=${chunk.x.toFixed(1)}`);
         }
     });
     
@@ -575,7 +576,7 @@ export function checkChunkedTerrainCollision(projectile, chunks) {
  * @returns {{landscapeData: {points: Array, flatBases: Array, chunks: TerrainChunk[]}, graphics: Phaser.GameObjects.Graphics}} Chunked landscape
  */
 export function setupChunkedLandscape(scene, worldWidth, worldHeight, gameConfig) {
-    console.log(`🏔️ Setting up chunked landscape: ${worldWidth}x${worldHeight}px for ${gameConfig.numPlayers} players`);
+    info(`🏔️ Setting up chunked landscape: ${worldWidth}x${worldHeight}px for ${gameConfig.numPlayers} players`);
     
     // Generate points with same spacing as chunks for perfect alignment
     const baseY = worldHeight - 100;

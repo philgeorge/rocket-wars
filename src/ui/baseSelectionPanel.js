@@ -2,6 +2,7 @@
 // Phaser-based base selection panel to avoid DOM event conflicts
 
 import { getTeamColorName, getTeamColorCSS } from '../constants.js';
+import { info, trace } from '../logger.js';
 import { createBasePanel, addPanelText } from './panelFactory.js';
 import { shouldUseMobilePositioning } from '../deviceDetection.js';
 
@@ -12,7 +13,7 @@ import { shouldUseMobilePositioning } from '../deviceDetection.js';
  * @returns {Phaser.GameObjects.Container & {panelWidth?: number, panelHeight?: number}}
  */
 export function createBaseSelectionPanel(scene, currentPlayer) {
-    console.log(`🎮 Creating base selection panel for ${currentPlayer.name}...`);
+    info(`🎮 Creating base selection panel for ${currentPlayer.name}...`);
     
     // Get player-specific styling
     const playerColorName = getTeamColorName(currentPlayer.team);
@@ -68,7 +69,7 @@ export function createBaseSelectionPanel(scene, currentPlayer) {
     panel.setDepth(1000);
     panel.setVisible(true);
     
-    console.log(`📝 Created panel for ${currentPlayer.name} (${playerColorName}) with color ${playerColorCSS}`);
+    trace(`📝 Created panel for ${currentPlayer.name} (${playerColorName}) with color ${playerColorCSS}`);
     
     return /** @type {any} */ (panel);
 }
@@ -91,7 +92,7 @@ export function positionBaseSelectionPanel(panel, screenWidth, isTeleportMode = 
     if (isTeleportMode && shouldUseMobilePositioning()) {
         // On mobile devices during teleport, position lower to avoid overlap with environment panel
         panelY += 180; // Move down to avoid UI overlap
-        console.log(`📱 Positioning teleport panel lower for mobile (Y=${panelY})`);
+        trace(`📱 Positioning teleport panel lower for mobile (Y=${panelY})`);
     }
     
     panel.setPosition(panelX, panelY);
@@ -104,7 +105,7 @@ export function positionBaseSelectionPanel(panel, screenWidth, isTeleportMode = 
 export function hideBaseSelectionPanel(panel) {
     if (panel && panel.scene) {
         panel.setVisible(false);
-        console.log('🙈 Base selection panel hidden');
+        trace('🙈 Base selection panel hidden');
     }
 }
 
@@ -115,6 +116,6 @@ export function hideBaseSelectionPanel(panel) {
 export function showBaseSelectionPanel(panel) {
     if (panel && panel.scene) {
         panel.setVisible(true);
-        console.log('👁️ Base selection panel shown');
+        trace('👁️ Base selection panel shown');
     }
 }

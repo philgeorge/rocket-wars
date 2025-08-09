@@ -22,16 +22,18 @@ export const defaultGameConfig = {
  * Load game configuration from localStorage
  * @returns {Object} Saved config or default config
  */
+import { info, warn, trace } from './logger.js';
+
 export function loadGameConfig() {
     try {
         if (typeof localStorage === 'undefined') {
-            console.warn('localStorage not available - returning defaults');
+            warn('localStorage not available - returning defaults');
             return { ...defaultGameConfig };
         }
         const savedConfig = localStorage.getItem('gameConfig');
         if (savedConfig) {
             const config = JSON.parse(savedConfig);
-            console.log('Loaded saved game config:', config);
+            info('Loaded saved game config:', config);
             // Merge with defaults to ensure all properties exist
             return {
                 ...defaultGameConfig,
@@ -44,9 +46,9 @@ export function loadGameConfig() {
             };
         }
     } catch (error) {
-        console.warn('Failed to load saved game config:', error);
+        warn('Failed to load saved game config:', error);
     }
-    console.log('Using default game config');
+    info('Using default game config');
     return { ...defaultGameConfig };
 }
 
@@ -58,9 +60,9 @@ export function saveGameConfig(config) {
     try {
         if (typeof localStorage === 'undefined') return;
         localStorage.setItem('gameConfig', JSON.stringify(config));
-        console.log('Saved game config to localStorage:', config);
+        trace('Saved game config to localStorage:', config);
     } catch (error) {
-        console.warn('Failed to save game config:', error);
+        warn('Failed to save game config:', error);
     }
 }
 
@@ -78,17 +80,17 @@ export function loadDebugSettings(debugSettings) {
                     const setting = localStorage.getItem(storageKey);
                     if (setting === 'true') {
                         debugSettings[propertyName] = true;
-                        console.log(`🐛 Debug: ${propertyName} ENABLED via localStorage`);
+                        info(`🐛 Debug: ${propertyName} ENABLED via localStorage`);
                     } else if (setting === 'false') {
                         debugSettings[propertyName] = false;
-                        console.log(`🐛 Debug: ${propertyName} DISABLED via localStorage`);
+                        info(`🐛 Debug: ${propertyName} DISABLED via localStorage`);
                     }
                 }
             }
         } else {
-            console.warn('localStorage not available for debug settings');
+            warn('localStorage not available for debug settings');
         }
     } catch (error) {
-        console.warn('Failed to load debug settings from localStorage:', error);
+        warn('Failed to load debug settings from localStorage:', error);
     }
 }

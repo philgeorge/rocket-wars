@@ -2,6 +2,7 @@
 // Camera controls and operations for Rocket Wars
 
 import { setupInputManager } from './input/inputManager.js';
+import { info } from './logger.js';
 
 /**
  * Camera controls object with methods and state
@@ -29,12 +30,12 @@ export function setupCameraAndInput(scene, onShoot) {
         
         // Methods to enable/disable camera controls during setup
         disable: () => {
-            console.log('🚫 Disabling camera controls for player setup');
+            info('🚫 Disabling camera controls for player setup');
             inputManager.disable();
         },
         
         enable: () => {
-            console.log('✅ Re-enabling camera controls after player setup');
+            info('✅ Re-enabling camera controls after player setup');
             const newInputManager = inputManager.enable();
             // Return updated camera controls with new input manager
             return {
@@ -136,7 +137,7 @@ export function updateKeyboardCamera(scene) {
  * @param {number} worldHeight - World height in pixels
  */
 export function setupWorldBounds(scene, worldWidth, worldHeight) {
-    console.log(`Setting up world bounds: ${worldWidth}x${worldHeight}px`);
+    info(`Setting up world bounds: ${worldWidth}x${worldHeight}px`);
     
     // Set camera bounds to the world size
     scene.cameras.main.setBounds(0, 0, worldWidth, worldHeight);

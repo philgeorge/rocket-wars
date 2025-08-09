@@ -5,6 +5,7 @@ import { setupMouseInput } from './mouseInput.js';
 import { setupKeyboardInput } from './keyboardInput.js';
 import { getCurrentPlayer } from '../turnManager.js';
 import { updateGameUI } from '../ui/updateUI.js';
+import { info, warn } from '../logger.js';
 
 /**
  * Input manager object
@@ -29,13 +30,13 @@ export function setupInputManager(scene, onShoot) {
     // Helper function to start aiming for the current player
     const startPlayerAiming = (isKeyboardMode = false) => {
         if (!scene.gameState || !scene.turrets) {
-            console.warn('⚠️ Cannot start aiming - game state or turrets not available');
+            warn('⚠️ Cannot start aiming - game state or turrets not available');
             return false;
         }
         
         // Block aiming if in teleport mode
         if (scene.gameState.teleportMode) {
-            console.log('🚫 Cannot start aiming - player is in teleport mode');
+            info('🚫 Cannot start aiming - player is in teleport mode');
             return false;
         }
         
@@ -44,7 +45,7 @@ export function setupInputManager(scene, onShoot) {
         
         // Check if this player has already fired this turn
         if (scene.gameState.hasPlayerFiredThisTurn) {
-            console.log(`🚫 Player ${currentPlayerNum} has already fired this turn`);
+            info(`🚫 Player ${currentPlayerNum} has already fired this turn`);
             return false;
         }
         
@@ -52,12 +53,12 @@ export function setupInputManager(scene, onShoot) {
         const activeTurret = scene.turrets.find(turret => turret.team === currentPlayerKey);
         
         if (!activeTurret) {
-            console.warn(`⚠️ Could not find turret for active player ${currentPlayerKey}`);
+            warn(`⚠️ Could not find turret for active player ${currentPlayerKey}`);
             return false;
         }
         
         // Start aiming
-        console.log(`${isKeyboardMode ? '⌨️' : '🖱️'} Starting ${isKeyboardMode ? 'keyboard' : 'mouse'} aiming for ${currentPlayerKey}`);
+        info(`${isKeyboardMode ? '⌨️' : '🖱️'} Starting ${isKeyboardMode ? 'keyboard' : 'mouse'} aiming for ${currentPlayerKey}`);
         scene.currentPlayerTurret = activeTurret;
         
         if (isKeyboardMode) {
@@ -80,7 +81,7 @@ export function setupInputManager(scene, onShoot) {
             return;
         }
         
-        console.log(`${isKeyboardMode ? '⌨️' : '🖱️'} Stopping ${isKeyboardMode ? 'keyboard' : 'mouse'} aiming and shooting`);
+        info(`${isKeyboardMode ? '⌨️' : '🖱️'} Stopping ${isKeyboardMode ? 'keyboard' : 'mouse'} aiming and shooting`);
         const shootData = scene.currentPlayerTurret.stopAiming();
         
         // Call the shoot callback
@@ -116,12 +117,12 @@ export function setupInputManager(scene, onShoot) {
         },
         
         disable: () => {
-            console.log('🚫 Disabling input manager');
+            info('🚫 Disabling input manager');
             keyboardInput.disable();
         },
         
         enable: () => {
-            console.log('✅ Re-enabling input manager');
+            info('✅ Re-enabling input manager');
             keyboardInput.enable();
             // Re-create keyboard controls after re-enabling
             const newKeyboardInput = setupKeyboardInput(scene, mouseInput);
@@ -136,7 +137,7 @@ export function setupInputManager(scene, onShoot) {
                     newKeyboardInput.disable();
                 },
                 enable: () => {
-                    console.log('✅ Re-enabling input manager');
+                    info('✅ Re-enabling input manager');
                     return setupInputManager(scene, onShoot);
                 }
             };

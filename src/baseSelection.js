@@ -5,6 +5,7 @@ import { createGunTurret } from './turret.js';
 import { createBaseSelectionPanel, hideBaseSelectionPanel, positionBaseSelectionPanel } from './ui/index.js';
 import { getTeamColorCSS } from './constants.js';
 import { getCurrentPlayer } from './turnManager.js';
+import { info, trace, warn, error as logError } from './logger.js';
 
 /**
  * Base selection stage state management
@@ -23,10 +24,10 @@ import { getCurrentPlayer } from './turnManager.js';
  * @returns {Promise<{players: PlayerData[], turrets: any[]}>} Promise that resolves with player selection data and created turrets
  */
 export function initializeBaseSelection(scene, gameConfig, flatBases) {
-    console.log('🎮 Starting Phaser-based base selection stage...');
+    info('🎮 Starting Phaser-based base selection stage...');
     
     // Camera controls remain enabled since we're using Phaser panels now
-    console.log('🎮 Camera controls remain enabled for base selection');
+    trace('🎮 Camera controls remain enabled for base selection');
     
     return new Promise((resolve) => {
         // Initialize player data structures
@@ -45,7 +46,7 @@ export function initializeBaseSelection(scene, gameConfig, flatBases) {
             players.push(playerData);
         }
         
-        console.log('🎮 Player data initialized with names from game config:', players.map(p => ({ id: p.id, name: p.name })));
+        trace('🎮 Player data initialized with names from game config:', players.map(p => ({ id: p.id, name: p.name })));
         
         // Initialize base selection logic (no need to create panel upfront)
         startBaseSelection(scene, players, flatBases, resolve);
@@ -62,7 +63,7 @@ export function initializeBaseSelection(scene, gameConfig, flatBases) {
 function startBaseSelection(scene, players, flatBases, resolve) {
     const landscapePoints = scene.landscapeData?.points;
     if (!landscapePoints) {
-        console.error('❌ No landscape points available in scene');
+        logError('❌ No landscape points available in scene');
         return;
     }
     
@@ -73,12 +74,12 @@ function startBaseSelection(scene, players, flatBases, resolve) {
     function showBaseSelection(playerIndex) {
         const player = players[playerIndex];
         
-        console.log(`🎯 Starting base selection for ${player.name} (${playerIndex + 1}/${players.length})`);
+        info(`🎯 Starting base selection for ${player.name} (${playerIndex + 1}/${players.length})`);
         
         // Use the shared single-player base selection logic
         startSinglePlayerBaseSelection(scene, player, flatBases, availableBases, landscapePoints, {
             onBaseSelected: (baseIndex, basePosition) => {
-                console.log(`🎯 Player ${player.name} selected base ${baseIndex}`);
+                info(`🎯 Player ${player.name} selected base ${baseIndex}`);
                 
                 // Store selection in player data
                 player.baseIndex = baseIndex;
@@ -92,7 +93,7 @@ function startBaseSelection(scene, players, flatBases, resolve) {
                 player.turret = turret;
                 setupTurrets.push(turret);
                 
-                console.log(`🏭 Placed turret for ${player.name} at (${turretX}, ${turretY})`);
+                trace(`🏭 Placed turret for ${player.name} at (${turretX}, ${turretY})`);
                 
                 // Remove selected base from available list
                 availableBases = availableBases.filter(index => index !== baseIndex);
@@ -106,15 +107,15 @@ function startBaseSelection(scene, players, flatBases, resolve) {
                 }
             },
             onCancelled: () => {
-                console.log('🚫 Base selection cancelled - this should not happen in initial setup');
+                warn('🚫 Base selection cancelled - this should not happen in initial setup');
                 // In initial setup, cancellation shouldn't happen, but we could handle it
             }
         }, false);
     }
     
     function completeSetup() {
-        console.log('🎯 Phaser-based base selection complete!', players);
-        console.log('🏭 Turrets created during base selection:', setupTurrets.length);
+        info('🎯 Phaser-based base selection complete!', players);
+        trace('🏭 Turrets created during base selection:', setupTurrets.length);
         
         // Resolve the promise with player data and existing turrets
         resolve({ players: players, turrets: setupTurrets });
@@ -134,12 +135,12 @@ function startBaseSelection(scene, players, flatBases, resolve) {
  * @returns {Promise<{baseIndex: number, basePosition: Object}>} Promise that resolves with selected base data
  */
 export function initializeTeleportBaseSelection(scene, gameState, flatBases) {
-    console.log('🔄 Starting teleport base selection...');
+    info('🔄 Starting teleport base selection...');
     
     return new Promise((resolve, reject) => {
         const landscapePoints = scene.landscapeData?.points;
         if (!landscapePoints) {
-            console.error('❌ No landscape points available in scene');
+            logError('❌ No landscape points available in scene');
             reject(new Error('No landscape points available'));
             return;
         }
@@ -184,10 +185,10 @@ export function initializeTeleportBaseSelection(scene, gameState, flatBases) {
             .map((_, index) => index)
             .filter(index => !occupiedBaseIndices.includes(index));
         
-        console.log(`🔄 Available bases for teleport: ${availableBases.length}/${flatBases.length} (occupied: [${occupiedBaseIndices.join(', ')}])`);
+        trace(`🔄 Available bases for teleport: ${availableBases.length}/${flatBases.length} (occupied: [${occupiedBaseIndices.join(', ')}])`);
         
         if (availableBases.length === 0) {
-            console.log('🚫 No available bases for teleportation');
+            warn('🚫 No available bases for teleportation');
             reject(new Error('No available bases for teleportation'));
             return;
         }
@@ -195,11 +196,11 @@ export function initializeTeleportBaseSelection(scene, gameState, flatBases) {
         // Reuse the existing base selection logic with teleport-specific callbacks
         startSinglePlayerBaseSelection(scene, mockPlayer, flatBases, availableBases, landscapePoints, {
             onBaseSelected: (baseIndex, basePosition) => {
-                console.log(`✅ Teleport base selection complete: base ${baseIndex}`);
+                info(`✅ Teleport base selection complete: base ${baseIndex}`);
                 resolve({ baseIndex, basePosition });
             },
             onCancelled: () => {
-                console.log('🚫 Teleport base selection cancelled');
+                info('🚫 Teleport base selection cancelled');
                 reject(new Error('Teleport cancelled by user'));
             }
         }, true);
@@ -252,7 +253,7 @@ function startSinglePlayerBaseSelection(scene, player, flatBases, availableBases
     const escKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     escKey.on('down', () => {
         if (isSelectionActive) {
-            console.log('🚫 Base selection cancelled via ESC');
+            info('🚫 Base selection cancelled via ESC');
             isSelectionActive = false;
             cleanupSelection();
             callbacks.onCancelled();
@@ -289,7 +290,7 @@ function startSinglePlayerBaseSelection(scene, player, flatBases, availableBases
             highlight.setDepth(500);
             
             baseHighlights.push(highlight);
-            console.log(`✨ Created highlight for base ${baseIndex} at (${baseCenter.x}, ${baseCenter.y})`);
+            trace(`✨ Created highlight for base ${baseIndex} at (${baseCenter.x}, ${baseCenter.y})`);
         });
     }
     
@@ -316,7 +317,7 @@ function startSinglePlayerBaseSelection(scene, player, flatBases, availableBases
             const clickHandler = () => {
                 if (!isSelectionActive) return;
                 
-                console.log(`🎯 Player ${player.name} selected base ${baseIndex} via CLICK`);
+                info(`🎯 Player ${player.name} selected base ${baseIndex} via CLICK`);
                 
                 if (hoverTimeout) {
                     clearTimeout(hoverTimeout);
@@ -393,7 +394,7 @@ function startSinglePlayerBaseSelection(scene, player, flatBases, availableBases
         const nextIndex = (currentIndex + 1) % availableBases.length;
         keyboardSelectedBaseIndex = availableBases[nextIndex];
         
-        console.log(`⌨️ Cycling to base ${keyboardSelectedBaseIndex}`);
+        trace(`⌨️ Cycling to base ${keyboardSelectedBaseIndex}`);
         
         // Move camera to show the selected base (reuse existing logic)
         const basePosition = calculateBaseCenterFromPoints(flatBases[keyboardSelectedBaseIndex], landscapePoints);
@@ -406,11 +407,11 @@ function startSinglePlayerBaseSelection(scene, player, flatBases, availableBases
     
     function confirmKeyboardSelection() {
         if (keyboardSelectedBaseIndex === -1) {
-            console.log('⌨️ No base selected via keyboard');
+            trace('⌨️ No base selected via keyboard');
             return;
         }
         
-        console.log(`⌨️ Player ${player.name} confirmed base ${keyboardSelectedBaseIndex} via keyboard`);
+        info(`⌨️ Player ${player.name} confirmed base ${keyboardSelectedBaseIndex} via keyboard`);
         clearPreviewTurret();
         completeSelection(keyboardSelectedBaseIndex);
     }

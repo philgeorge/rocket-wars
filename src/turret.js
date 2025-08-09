@@ -2,6 +2,7 @@
 // Player gun turret graphics and logic for Rocket Wars
 
 import { getTeamColorHex } from './constants.js';
+import { info, trace, warn } from './logger.js';
 
 /**
  * Create a gun turret with interactive aiming capabilities
@@ -232,7 +233,7 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         const screenSize = Math.min(camera.width, camera.height);
         this.minDistance = Math.max(40, screenSize * 0.05);  // At least 40px, or 5% of screen
         this.maxDistance = Math.max(120, screenSize * 0.3); // At least 120px, or 30% of screen
-        console.log(`🔫 Turret aiming on screenSize=${screenSize} with responsive distances: min=${this.minDistance}, max=${this.maxDistance}`);
+        trace(`🔫 Turret aiming on screenSize=${screenSize} with responsive distances: min=${this.minDistance}, max=${this.maxDistance}`);
         
         // Create aiming line graphics
         if (!this.aimingLine) {
@@ -340,7 +341,7 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         turret.keyboardAngle = Phaser.Math.RadToDeg(finalAngle);
         turret.keyboardPower = finalPower;
         
-        console.log(`💾 Stored aiming preferences - angle: ${turret.keyboardAngle.toFixed(1)}°, power: ${Math.round(turret.keyboardPower * 100)}%`);
+        trace(`💾 Stored aiming preferences - angle: ${turret.keyboardAngle.toFixed(1)}°, power: ${Math.round(turret.keyboardPower * 100)}%`);
         
         return {
             angle: finalAngle,
@@ -353,21 +354,21 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         // Clamp health percentage to 0-100 range
         const clampedHealth = Math.max(0, Math.min(100, healthPercent));
         
-        console.log(`🎯 Updating turret health display: ${clampedHealth}% (team: ${this.team})`);
-        console.log(`🎯 Before redraw - base exists: ${!!this.base}, body exists: ${!!this.turretBody}`);
-        console.log(`🎯 Colors - darkerColor: ${darkerColor.toString(16)}, color: ${color.toString(16)}`);
+        trace(`🎯 Updating turret health display: ${clampedHealth}% (team: ${this.team})`);
+        trace(`🎯 Before redraw - base exists: ${!!this.base}, body exists: ${!!this.turretBody}`);
+        trace(`🎯 Colors - darkerColor: ${darkerColor.toString(16)}, color: ${color.toString(16)}`);
         
         // Redraw base and turret body with vertical fill based on health
         drawTurretBase(this.base, darkerColor, 1, color, clampedHealth);
         drawTurretBody(this.turretBody, darkerColor, 1, color, clampedHealth);
         
-        console.log(`🎯 After redraw - health display updated for ${this.team}`);
+        trace(`🎯 After redraw - health display updated for ${this.team}`);
     };
 
     // Method to start keyboard aiming
     turret.startKeyboardAiming = function() {
         const turret = /** @type {TurretContainer} */ (this);
-        console.log(`⌨️ Starting keyboard aiming for ${turret.team}`);
+        trace(`⌨️ Starting keyboard aiming for ${turret.team}`);
         
         // Start standard aiming first
         turret.startAiming();
@@ -385,7 +386,7 @@ export function createGunTurret(scene, x, y, team = 'player1') {
         // Draw aiming line and update tooltip using helper method
         turret.drawAimingLineAndTooltip(angleInRadians, turret.currentPower, true);
         
-        console.log(`⌨️ Keyboard aiming initialized - angle: ${turret.keyboardAngle}°, power: ${Math.round(turret.currentPower * 100)}%`);
+        trace(`⌨️ Keyboard aiming initialized - angle: ${turret.keyboardAngle}°, power: ${Math.round(turret.currentPower * 100)}%`);
     };
 
     // Set initial angle (pointing slightly upward)
@@ -405,7 +406,7 @@ export function createGunTurret(scene, x, y, team = 'player1') {
 export function placeTurretsOnBases(scene, flatBases, points, playerData = []) {
     const turrets = [];
     
-    console.log(`🎯 Placing turrets for ${playerData.length} players using setup data...`);
+    info(`🎯 Placing turrets for ${playerData.length} players using setup data...`);
     
     if (playerData.length > 0 && flatBases.length > 0) {
         // Place turrets based on player setup data
@@ -440,16 +441,16 @@ export function placeTurretsOnBases(scene, flatBases, points, playerData = []) {
                 
                 turrets.push(turret);
                 
-                console.log(`✅ Placed ${player.name}'s (${player.team}) turret on base ${player.baseIndex} at (${Math.round(baseCenterX + randomOffset)}, ${Math.round(baseCenterY - 25)})`);
+                trace(`✅ Placed ${player.name}'s (${player.team}) turret on base ${player.baseIndex} at (${Math.round(baseCenterX + randomOffset)}, ${Math.round(baseCenterY - 25)})`);
             } else {
-                console.warn(`⚠️ Player ${player.name} has invalid base index: ${player.baseIndex}`);
+                warn(`⚠️ Player ${player.name} has invalid base index: ${player.baseIndex}`);
             }
         });
     } else {
-        console.warn(`⚠️ No player data provided or no flat bases available`);
+        warn(`⚠️ No player data provided or no flat bases available`);
     }
     
-    console.log(`🏁 Placed ${turrets.length} turrets for ${playerData.length} players using their selected bases`);
+    info(`🏁 Placed ${turrets.length} turrets for ${playerData.length} players using their selected bases`);
     return turrets;
 }
 
@@ -464,7 +465,7 @@ export function placeTurretsOnBases(scene, flatBases, points, playerData = []) {
 function drawTurretBase(graphics, fillColor, fillAlpha, outlineColor, healthPercent = 100) {
     graphics.clear();
     
-    console.log(`🏗️ Drawing turret base with health: ${healthPercent}%`);
+    trace(`🏗️ Drawing turret base with health: ${healthPercent}%`);
     
     // Fill the base shape
     graphics.fillStyle(fillColor, fillAlpha);
@@ -495,7 +496,7 @@ function drawTurretBase(graphics, fillColor, fillAlpha, outlineColor, healthPerc
         else activeSegments = 5;
     }
     
-    console.log(`🏗️ Health segments: ${activeSegments}/${numSegments} (${healthPercent}%)`);
+    trace(`🏗️ Health segments: ${activeSegments}/${numSegments} (${healthPercent}%)`);
     
     // Draw each segment
     for (let i = 0; i < numSegments; i++) {
@@ -535,7 +536,7 @@ function drawTurretBase(graphics, fillColor, fillAlpha, outlineColor, healthPerc
 function drawTurretBody(graphics, fillColor, fillAlpha, outlineColor, healthPercent = 100) {
     graphics.clear();
     
-    console.log(`🏗️ Drawing turret body with health: ${healthPercent}%`);
+    trace(`🏗️ Drawing turret body with health: ${healthPercent}%`);
     
     // Fill the turret body circle with health-based vertical fill
     graphics.fillStyle(fillColor, fillAlpha);
@@ -550,16 +551,16 @@ function drawTurretBody(graphics, fillColor, fillAlpha, outlineColor, healthPerc
         const fillHeight = (healthPercent / 100) * totalHeight;
         const fillTop = circleBottom - fillHeight; // Start from bottom, work up
         
-        console.log(`🏗️ Body fill calculation: fillHeight=${fillHeight}, fillTop=${fillTop}, totalHeight=${totalHeight}`);
+        trace(`🏗️ Body fill calculation: fillHeight=${fillHeight}, fillTop=${fillTop}, totalHeight=${totalHeight}`);
         
         // Draw a partial circle fill from bottom up
         if (fillHeight >= totalHeight) {
             // Full circle
-            console.log(`🏗️ Drawing full circle`);
+            trace(`🏗️ Drawing full circle`);
             graphics.fillCircle(0, circleCenterY, circleRadius);
         } else {
             // Partial circle - draw a custom path
-            console.log(`🏗️ Drawing partial circle`);
+            trace(`🏗️ Drawing partial circle`);
             // Calculate the angle where the fill line intersects the circle
             const yOffset = fillTop - circleCenterY; // Distance from center to fill line
             
@@ -569,7 +570,7 @@ function drawTurretBody(graphics, fillColor, fillAlpha, outlineColor, healthPerc
                 const x1 = -Math.sin(angle) * circleRadius;
                 const x2 = Math.sin(angle) * circleRadius;
                 
-                console.log(`🏗️ Circle intersection: yOffset=${yOffset}, angle=${angle}, x1=${x1}, x2=${x2}`);
+                trace(`🏗️ Circle intersection: yOffset=${yOffset}, angle=${angle}, x1=${x1}, x2=${x2}`);
                 
                 // Draw the filled portion
                 graphics.beginPath();
@@ -579,11 +580,11 @@ function drawTurretBody(graphics, fillColor, fillAlpha, outlineColor, healthPerc
                 graphics.closePath();
                 graphics.fillPath();
             } else {
-                console.log(`🏗️ Fill line above circle, no fill`);
+                trace(`🏗️ Fill line above circle, no fill`);
             }
         }
     } else {
-        console.log(`🏗️ No health remaining, no body fill`);
+        trace(`🏗️ No health remaining, no body fill`);
     }
     
     // Draw the outline (always full circle outline)

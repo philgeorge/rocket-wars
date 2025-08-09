@@ -3,6 +3,7 @@
 
 import { initializeTeleportBaseSelection } from './baseSelection.js';
 import { updateGameUI } from './ui/updateUI.js';
+import { info, trace, warn, error } from './logger.js';
 
 /**
  * Initialize game state with rounds and turns tracking
@@ -156,7 +157,7 @@ export function removePlayer(gameState, playerNum) {
         const playerKey = `player${playerNum}`;
         if (gameState[playerKey]) {
             gameState[playerKey].baseIndex = null;
-            console.log(`📍 Cleared base index for eliminated Player ${playerNum}`);
+            trace(`📍 Cleared base index for eliminated Player ${playerNum}`);
         }
         
         // Adjust current player index if needed
@@ -168,8 +169,8 @@ export function removePlayer(gameState, playerNum) {
             gameState.currentPlayerIndex = 0;
         }
         
-        console.log(`Player ${playerNum} eliminated. Remaining players:`, gameState.playersAlive);
-        console.log(`Current player index adjusted to: ${gameState.currentPlayerIndex} (Player ${getCurrentPlayer(gameState)})`);
+        info(`Player ${playerNum} eliminated. Remaining players:`, gameState.playersAlive);
+        trace(`Current player index adjusted to: ${gameState.currentPlayerIndex} (Player ${getCurrentPlayer(gameState)})`);
     }
 }
 
@@ -180,11 +181,11 @@ export function removePlayer(gameState, playerNum) {
  * @returns {boolean} True if advanced to next player, false if round completed
  */
 export function advanceToNextPlayer(gameState, scene) {
-    console.log(`🔄 Advancing from player index ${gameState.currentPlayerIndex} (Player ${getCurrentPlayer(gameState)})`);
+    trace(`🔄 Advancing from player index ${gameState.currentPlayerIndex} (Player ${getCurrentPlayer(gameState)})`);
     
     // Exit teleport mode if active (player's turn is ending)
     if (gameState.teleportMode) {
-        console.log('🔄 Automatically exiting teleport mode due to turn advancement');
+        trace('🔄 Automatically exiting teleport mode due to turn advancement');
         exitTeleportMode(gameState, scene);
     }
     
@@ -199,11 +200,11 @@ export function advanceToNextPlayer(gameState, scene) {
     // Check if we've gone through all players (round complete)
     if (gameState.currentPlayerIndex >= gameState.playersAlive.length) {
         gameState.currentPlayerIndex = 0;
-        console.log(`Round ${gameState.currentRound} completed, wrapping to start of next round`);
+        info(`Round ${gameState.currentRound} completed, wrapping to start of next round`);
         return false; // Round completed
     }
     
-    console.log(`🎯 Turn advanced to Player ${getCurrentPlayer(gameState)} (index ${gameState.currentPlayerIndex})`);
+    info(`🎯 Turn advanced to Player ${getCurrentPlayer(gameState)} (index ${gameState.currentPlayerIndex})`);
     return true; // Still in same round
 }
 
@@ -215,7 +216,7 @@ export function advanceToNextPlayer(gameState, scene) {
 export function advanceToNextRound(gameState) {
     // Check if we would exceed max rounds AFTER incrementing
     if (gameState.currentRound + 1 > gameState.maxRounds) {
-        console.log('Game ended: Maximum rounds reached');
+        warn('Game ended: Maximum rounds reached');
         return false; // Game should end
     }
     
@@ -227,7 +228,7 @@ export function advanceToNextRound(gameState) {
     gameState.hasPlayerFiredThisTurn = false;
     gameState.lastRemainingTime = null; // Reset for next round
     
-    console.log(`Advanced to Round ${gameState.currentRound}`);
+    info(`Advanced to Round ${gameState.currentRound}`);
     
     return true; // Continue playing
 }
@@ -278,15 +279,15 @@ export function startPlayerTurn(gameState, onTimeUp = null) {
                 clearInterval(gameState.turnTimer);
                 gameState.turnTimer = null;
                 gameState.turnStartTime = null;
-                console.log(`⏰ Time's up for Player ${getCurrentPlayer(gameState)}`);
+                info(`⏰ Time's up for Player ${getCurrentPlayer(gameState)}`);
                 onTimeUp();
             }
         }, 100); // Check every 100ms for smooth countdown
     }
     
     const currentPlayer = getCurrentPlayer(gameState);
-    console.log(`🎯 Started turn for Player ${currentPlayer} in Round ${gameState.currentRound} (${gameState.turnTimeLimit}s limit)`);
-    console.log(`Players alive: [${gameState.playersAlive.join(', ')}], current index: ${gameState.currentPlayerIndex}`);
+    info(`🎯 Started turn for Player ${currentPlayer} in Round ${gameState.currentRound} (${gameState.turnTimeLimit}s limit)`);
+    trace(`Players alive: [${gameState.playersAlive.join(', ')}], current index: ${gameState.currentPlayerIndex}`);
 }
 
 /**
@@ -373,23 +374,23 @@ export function getRankedPlayers(gameState, playerData = null) {
 export function enterTeleportMode(gameState, scene) {
     // Validate that we can enter teleport mode
     if (!gameState.playersAlive || gameState.playersAlive.length === 0) {
-        console.log('🚫 Cannot enter teleport mode - no players alive');
+        warn('🚫 Cannot enter teleport mode - no players alive');
         return false;
     }
     
     if (gameState.teleportMode) {
-        console.log('🚫 Cannot enter teleport mode - already in teleport mode');
+        warn('🚫 Cannot enter teleport mode - already in teleport mode');
         return false;
     }
     
     if (gameState.hasPlayerFiredThisTurn) {
-        console.log('🚫 Cannot enter teleport mode - player has already fired this turn');
+        warn('🚫 Cannot enter teleport mode - player has already fired this turn');
         return false;
     }
     
     // Check if player is currently aiming
     if (scene.currentPlayerTurret) {
-        console.log('🚫 Cannot enter teleport mode - player is currently aiming');
+        warn('🚫 Cannot enter teleport mode - player is currently aiming');
         return false;
     }
     
@@ -400,8 +401,8 @@ export function enterTeleportMode(gameState, scene) {
     // Refresh teleport button state via centralized UI helper
     updateGameUI(scene, gameState, { updateEnvironment: false, updatePlayers: false, updateTeleport: true });
     
-    console.log(`🔄 Player ${currentPlayer} entered teleport mode`);
-    console.log(`Turn timer continues running: ${gameState.turnStartTime ? 'YES' : 'NO'}`);
+    info(`🔄 Player ${currentPlayer} entered teleport mode`);
+    trace(`Turn timer continues running: ${gameState.turnStartTime ? 'YES' : 'NO'}`);
     
     startTeleportBaseSelection(gameState, scene);
     
@@ -416,7 +417,7 @@ export function enterTeleportMode(gameState, scene) {
  */
 export function exitTeleportMode(gameState, scene = null) {
     if (!gameState.teleportMode) {
-        console.log('🚫 Cannot exit teleport mode - not in teleport mode');
+        warn('🚫 Cannot exit teleport mode - not in teleport mode');
         return false;
     }
     
@@ -426,14 +427,14 @@ export function exitTeleportMode(gameState, scene = null) {
 
     // Clean up any active base selection UI
     if (scene && scene.activeBaseSelectionCleanup) {
-        console.log('🧹 Cleaning up active base selection UI');
+        trace('🧹 Cleaning up active base selection UI');
         scene.activeBaseSelectionCleanup();
     }
 
     // Centralized UI refresh (teleport button only)
     updateGameUI(scene, gameState, { updateEnvironment: false, updatePlayers: false, updateTeleport: true });
     
-    console.log(`↩️ Player ${playerNum} exited teleport mode - can continue turn normally`);
+    info(`↩️ Player ${playerNum} exited teleport mode - can continue turn normally`);
     
     return true;
 }
@@ -446,7 +447,7 @@ export function exitTeleportMode(gameState, scene = null) {
  */
 export function completeTeleport(gameState, scene) {
     if (!gameState.teleportMode) {
-        console.log('🚫 Cannot complete teleport - not in teleport mode');
+        warn('🚫 Cannot complete teleport - not in teleport mode');
         return false;
     }
     
@@ -458,12 +459,12 @@ export function completeTeleport(gameState, scene) {
     // Mark turn as completed (similar to firing)
     gameState.hasPlayerFiredThisTurn = true;
     
-    console.log(`✅ Player ${playerNum} completed teleport - ending turn`);
+    info(`✅ Player ${playerNum} completed teleport - ending turn`);
     
     // Advance to next player (similar to projectile impact logic)
     // Use a small delay for smoother transition
     scene.time.delayedCall(500, () => {
-        console.log('🎯 Advancing turn after teleport via unified progressTurn');
+        trace('🎯 Advancing turn after teleport via unified progressTurn');
         const sceneAny = /** @type {any} */ (scene);
         if (sceneAny.progressTurn) {
             sceneAny.progressTurn('teleport', { delayMs: 0 });
@@ -500,13 +501,13 @@ export function isPlayerInTeleportMode(gameState, playerNum) {
  * @param {Scene} scene - Scene object with landscape data and turrets
  */
 function startTeleportBaseSelection(gameState, scene) {
-    console.log('🔄 Starting teleport base selection...');
+    info('🔄 Starting teleport base selection...');
     
     // Get scene data needed for base selection
     const flatBases = scene.landscapeData?.flatBases;
     
     if (!flatBases) {
-        console.error('❌ Missing landscape data for teleport base selection');
+        error('❌ Missing landscape data for teleport base selection');
         exitTeleportMode(gameState, scene);
         return;
     }
@@ -514,11 +515,11 @@ function startTeleportBaseSelection(gameState, scene) {
     // Start the teleport base selection process
     const _baseSelectionPromise = initializeTeleportBaseSelection(scene, gameState, flatBases)
         .then((selection) => {
-            console.log('✅ Teleport base selected:', selection);
+            info('✅ Teleport base selected:', selection);
             handleTeleportBaseSelected(gameState, scene, selection);
         })
         .catch((error) => {
-            console.log('🚫 Teleport base selection cancelled or failed:', error.message);
+            warn('🚫 Teleport base selection cancelled or failed:', error.message);
             // Exit teleport mode but don't advance turn (player can continue)
             exitTeleportMode(gameState, scene);
         });
@@ -534,14 +535,14 @@ function handleTeleportBaseSelected(gameState, scene, selection) {
     const currentPlayerNum = getCurrentPlayer(gameState);
     const currentPlayerKey = `player${currentPlayerNum}`;
     
-    console.log(`🔄 Moving Player ${currentPlayerNum} turret to base ${selection.baseIndex}`);
+    info(`🔄 Moving Player ${currentPlayerNum} turret to base ${selection.baseIndex}`);
     
     // Find current player's turret
     const turrets = scene.turrets;
     const currentTurret = turrets?.find(turret => turret.team === currentPlayerKey);
     
     if (!currentTurret) {
-        console.error('❌ Could not find current player turret for teleportation');
+        error('❌ Could not find current player turret for teleportation');
         exitTeleportMode(gameState, scene);
         return;
     }
@@ -556,7 +557,7 @@ function handleTeleportBaseSelected(gameState, scene, selection) {
     // Update base index in game state
     gameState[currentPlayerKey].baseIndex = selection.baseIndex;
     
-    console.log(`✅ Turret moved to (${newX}, ${newY}) - Base index updated to ${selection.baseIndex}`);
+    info(`✅ Turret moved to (${newX}, ${newY}) - Base index updated to ${selection.baseIndex}`);
     
     // Complete the teleport (this ends the turn)
     completeTeleport(gameState, scene);

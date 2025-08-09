@@ -2,6 +2,7 @@
 // Landscape generation and drawing utilities for Rocket Wars
 
 import { WORLD_HEIGHT } from './constants.js';
+import { info, trace, warn, error as logError } from './logger.js';
 
 /**
  * Generate landscape points with alternating flat and mountainous sections
@@ -20,7 +21,7 @@ export function generateLandscapePoints(width, baseY, numPoints, numPlayers = 2)
     const numSections = 2 * numPlayers;
     const sectionSize = Math.floor(numPoints / numSections);
     
-    console.log(`Generating landscape with ${numSections} sections for ${numPlayers} players`);
+    info(`Generating landscape with ${numSections} sections for ${numPlayers} players`);
 
     // 1. Generate initial random landscape with varied terrain across sections
     for (let i = 0; i < numPoints; i++) {
@@ -56,7 +57,7 @@ export function generateLandscapePoints(width, baseY, numPoints, numPlayers = 2)
     }
 
     // 2. Apply smoothing to reduce spikiness between adjacent points
-    console.log('Applying smoothing to landscape points...');
+    trace('Applying smoothing to landscape points...');
     for (let i = 1; i < points.length - 1; i++) {
         const prev = points[i - 1];
         const curr = points[i];
@@ -73,7 +74,7 @@ export function generateLandscapePoints(width, baseY, numPoints, numPlayers = 2)
             // Smooth this point by averaging with neighbors (weighted)
             const smoothedY = (prev.y * 0.25 + curr.y * 0.5 + next.y * 0.25);
             curr.y = Math.round(smoothedY);
-            console.log(`🏔️ Smoothed point ${i}: was ${points[i].y}, now ${curr.y}`);
+            trace(`🏔️ Smoothed point ${i}: was ${points[i].y}, now ${curr.y}`);
         }
     }
 
@@ -97,7 +98,7 @@ export function generateLandscapePoints(width, baseY, numPoints, numPlayers = 2)
         const minRequiredForTwoBases = (2 * minFlatWidthPx) + minSpacingPx;
         const maxBasesInSection = availableWidth >= minRequiredForTwoBases ? 2 : 1;
         
-        console.log(`Section ${sectionIndex + 1}: ${sectionPoints} points, ${Math.round(availableWidth)}px wide, attempting ${maxBasesInSection} bases`);
+        trace(`Section ${sectionIndex + 1}: ${sectionPoints} points, ${Math.round(availableWidth)}px wide, attempting ${maxBasesInSection} bases`);
         
         for (let baseInSection = 0; baseInSection < maxBasesInSection; baseInSection++) {
             // Calculate available space for this base
@@ -157,7 +158,7 @@ export function generateLandscapePoints(width, baseY, numPoints, numPlayers = 2)
                     points[j].y = flatY;
                 }
                 
-                console.log(`Created flat base ${baseInSection + 1} in section ${sectionIndex + 1}: points ${baseStart}-${baseEnd}, Y=${flatY}`);
+                trace(`Created flat base ${baseInSection + 1} in section ${sectionIndex + 1}: points ${baseStart}-${baseEnd}, Y=${flatY}`);
                 flatBases.push({ start: baseStart, end: baseEnd });
             }
         }
@@ -170,19 +171,19 @@ export function generateLandscapePoints(width, baseY, numPoints, numPlayers = 2)
         
         for (let i = base.start; i <= base.end; i++) {
             if (points[i].y !== expectedY) {
-                console.error(`CRITICAL: Flat base ${index} point ${i} has Y=${points[i].y}, expected Y=${expectedY}`);
+                logError(`CRITICAL: Flat base ${index} point ${i} has Y=${points[i].y}, expected Y=${expectedY}`);
                 points[i].y = expectedY; // Force fix it
                 allFlat = false;
             }
         }
         
         if (!allFlat) {
-            console.warn(`Fixed flat base ${index} inconsistencies`);
+            warn(`Fixed flat base ${index} inconsistencies`);
         }
     });
 
-    console.log(`📊 Landscape generation complete: Created ${flatBases.length} flat bases for ${numPlayers} players across ${numSections} sections (up to 2 per section)`);
-    console.log(`📊 Flat bases summary:`, flatBases.map((base, index) => `Base ${index}: points ${base.start}-${base.end} (width: ${base.end - base.start + 1} points)`));
+    info(`📊 Landscape generation complete: Created ${flatBases.length} flat bases for ${numPlayers} players across ${numSections} sections (up to 2 per section)`);
+    trace(`📊 Flat bases summary:`, flatBases.map((base, index) => `Base ${index}: points ${base.start}-${base.end} (width: ${base.end - base.start + 1} points)`));
 
     return { points, flatBases };
 }

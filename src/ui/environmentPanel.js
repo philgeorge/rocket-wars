@@ -2,6 +2,7 @@
 // Environment panel showing round, wind, gravity, and timer
 
 import { createBasePanel, addPanelText, addPanelButton, positionPanel } from './panelFactory.js';
+import { info } from '../logger.js';
 import { getCurrentPlayer } from '../turnManager.js';
 
 /**
@@ -76,7 +77,7 @@ export function createEnvironmentPanel(scene, gameState) {
                 if (/** @type {any} */ (scene).exitTeleportMode) {
                     const success = /** @type {any} */ (scene).exitTeleportMode();
                     if (success) {
-                        console.log(`↩️ Player exited teleport mode via button`);
+                        info(`↩️ Player exited teleport mode via button`);
                     }
                 }
             } else {
@@ -85,7 +86,7 @@ export function createEnvironmentPanel(scene, gameState) {
                     const success = /** @type {any} */ (scene).enterTeleportMode();
                     if (success) {
                         const currentPlayerNum = getCurrentPlayer(gameState);
-                        console.log(`✅ Player ${currentPlayerNum} entered teleport mode via button`);
+                        info(`✅ Player ${currentPlayerNum} entered teleport mode via button`);
                     }
                 }
             }

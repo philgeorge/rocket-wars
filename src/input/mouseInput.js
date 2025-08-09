@@ -2,6 +2,7 @@
 // Mouse and touch input handling for Rocket Wars
 
 import { getCurrentPlayer } from '../turnManager.js';
+import { info } from '../logger.js';
 
 /**
  * Mouse input handler object
@@ -113,7 +114,7 @@ export function setupMouseInput(scene, startPlayerAiming, stopAimingAndShoot) {
                 const currentPlayerKey = `player${currentPlayerNum}`;
                 
                 if (clickedTurret.team !== currentPlayerKey) {
-                    console.log(`🚫 Can't use ${clickedTurret.team} turret - it's Player ${currentPlayerNum}'s turn (${currentPlayerKey})`);
+                    info(`🚫 Can't use ${clickedTurret.team} turret - it's Player ${currentPlayerNum}'s turn (${currentPlayerKey})`);
                     return; // Exit early - not the active player's turret
                 }
             }

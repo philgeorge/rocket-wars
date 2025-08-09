@@ -14,46 +14,47 @@ import {
 /**
  * Run device detection tests and log results
  */
+import { info } from './logger.js';
 function runDeviceDetectionTest() {
-    console.log('🧪 Running Device Detection Tests...\n');
+    info('🧪 Running Device Detection Tests...\n');
     
     // Log all device info
     logDeviceInfo();
     
-    console.log('\n📱 UI Recommendations:');
-    console.log(`  Use Touch UI: ${shouldUseTouchUI()}`);
-    console.log(`  Use Mobile Positioning: ${shouldUseMobilePositioning()}`);
+    info('\n📱 UI Recommendations:');
+    info(`  Use Touch UI: ${shouldUseTouchUI()}`);
+    info(`  Use Mobile Positioning: ${shouldUseMobilePositioning()}`);
     
-    console.log('\n🎮 Input Method Examples:');
+    info('\n🎮 Input Method Examples:');
     const primaryInput = getPrimaryInputMethod();
     if (primaryInput === InputMethod.TOUCH) {
-        console.log('  Recommended: "Tap to select" instructions');
+        info('  Recommended: "Tap to select" instructions');
     } else if (primaryInput === InputMethod.MOUSE) {
-        console.log('  Recommended: "Click to select" instructions');  
+        info('  Recommended: "Click to select" instructions');  
     } else if (primaryInput === InputMethod.HYBRID) {
-        console.log('  Recommended: "Click or tap to select" instructions');
+        info('  Recommended: "Click or tap to select" instructions');
     }
     
-    console.log('\n📋 Available Enums:');
-    console.log('  InputMethod:', Object.keys(InputMethod).join(', '));
-    console.log('  DeviceCategory:', Object.keys(DeviceCategory).join(', '));
-    console.log('  Current values:', primaryInput, 'on', getDeviceCategory());
+    info('\n📋 Available Enums:');
+    info('  InputMethod:', Object.keys(InputMethod).join(', '));
+    info('  DeviceCategory:', Object.keys(DeviceCategory).join(', '));
+    info('  Current values:', primaryInput, 'on', getDeviceCategory());
     // Test different screen sizes (for demonstration)
-    console.log('\n📏 Screen Size Analysis:');
+    info('\n📏 Screen Size Analysis:');
     const width = window.innerWidth;
     const height = window.innerHeight;
     const minDim = Math.min(width, height);
     const maxDim = Math.max(width, height);
-    console.log(`  Current: ${width}x${height} (min: ${minDim}, max: ${maxDim})`);
+    info(`  Current: ${width}x${height} (min: ${minDim}, max: ${maxDim})`);
     
     if (minDim < 480) {
-        console.log('  🤳 Small phone size');
+        info('  🤳 Small phone size');
     } else if (minDim < 768) {
-        console.log('  📱 Large phone size');
+        info('  📱 Large phone size');
     } else if (minDim < 1024) {
-        console.log('  📟 Tablet size');
+        info('  📟 Tablet size');
     } else {
-        console.log('  💻 Desktop size');
+        info('  💻 Desktop size');
     }
 }
 

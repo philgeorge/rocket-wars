@@ -2,6 +2,7 @@
 // Game results panel for end-of-game display
 
 import { createBasePanel, addPanelText, positionPanel, setupPanelInputDismissal } from './panelFactory.js';
+import { info } from '../logger.js';
 import { getRankedPlayers } from '../turnManager.js';
 import { getTeamColorCSS } from '../constants.js';
 
@@ -114,7 +115,7 @@ export function createResultsPanel(scene, gameState, playerData = null) {
  * @param {Phaser.Scene} scene - The Phaser scene
  */
 export function setupResultsPanelRestart(scene) {
-    console.log('🎯 Setting up results panel restart functionality');
+    info('🎯 Setting up results panel restart functionality');
     
     let restarted = false;
     
@@ -122,7 +123,7 @@ export function setupResultsPanelRestart(scene) {
     setupPanelInputDismissal(scene, () => {
         if (!restarted) {
             restarted = true;
-            console.log('🔄 Restarting game...');
+            info('🔄 Restarting game...');
             window.location.reload();
         }
     }, {

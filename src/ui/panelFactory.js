@@ -2,6 +2,7 @@
 // Base panel creation utilities for consistent UI panels
 
 import { isTouchDevice } from '../deviceDetection.js';
+import { trace, warn } from '../logger.js';
 
 /**
  * Default panel styling options
@@ -111,13 +112,13 @@ export function addPanelText(scene, panel, textItems, options = {}) {
         if (isTouch) {
             // probably no keyboard, so don't show keyboard instructions
             if (keyboardWords.some(word => new RegExp(`\\b${word}\\b`, 'i').test(item.text))) {
-                console.log(`📜 Filtering out keyboard instruction: ${item.text}`);
+                trace(`📜 Filtering out keyboard instruction: ${item.text}`);
                 return false;
             }
         }
         return true;
     });
-    console.log(`📜 Adding ${filteredTextItems} text items to panel (touch: ${isTouch})`);
+    trace(`📜 Adding ${filteredTextItems} text items to panel (touch: ${isTouch})`);
 
     // modify words in instructions to suit touch devices over mouse
     const wordReplacements = {
@@ -206,7 +207,7 @@ export function positionPanel(panel, position, viewportWidth, viewportHeight, pa
             break;
             
         default:
-            console.warn(`Unknown panel position: ${position}`);
+            warn(`Unknown panel position: ${position}`);
             panel.x = padding;
             panel.y = padding;
     }

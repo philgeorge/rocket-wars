@@ -6,6 +6,7 @@ import { applyDamage, getCurrentPlayer } from './turnManager.js';
 import { updateGameUI } from './ui/updateUI.js';
 import { updateProjectileCamera } from './camera.js';
 import { createTerrainDestruction, updateChunkAnimations, handleTurretFalling } from './chunkedLandscape.js';
+import { info, trace, warn } from './logger.js';
 
 /**
  * Update all projectiles in the scene
@@ -32,7 +33,7 @@ export function updateProjectiles(scene, projectiles, gameState, landscapeData, 
         
         // If animations just finished, check for turret falling
         if (sceneAny.chunksWereAnimating && !stillAnimating) {
-            console.log('🔍 Chunk animations completed - checking turrets for falling...');
+            info('🔍 Chunk animations completed - checking turrets for falling...');
             const fallDamageOccurred = handleTurretFalling(scene, landscapeData.chunks, turrets, gameState);
             
             // Update UI panels if any falling damage occurred
@@ -71,7 +72,7 @@ export function updateProjectiles(scene, projectiles, gameState, landscapeData, 
 
     // Ensure camera following is disabled when no projectiles remain
     if (projectiles.length === 0 && cameraControls && cameraControls.followingProjectile) {
-        console.log('No projectiles remaining - disabling camera following');
+        info('No projectiles remaining - disabling camera following');
         cameraControls.followingProjectile = false;
     }
 }
@@ -98,7 +99,7 @@ export function applyProjectilePhysics(projectile, gameState, currentTime) {
 
     // Debug: Log wind effect periodically (every 30 frames ≈ 0.5 seconds)
     if (Math.floor(currentTime / 500) > Math.floor((currentTime - 16) / 500)) {
-        console.log(`Wind effect: ${gameState.wind.current} units, acceleration: ${windAcceleration.toFixed(1)} px/s²`);
+        trace(`Wind effect: ${gameState.wind.current} units, acceleration: ${windAcceleration.toFixed(1)} px/s²`);
     }
 }
 
@@ -121,10 +122,10 @@ export function handleProjectileCollisions(scene, projectile, collisions, gameSt
     } else if (collisions.turret) {
         return handleTurretCollision(scene, projectile, collisions, gameState, turrets, environmentPanel, playerStatsPanel);
     } else if (collisions.worldBounds) {
-        console.log('Projectile left world bounds');
+        info('Projectile left world bounds');
         return true;
     } else if (scene.time.now - projectile.startTime > projectile.maxFlightTime) {
-        console.log('Projectile timed out');
+        info('Projectile timed out');
         return true;
     }
 
@@ -142,7 +143,7 @@ export function handleProjectileCollisions(scene, projectile, collisions, gameSt
  * @returns {boolean} True (projectile should be removed)
  */
 function handleTerrainCollision(scene, projectile, gameState, turrets, environmentPanel, playerStatsPanel) {
-    console.log('Projectile hit terrain!');
+    info('Projectile hit terrain!');
 
     // Calculate velocity-based explosion size (includes visual scaling)
     const velocityFactor = calculateVelocityFactor(projectile);
@@ -150,27 +151,27 @@ function handleTerrainCollision(scene, projectile, gameState, turrets, environme
     const maxExplosionSize = 150; // Maximum explosion size
     const terrainExplosionSize = baseExplosionSize + (maxExplosionSize - baseExplosionSize) * velocityFactor;
 
-    console.log(`🌍 Terrain explosion: velocity factor ${(velocityFactor * 100).toFixed(1)}%, size: ${terrainExplosionSize.toFixed(1)}px`);
+    info(`🌍 Terrain explosion: velocity factor ${(velocityFactor * 100).toFixed(1)}%, size: ${terrainExplosionSize.toFixed(1)}px`);
     createExplosion(scene, projectile.x, projectile.y, terrainExplosionSize, 'terrain');
 
     // Apply terrain destruction if chunked terrain is active
     const sceneAny = /** @type {any} */ (scene);
-    console.log('🔍 Checking terrain destruction conditions:');
-    console.log('- landscapeData exists:', !!sceneAny.landscapeData);
-    console.log('- chunks exist:', !!(sceneAny.landscapeData && sceneAny.landscapeData.chunks));
-    console.log('- landscapeGraphics exists:', !!sceneAny.landscapeGraphics);
-    console.log('- chunks length:', sceneAny.landscapeData?.chunks?.length || 0);
+    trace('🔍 Checking terrain destruction conditions:');
+    trace('- landscapeData exists:', !!sceneAny.landscapeData);
+    trace('- chunks exist:', !!(sceneAny.landscapeData && sceneAny.landscapeData.chunks));
+    trace('- landscapeGraphics exists:', !!sceneAny.landscapeGraphics);
+    trace('- chunks length:', sceneAny.landscapeData?.chunks?.length || 0);
     
     if (sceneAny.landscapeData && sceneAny.landscapeData.chunks && sceneAny.landscapeGraphics) {
-        console.log('💥 Applying chunked terrain destruction...');
-        console.log(`🔍 DEBUG: Passing ${turrets.length} turrets to createTerrainDestruction`);
+        info('💥 Applying chunked terrain destruction...');
+        trace(`🔍 DEBUG: Passing ${turrets.length} turrets to createTerrainDestruction`);
         turrets.forEach((turret, i) => {
-            console.log(`  Turret ${i}: ${turret.team} at (${turret.x.toFixed(1)}, ${turret.y.toFixed(1)})`);
+            trace(`  Turret ${i}: ${turret.team} at (${turret.x.toFixed(1)}, ${turret.y.toFixed(1)})`);
         });
         createTerrainDestruction(scene, sceneAny.landscapeData.chunks, sceneAny.landscapeGraphics, 
             projectile.x, projectile.y);
     } else {
-        console.log('⚠️ Chunked terrain destruction skipped - conditions not met');
+        warn('⚠️ Chunked terrain destruction skipped - conditions not met');
     }
 
     // Check for AOE damage to nearby turrets
@@ -183,7 +184,7 @@ function handleTerrainCollision(scene, projectile, gameState, turrets, environme
         if (turret.updateHealthDisplay) {
             turret.updateHealthDisplay(gameState[turret.team].health);
         }
-        console.log(`🌊 ${turret.team} turret took ${damage} AOE damage from terrain explosion, health now: ${gameState[turret.team].health}%`);
+        info(`🌊 ${turret.team} turret took ${damage} AOE damage from terrain explosion, health now: ${gameState[turret.team].health}%`);
     });
 
     // Update panels if any turrets were damaged
@@ -206,7 +207,7 @@ function handleTerrainCollision(scene, projectile, gameState, turrets, environme
  * @returns {boolean} True (projectile should be removed)
  */
 function handleTurretCollision(scene, projectile, collisions, gameState, turrets, environmentPanel, playerStatsPanel) {
-    console.log(`Projectile hit ${collisions.turret.team} turret!`);
+    info(`Projectile hit ${collisions.turret.team} turret!`);
 
     // Calculate dynamic damage based on accuracy and velocity
     const damage = calculateDamage(projectile, collisions.turret, collisions.turretDistance || 0);
@@ -217,7 +218,7 @@ function handleTurretCollision(scene, projectile, collisions, gameState, turrets
     const maxExplosionSize = 180; // Maximum explosion size for turret hits
     const explosionSize = baseExplosionSize + (maxExplosionSize - baseExplosionSize) * velocityFactor;
 
-    console.log(`🎯 Turret explosion: velocity factor ${(velocityFactor * 100).toFixed(1)}%, size: ${explosionSize.toFixed(1)}px (damage: ${damage})`);
+    info(`🎯 Turret explosion: velocity factor ${(velocityFactor * 100).toFixed(1)}%, size: ${explosionSize.toFixed(1)}px (damage: ${damage})`);
     createExplosion(scene, projectile.x, projectile.y, explosionSize, 'turret');
 
     // Apply direct damage to hit turret
@@ -226,7 +227,7 @@ function handleTurretCollision(scene, projectile, collisions, gameState, turrets
     if (collisions.turret.updateHealthDisplay) {
         collisions.turret.updateHealthDisplay(gameState[collisions.turret.team].health);
     }
-    console.log(`💥 ${collisions.turret.team} turret took ${damage} direct damage, health now: ${gameState[collisions.turret.team].health}%`);
+    info(`💥 ${collisions.turret.team} turret took ${damage} direct damage, health now: ${gameState[collisions.turret.team].health}%`);
 
     // Check for AOE damage to other nearby turrets (excluding the directly hit one)
     const otherTurrets = turrets.filter(t => t !== collisions.turret);
@@ -239,7 +240,7 @@ function handleTurretCollision(scene, projectile, collisions, gameState, turrets
         if (turret.updateHealthDisplay) {
             turret.updateHealthDisplay(gameState[turret.team].health);
         }
-        console.log(`🌊 ${turret.team} turret took ${aoeDamage} AOE damage from turret explosion, health now: ${gameState[turret.team].health}%`);
+        info(`🌊 ${turret.team} turret took ${aoeDamage} AOE damage from turret explosion, health now: ${gameState[turret.team].health}%`);
     });
 
     // Update panel displays
@@ -297,10 +298,10 @@ export function cleanupFinishedProjectile(projectile, projectiles, index, camera
             if (scene.progressTurn) {
                 scene.progressTurn('projectile', { delayMs: delay });
             } else {
-                console.warn('⚠️ progressTurn not found on scene; turn will not advance automatically');
+                warn('⚠️ progressTurn not found on scene; turn will not advance automatically');
             }
         } else {
-            console.warn('⚠️ Cannot progress turn: missing gameState or scene');
+            warn('⚠️ Cannot progress turn: missing gameState or scene');
         }
     }
 }
@@ -335,16 +336,16 @@ export function focusCameraOnActivePlayer(gameState, scene) {
     const activeTurret = scene.turrets.find(turret => turret.team === currentPlayerKey);
     
     if (activeTurret) {
-        console.log(`📹 Smoothly panning camera to ${currentPlayerKey} turret at (${activeTurret.x}, ${activeTurret.y})`);
+        info(`📹 Smoothly panning camera to ${currentPlayerKey} turret at (${activeTurret.x}, ${activeTurret.y})`);
         
         // Use Phaser's pan method for smooth camera movement over 2 seconds
         scene.cameras.main.pan(activeTurret.x, activeTurret.y, 2000, 'Power2', false, (camera, progress) => {
             // Optional: Add callback during pan animation if needed
             if (progress === 1) {
-                console.log(`📹 Camera pan to ${currentPlayerKey} completed`);
+                trace(`📹 Camera pan to ${currentPlayerKey} completed`);
             }
         });
     } else {
-        console.warn(`⚠️ Could not find turret for active player ${currentPlayerKey}`);
+        warn(`⚠️ Could not find turret for active player ${currentPlayerKey}`);
     }
 }

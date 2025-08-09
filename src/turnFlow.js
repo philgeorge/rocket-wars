@@ -7,6 +7,7 @@ import { advanceToNextPlayer, advanceToNextRound, shouldGameEnd, updateWindForNe
 import { handleGameEnd } from './gameLifecycle.js';
 import { focusCameraOnActivePlayer } from './projectileManager.js';
 import { updateGameUI } from './ui/updateUI.js';
+import { info, warn } from './logger.js';
 
 /**
  * Eliminate players with health <= 0 and remove their turrets.
@@ -24,14 +25,14 @@ function eliminateDeadPlayers(gameState, scene) {
         }
     }
     if (eliminated.length === 0) return;
-    console.log(`💀 Eliminating players: [${eliminated.join(', ')}]`);
+    info(`💀 Eliminating players: [${eliminated.join(', ')}]`);
     eliminated.forEach(num => {
         removePlayer(gameState, num);
         const teamKey = `player${num}`;
         const idx = scene.turrets.findIndex(t => t.team === teamKey);
         if (idx !== -1) {
             const t = scene.turrets[idx];
-            console.log(`💀 Destroying turret for ${teamKey}`);
+            info(`💀 Destroying turret for ${teamKey}`);
             t.destroy();
             scene.turrets.splice(idx, 1);
         }
@@ -59,12 +60,12 @@ export function progressTurn(scene, reason, opts = {}) {
     const delayMs = opts.delayMs ?? 0;
     const gameState = scene.gameState;
     if (!gameState) {
-        console.warn('progressTurn called without gameState');
+        warn('progressTurn called without gameState');
         return;
     }
     if (scene.gameEnded) return; // Already ended.
 
-    console.log(`\uD83D\uDD04 progressTurn start (reason=${reason}, delayMs=${delayMs})`);
+    info(`\uD83D\uDD04 progressTurn start (reason=${reason}, delayMs=${delayMs})`);
 
     // 1. Eliminate dead players.
     eliminateDeadPlayers(gameState, scene);

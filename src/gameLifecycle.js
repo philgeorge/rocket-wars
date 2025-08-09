@@ -2,6 +2,7 @@
 // Game lifecycle management functions
 
 import { stopTurnTimer, getRankedPlayers } from './turnManager.js';
+import { info } from './logger.js';
 import { updateGameUI } from './ui/updateUI.js';
 import { createResultsPanel, positionResultsPanel, setupResultsPanelRestart, hideAimingInstructionsPanel } from './ui/index.js';
 
@@ -11,7 +12,7 @@ import { createResultsPanel, positionResultsPanel, setupResultsPanelRestart, hid
  * @param {string} reason - Reason for game end ('max_rounds' or 'last_player')
  */
 export function handleGameEnd(scene, reason) {
-    console.log(`🏁 Game ended: ${reason}`);
+    info(`🏁 Game ended: ${reason}`);
     
     // Set game ended flag for keyboard input handling
     scene.gameEnded = true;
@@ -44,5 +45,5 @@ export function handleGameEnd(scene, reason) {
         }
     }
     
-    console.log(`🎊 Game complete! Winner: Player ${winner ? winner.number : 'Unknown'}`);
+    info(`🎊 Game complete! Winner: Player ${winner ? winner.number : 'Unknown'}`);
 }

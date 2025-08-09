@@ -2,6 +2,7 @@
 // Projectile physics and graphics for Rocket Wars
 
 import { checkChunkedTerrainCollision } from './chunkedLandscape.js';
+import { info, trace } from './logger.js';
 
 /**
  * Create a projectile with physics and visual trail
@@ -126,7 +127,7 @@ export function drawProjectileTrail(scene, projectile) {
  * @returns {null}
  */
 export function createExplosion(scene, x, y, radius = 80, hitType = 'turret') {
-    console.log(`💥 Creating explosion at (${Math.round(x)}, ${Math.round(y)}) with radius ${radius}`);
+    info(`💥 Creating explosion at (${Math.round(x)}, ${Math.round(y)}) with radius ${radius}`);
     
     // Define explosion ring colors (from center outward)
     const ringColors = [
@@ -255,12 +256,12 @@ export function createExplosion(scene, x, y, radius = 80, hitType = 'turret') {
 export function calculateAOEDamage(explosionX, explosionY, explosionRadius, turrets) {
     const affectedTurrets = [];
     
-    console.log(`🔍 AOE Check: Explosion at (${explosionX.toFixed(1)}, ${explosionY.toFixed(1)}) with radius ${explosionRadius}px`);
-    console.log(`🔍 Checking ${turrets.length} turrets for AOE damage:`);
+    trace(`🔍 AOE Check: Explosion at (${explosionX.toFixed(1)}, ${explosionY.toFixed(1)}) with radius ${explosionRadius}px`);
+    trace(`🔍 Checking ${turrets.length} turrets for AOE damage:`);
     
     turrets.forEach((turret, index) => {
         const distance = Phaser.Math.Distance.Between(explosionX, explosionY, turret.x, turret.y);
-        console.log(`  Turret ${index + 1} (${turret.team}): at (${turret.x.toFixed(1)}, ${turret.y.toFixed(1)}) - Distance: ${distance.toFixed(1)}px`);
+        trace(`  Turret ${index + 1} (${turret.team}): at (${turret.x.toFixed(1)}, ${turret.y.toFixed(1)}) - Distance: ${distance.toFixed(1)}px`);
         
         // Check if turret is within explosion radius
         if (distance <= explosionRadius) {
@@ -273,7 +274,7 @@ export function calculateAOEDamage(explosionX, explosionY, explosionRadius, turr
             const distanceFactor = 1 - (distance / explosionRadius);
             const aoeDamage = minAOEDamage + (maxAOEDamage - minAOEDamage) * distanceFactor;
             
-            console.log(`    ✅ WITHIN RANGE! AOE damage to ${turret.team}: ${Math.round(aoeDamage)} (distance: ${distance.toFixed(1)}px from ${explosionRadius}px explosion)`);
+            trace(`    ✅ WITHIN RANGE! AOE damage to ${turret.team}: ${Math.round(aoeDamage)} (distance: ${distance.toFixed(1)}px from ${explosionRadius}px explosion)`);
             
             affectedTurrets.push({
                 turret: turret,
@@ -281,11 +282,11 @@ export function calculateAOEDamage(explosionX, explosionY, explosionRadius, turr
                 distance: distance
             });
         } else {
-            console.log(`    ❌ Too far away (${distance.toFixed(1)}px > ${explosionRadius}px)`);
+            trace(`    ❌ Too far away (${distance.toFixed(1)}px > ${explosionRadius}px)`);
         }
     });
     
-    console.log(`🎯 AOE Result: ${affectedTurrets.length} turrets affected by explosion`);
+    trace(`🎯 AOE Result: ${affectedTurrets.length} turrets affected by explosion`);
     return affectedTurrets;
 }
 
@@ -329,7 +330,7 @@ export function checkProjectileCollisions(scene, projectile, landscapeData, turr
         } 
         // Fallback to point-based terrain collision
         else if (landscapeData.points) {
-            console.log(`🔍 Using point-based terrain collision (no chunks available)`);
+            trace(`🔍 Using point-based terrain collision (no chunks available)`);
             const points = landscapeData.points;
             const projectileX = projectile.x;
             const projectileY = projectile.y;
@@ -412,7 +413,7 @@ export function calculateDamage(projectile, turret, distance) {
     // Calculate final damage
     const damage = BASE_DAMAGE + (MAX_DAMAGE - BASE_DAMAGE) * combinedFactor;
     
-    console.log(`🎯 Damage calculation (generous):
+    trace(`🎯 Damage calculation (generous):
     - Distance: ${distance.toFixed(1)}px from turret center (${TURRET_RADIUS}px radius)
     - Raw accuracy: ${(rawAccuracyFactor * 100).toFixed(1)}% → Curved: ${(accuracyFactor * 100).toFixed(1)}%
     - Velocity factor: ${(velocityFactor * 100).toFixed(1)}% (faster = more damage)
