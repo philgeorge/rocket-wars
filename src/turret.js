@@ -3,6 +3,7 @@
 
 import { getTeamColorHex } from './constants.js';
 import { info, trace, warn } from './logger.js';
+import { getTurretPositionForChunk } from './chunkBaseHelpers.js';
 
 /**
  * Create a gun turret with interactive aiming capabilities
@@ -395,62 +396,44 @@ export function createGunTurret(scene, x, y, team = 'player1') {
     return turret;
 }
 
+
 /**
- * Place turrets on specified bases using player setup data
- * @param {Phaser.Scene} scene - The Phaser scene instance
- * @param {Array<{start: number, end: number}>} flatBases - Array of flat base objects with start/end indices
- * @param {Array<{x: number, y: number}>} points - Array of landscape points
- * @param {Array} playerData - Array of player data from setup stage (default: empty array)
- * @returns {Array<TurretContainer>} Array of created turret objects
+ * Place turrets on chunk indices stored in player.chunkIndex (chunk-based system)
+ * @param {Phaser.Scene} scene
+ * @param {Array<any>} chunks
+ * @param {Array<PlayerData>} playerData
+ * @returns {Array<TurretContainer>}
  */
-export function placeTurretsOnBases(scene, flatBases, points, playerData = []) {
+export function placeTurretsOnChunks(scene, chunks, playerData = []) {
     const turrets = [];
-    
-    info(`🎯 Placing turrets for ${playerData.length} players using setup data...`);
-    
-    if (playerData.length > 0 && flatBases.length > 0) {
-        // Place turrets based on player setup data
-        playerData.forEach((player, _playerIndex) => {
-            if (player.baseIndex !== null && player.baseIndex < flatBases.length) {
-                const base = flatBases[player.baseIndex];
-                
-                // Calculate turret position at the center of the selected base
-                const startPoint = points[base.start];
-                const endPoint = points[base.end];
-                const baseCenterX = (startPoint.x + endPoint.x) / 2;
-                const baseCenterY = startPoint.y; // All points in flat base should have same Y
-                
-                // Add slight random offset within the base for visual variety
-                const baseWidth = endPoint.x - startPoint.x;
-                const offsetRange = Math.min(20, baseWidth * 0.3); // Max 20px or 30% of base width
-                const randomOffset = (Math.random() - 0.5) * offsetRange;
-                
-                const turret = createGunTurret(scene, baseCenterX + randomOffset, baseCenterY - 25, player.team);
-                
-                // Store player name and data reference on turret
-                turret.playerName = player.name;
-                turret.playerId = player.id;
-                turret.playerData = player;
-                
-                // Set random initial gun angle for variety
-                const randomAngle = -180 + Math.random() * 180; // -180° to 0°
-                turret.setGunAngle(randomAngle);
-                
-                // Update player data with turret reference
-                player.turret = turret;
-                
-                turrets.push(turret);
-                
-                trace(`✅ Placed ${player.name}'s (${player.team}) turret on base ${player.baseIndex} at (${Math.round(baseCenterX + randomOffset)}, ${Math.round(baseCenterY - 25)})`);
-            } else {
-                warn(`⚠️ Player ${player.name} has invalid base index: ${player.baseIndex}`);
-            }
-        });
-    } else {
-        warn(`⚠️ No player data provided or no flat bases available`);
-    }
-    
-    info(`🏁 Placed ${turrets.length} turrets for ${playerData.length} players using their selected bases`);
+    info(`🎯 Placing turrets for ${playerData.length} players using chunk indices...`);
+    playerData.forEach(player => {
+        const idx = player.chunkIndex;
+        if (idx === null || idx === undefined) {
+            warn(`⚠️ Player ${player.name} missing chunkIndex`);
+            return;
+        }
+        if (idx < 0 || idx >= chunks.length) {
+            warn(`⚠️ Player ${player.name} invalid chunk index: ${idx}`);
+            return;
+        }
+        const chunk = chunks[idx];
+        if (!chunk || chunk.destroyed) {
+            warn(`⚠️ Player ${player.name} chunk ${idx} unavailable (destroyed or missing)`);
+            return;
+        }
+        const pos = getTurretPositionForChunk(chunk);
+        const turret = createGunTurret(scene, pos.x, pos.y, player.team);
+        turret.playerName = player.name;
+        turret.playerId = player.id;
+        turret.playerData = player;
+        const randomAngle = -180 + Math.random() * 180;
+        turret.setGunAngle(randomAngle);
+        player.turret = turret;
+        turrets.push(turret);
+        trace(`✅ Placed ${player.name}'s (${player.team}) turret on chunk ${idx} at (${Math.round(pos.x)}, ${Math.round(pos.y)})`);
+    });
+    info(`🏁 Placed ${turrets.length} turrets via chunk-based system`);
     return turrets;
 }
 

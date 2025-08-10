@@ -17,7 +17,7 @@ declare global {
     health: number; // Player health (0-100)
     kills: number; // Number of kills
     deaths: number; // Number of deaths
-    baseIndex?: number | null; // Current base index (null if eliminated/not placed)
+  chunkIndex?: number | null; // Index into landscapeData.chunks for current base (null if eliminated/not placed)
   }
   
   interface GameState {
@@ -50,20 +50,14 @@ declare global {
     name: string; // User-entered name
     color?: string; // Player color
     team?: string; // Team identifier for colors
-    baseIndex?: number | null; // Index of chosen flat base
+    chunkIndex?: number | null; // Chosen chunk index for base
     basePosition?: { x: number; y: number }; // Calculated base center position
     health?: number; // Player health
     turret?: TurretContainer | null; // Turret object reference
   }
   
-  interface FlatBase {
-    start: number; // Starting point index in landscape
-    end: number; // Ending point index in landscape
-  }
-  
   interface LandscapeData {
     points: Array<{ x: number; y: number }>;
-    flatBases: FlatBase[];
     chunks?: Array<{
       x: number;
       y: number;

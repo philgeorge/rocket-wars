@@ -156,8 +156,8 @@ export function removePlayer(gameState, playerNum) {
         // Clear the eliminated player's base index to free up their base for teleportation
         const playerKey = `player${playerNum}`;
         if (gameState[playerKey]) {
-            gameState[playerKey].baseIndex = null;
-            trace(`📍 Cleared base index for eliminated Player ${playerNum}`);
+            gameState[playerKey].chunkIndex = null;
+            trace(`📍 Cleared chunk index for eliminated Player ${playerNum}`);
         }
         
         // Adjust current player index if needed
@@ -503,17 +503,7 @@ export function isPlayerInTeleportMode(gameState, playerNum) {
 function startTeleportBaseSelection(gameState, scene) {
     info('🔄 Starting teleport base selection...');
     
-    // Get scene data needed for base selection
-    const flatBases = scene.landscapeData?.flatBases;
-    
-    if (!flatBases) {
-        error('❌ Missing landscape data for teleport base selection');
-        exitTeleportMode(gameState, scene);
-        return;
-    }
-    
-    // Start the teleport base selection process
-    const _baseSelectionPromise = initializeTeleportBaseSelection(scene, gameState, flatBases)
+    const _baseSelectionPromise = initializeTeleportBaseSelection(scene, gameState)
         .then((selection) => {
             info('✅ Teleport base selected:', selection);
             handleTeleportBaseSelected(gameState, scene, selection);
@@ -529,13 +519,13 @@ function startTeleportBaseSelection(gameState, scene) {
  * Handle teleport base selection completion
  * @param {Object} gameState - Game state object
  * @param {Scene} scene - Scene object
- * @param {Object} selection - Selected base data {baseIndex, basePosition}
+ * @param {Object} selection - Selected base data {chunkIndex, basePosition}
  */
 function handleTeleportBaseSelected(gameState, scene, selection) {
     const currentPlayerNum = getCurrentPlayer(gameState);
     const currentPlayerKey = `player${currentPlayerNum}`;
     
-    info(`🔄 Moving Player ${currentPlayerNum} turret to base ${selection.baseIndex}`);
+    info(`🔄 Moving Player ${currentPlayerNum} turret to chunk ${selection.chunkIndex}`);
     
     // Find current player's turret
     const turrets = scene.turrets;
@@ -554,10 +544,10 @@ function handleTeleportBaseSelected(gameState, scene, selection) {
     currentTurret.x = newX;
     currentTurret.y = newY;
     
-    // Update base index in game state
-    gameState[currentPlayerKey].baseIndex = selection.baseIndex;
+    // Update chunk index in game state
+    gameState[currentPlayerKey].chunkIndex = selection.chunkIndex;
     
-    info(`✅ Turret moved to (${newX}, ${newY}) - Base index updated to ${selection.baseIndex}`);
+    info(`✅ Turret moved to (${newX}, ${newY}) - Chunk index updated to ${selection.chunkIndex}`);
     
     // Complete the teleport (this ends the turn)
     completeTeleport(gameState, scene);

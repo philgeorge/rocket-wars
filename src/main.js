@@ -2,7 +2,7 @@
 // Entry point for Rocket Wars game logic
 
 import { setupChunkedLandscape } from './chunkedLandscape.js';
-import { placeTurretsOnBases } from './turret.js';
+import { placeTurretsOnChunks } from './turret.js';
 import { createProjectile } from './projectile.js';
 import { createEnvironmentPanel, createPlayerStatsPanel, positionEnvironmentPanel, positionPlayerStatsPanel, createAimingInstructionsPanel, showAimingInstructionsIfNeeded, positionPanel } from './ui/index.js';
 import { createGameState, startPlayerTurn, getCurrentPlayer, stopTurnTimer, enterTeleportMode, exitTeleportMode, completeTeleport, isTeleportMode } from './turnManager.js';
@@ -193,7 +193,7 @@ function create() {
 
     // Start base selection stage instead of immediately placing turrets
     info('🎮 Starting base selection stage...');
-    initializeBaseSelection(this, gameConfig, landscapeData.flatBases).then((setupResult) => {
+    initializeBaseSelection(this, gameConfig).then((setupResult) => {
         info('✅ Base selection complete, starting combat phase...');
 
         const { players: playerData, turrets: existingTurrets } = setupResult;
@@ -203,7 +203,7 @@ function create() {
         if (existingTurrets && existingTurrets.length > 0) {
             turrets = existingTurrets;
         } else {
-            turrets = placeTurretsOnBases(this, landscapeData.flatBases, landscapeData.points, playerData);
+            turrets = placeTurretsOnChunks(this, landscapeData.chunks || [], playerData);
         }
 
         const turretAny = /** @type {any} */ (turrets);
@@ -222,12 +222,12 @@ function create() {
         
         // Sync base indices from player data to game state
         playerData.forEach((player, index) => {
-            if (player.baseIndex !== null && player.baseIndex !== undefined) {
+            if (player.chunkIndex !== null && player.chunkIndex !== undefined) {
                 const playerNum = index + 1;
                 const playerKey = `player${playerNum}`;
                 if (this.gameState[playerKey]) {
-                    this.gameState[playerKey].baseIndex = player.baseIndex;
-                    trace(`📍 Player ${playerNum} base index synced: ${player.baseIndex}`);
+                    this.gameState[playerKey].chunkIndex = player.chunkIndex;
+                    trace(`📍 Player ${playerNum} chunk index synced: ${player.chunkIndex}`);
                 }
             }
         });

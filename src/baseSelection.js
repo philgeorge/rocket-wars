@@ -6,6 +6,7 @@ import { createBaseSelectionPanel, hideBaseSelectionPanel, positionBaseSelection
 import { getTeamColorCSS } from './constants.js';
 import { getCurrentPlayer } from './turnManager.js';
 import { info, trace, warn, error as logError } from './logger.js';
+import { getTurretPositionForChunk, listSelectableChunkIndices } from './chunkBaseHelpers.js';
 
 /**
  * Base selection stage state management
@@ -20,10 +21,9 @@ import { info, trace, warn, error as logError } from './logger.js';
  * Initialize base selection for multiple players (full game setup)
  * @param {Scene} scene - The Phaser scene instance
  * @param {Object} gameConfig - Game configuration object
- * @param {FlatBase[]} flatBases - Array of available flat base locations
  * @returns {Promise<{players: PlayerData[], turrets: any[]}>} Promise that resolves with player selection data and created turrets
  */
-export function initializeBaseSelection(scene, gameConfig, flatBases) {
+export function initializeBaseSelection(scene, gameConfig) {
     info('🎮 Starting Phaser-based base selection stage...');
     
     // Camera controls remain enabled since we're using Phaser panels now
@@ -39,7 +39,7 @@ export function initializeBaseSelection(scene, gameConfig, flatBases) {
                 id: playerKey,
                 name: gameConfig.playerNames?.[playerKey] || `Player ${i}`, // Use name from game config
                 team: playerKey,
-                baseIndex: null,
+                chunkIndex: null,
                 health: 100,
                 turret: null
             };
@@ -49,7 +49,7 @@ export function initializeBaseSelection(scene, gameConfig, flatBases) {
         trace('🎮 Player data initialized with names from game config:', players.map(p => ({ id: p.id, name: p.name })));
         
         // Initialize base selection logic (no need to create panel upfront)
-        startBaseSelection(scene, players, flatBases, resolve);
+        startBaseSelection(scene, players, resolve);
     });
 }
 
@@ -57,18 +57,17 @@ export function initializeBaseSelection(scene, gameConfig, flatBases) {
  * Start the base selection process using Phaser panels
  * @param {Scene} scene - The Phaser scene with custom properties
  * @param {PlayerData[]} players - Array of player data
- * @param {FlatBase[]} flatBases - Array of available flat base locations
  * @param {Function} resolve - Promise resolve function
  */
-function startBaseSelection(scene, players, flatBases, resolve) {
-    const landscapePoints = scene.landscapeData?.points;
-    if (!landscapePoints) {
-        logError('❌ No landscape points available in scene');
+function startBaseSelection(scene, players, resolve) {
+    // Chunk-based selection path
+    const chunks = scene.landscapeData?.chunks;
+    if (!chunks) {
+        logError('❌ No chunks available in scene for base selection');
         return;
     }
-    
     let currentPlayerIndex = 0;
-    let availableBases = flatBases.map((_, index) => index);
+    let availableChunkIndices = listSelectableChunkIndices(chunks, []);
     const setupTurrets = [];
     
     function showBaseSelection(playerIndex) {
@@ -77,26 +76,18 @@ function startBaseSelection(scene, players, flatBases, resolve) {
         info(`🎯 Starting base selection for ${player.name} (${playerIndex + 1}/${players.length})`);
         
         // Use the shared single-player base selection logic
-        startSinglePlayerBaseSelection(scene, player, flatBases, availableBases, landscapePoints, {
-            onBaseSelected: (baseIndex, basePosition) => {
-                info(`🎯 Player ${player.name} selected base ${baseIndex}`);
-                
-                // Store selection in player data
-                player.baseIndex = baseIndex;
-                player.basePosition = basePosition;
-                
-                // Create permanent turret
-                const turretX = basePosition.x;
-                const turretY = basePosition.y - 20;
-                const turret = createGunTurret(scene, turretX, turretY, player.team);
-                
+        startSinglePlayerChunkSelection(scene, player, chunks, availableChunkIndices, {
+            onBaseSelected: (chunkIndex, position) => {
+                info(`🎯 Player ${player.name} selected chunk ${chunkIndex}`);
+                player.chunkIndex = chunkIndex;
+                player.basePosition = position;
+                const turret = createGunTurret(scene, position.x, position.y, player.team);
                 player.turret = turret;
                 setupTurrets.push(turret);
-                
-                trace(`🏭 Placed turret for ${player.name} at (${turretX}, ${turretY})`);
-                
-                // Remove selected base from available list
-                availableBases = availableBases.filter(index => index !== baseIndex);
+                trace(`🏭 Placed turret for ${player.name} at chunk ${chunkIndex} (${position.x}, ${position.y})`);
+                // Recompute available chunk indices excluding occupied
+                const occupied = players.filter(p => p.chunkIndex !== null && p.chunkIndex !== undefined).map(p => p.chunkIndex);
+                availableChunkIndices = listSelectableChunkIndices(chunks, occupied);
                 
                 // Move to next player or complete setup
                 currentPlayerIndex++;
@@ -128,373 +119,192 @@ function startBaseSelection(scene, players, flatBases, resolve) {
 }
 
 /**
- * Initialize base selection for teleportation (single player)
- * @param {Scene} scene - The Phaser scene instance with custom properties
- * @param {GameState} gameState - Current game state
- * @param {FlatBase[]} flatBases - Array of available flat base locations
- * @returns {Promise<{baseIndex: number, basePosition: Object}>} Promise that resolves with selected base data
+ * New chunk-based single-player selection (Phase 1)
+ * @param {Scene} scene
+ * @param {PlayerData} player
+ * @param {any[]} chunks
+ * @param {number[]} availableChunkIndices
+ * @param {{onBaseSelected:Function,onCancelled:Function}} callbacks
+ * @param {boolean} isTeleportMode
  */
-export function initializeTeleportBaseSelection(scene, gameState, flatBases) {
-    info('🔄 Starting teleport base selection...');
-    
-    return new Promise((resolve, reject) => {
-        const landscapePoints = scene.landscapeData?.points;
-        if (!landscapePoints) {
-            logError('❌ No landscape points available in scene');
-            reject(new Error('No landscape points available'));
-            return;
-        }
-        
-        // Get current player info
-        const currentPlayerNum = getCurrentPlayer(gameState);
-        const currentPlayerKey = `player${currentPlayerNum}`;
-        
-        // Get player name from playerData array (playerData is an array indexed 0-based, playerNum is 1-based)
-        const playerName = scene.playerData?.[currentPlayerNum - 1]?.name || `Player ${currentPlayerNum}`;
-        
-        // Create mock player object to reuse existing base selection logic
-        /** @type {PlayerData} */
-        const mockPlayer = {
-            id: currentPlayerKey,
-            name: playerName,
-            team: currentPlayerKey,
-            baseIndex: null,
-            health: 100,
-            turret: null
-        };
-        
-        // Calculate available bases (exclude occupied ones and current player's current base)
-        // Use game state to get occupied base indices - much simpler than distance calculations!
-        const occupiedBaseIndices = [];
-        
-        // Check each player's current base index
-        for (let i = 1; i <= gameState.numPlayers; i++) {
-            const playerKey = `player${i}`;
-            const playerState = gameState[playerKey];
-            
-            // Skip eliminated players (health <= 0 or not in playersAlive)
-            if (playerState.health <= 0 || !gameState.playersAlive.includes(i)) continue;
-            
-            // Add their base index to occupied list (including current player's own base)
-            if (playerState.baseIndex !== null && playerState.baseIndex !== undefined) {
-                occupiedBaseIndices.push(playerState.baseIndex);
-            }
-        }
-        
-        const availableBases = flatBases
-            .map((_, index) => index)
-            .filter(index => !occupiedBaseIndices.includes(index));
-        
-        trace(`🔄 Available bases for teleport: ${availableBases.length}/${flatBases.length} (occupied: [${occupiedBaseIndices.join(', ')}])`);
-        
-        if (availableBases.length === 0) {
-            warn('🚫 No available bases for teleportation');
-            reject(new Error('No available bases for teleportation'));
-            return;
-        }
-        
-        // Reuse the existing base selection logic with teleport-specific callbacks
-        startSinglePlayerBaseSelection(scene, mockPlayer, flatBases, availableBases, landscapePoints, {
-            onBaseSelected: (baseIndex, basePosition) => {
-                info(`✅ Teleport base selection complete: base ${baseIndex}`);
-                resolve({ baseIndex, basePosition });
-            },
-            onCancelled: () => {
-                info('🚫 Teleport base selection cancelled');
-                reject(new Error('Teleport cancelled by user'));
-            }
-        }, true);
-    });
-}
-
-/**
- * Reusable single-player base selection logic
- * @param {Scene} scene - The Phaser scene
- * @param {PlayerData} player - Player data object
- * @param {FlatBase[]} flatBases - Array of flat base locations
- * @param {number[]} availableBases - Array of available base indices
- * @param {Array<{x: number, y: number}>} landscapePoints - Landscape points for calculations
- * @param {{onBaseSelected: Function, onCancelled: Function}} callbacks - Callback functions for completion/cancellation
- * @param {boolean} isTeleportMode - Whether this is teleport mode (affects panel positioning)
- */
-function startSinglePlayerBaseSelection(scene, player, flatBases, availableBases, landscapePoints, callbacks, isTeleportMode = false) {
-    // Shared state management
-    let baseHighlights = [];
-    let currentPanel = null;
-    let keyboardSelectedBaseIndex = -1;
-    let previewTurret = null;
-    let keyboardHandlers = [];
-    let isSelectionActive = true;
-    let resizeHandler = null;
-    
-    // Create and show panel
-    currentPanel = createBaseSelectionPanel(scene, player);
+function startSinglePlayerChunkSelection(scene, player, chunks, availableChunkIndices, callbacks, isTeleportMode = false) {
+    let highlights = [];
+    let currentPanel = createBaseSelectionPanel(scene, player);
     positionBaseSelectionPanel(currentPanel, scene.cameras.main.width, isTeleportMode);
-    
-    // Handle window resize to reposition panel
-    resizeHandler = () => {
+    let keyboardSelectedChunkIndex = -1;
+    let previewTurret = null;
+    let isSelectionActive = true;
+    const keyboardHandlers = [];
+
+    const resizeHandler = () => {
         if (currentPanel && isSelectionActive) {
             positionBaseSelectionPanel(currentPanel, scene.cameras.main.width, isTeleportMode);
         }
     };
     window.addEventListener('resize', resizeHandler);
-    
-    // Show base highlights using existing function
-    showBaseHighlights();
-    
-    // Set up handlers using existing functions
-    setupBaseSelectionHandlers();
-    setupKeyboardHandlers();
-    
-    // Store cleanup function reference for external cancellation
-    scene.activeBaseSelectionCleanup = cleanupSelection;
-    
-    // Handle ESC key for cancellation
+
+    scene.activeBaseSelectionCleanup = cleanup;
+
     const escKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     escKey.on('down', () => {
-        if (isSelectionActive) {
-            info('🚫 Base selection cancelled via ESC');
-            isSelectionActive = false;
-            cleanupSelection();
-            callbacks.onCancelled();
-        }
+        if (!isSelectionActive) return;
+        isSelectionActive = false;
+        cleanup();
+        callbacks.onCancelled();
     });
     keyboardHandlers.push(escKey);
-    
-    function showBaseHighlights() {
-        // Clear any existing highlights
-        hideBaseHighlights();
-        
-        // Get player color (reuse existing logic)
-        const playerColor = getTeamColorCSS(player.team);
-        const playerColorHex = parseInt(playerColor.replace('#', ''), 16);
-        
-        // Create highlights for each available base
-        availableBases.forEach(baseIndex => {
-            const base = flatBases[baseIndex];
-            if (!base) return;
-            
-            const baseCenter = calculateBaseCenterFromPoints(base, landscapePoints);
-            
-            // Create highlight circle (reuse existing graphics logic)
-            const highlight = scene.add.graphics();
-            highlight.lineStyle(4, playerColorHex, 0.8);
-            highlight.fillStyle(playerColorHex, 0.2);
-            highlight.fillCircle(baseCenter.x, baseCenter.y - 25, 30);
-            highlight.strokeCircle(baseCenter.x, baseCenter.y - 25, 30);
-            
-            // Make it interactive (reuse existing logic)
-            const hitArea = new Phaser.Geom.Circle(baseCenter.x, baseCenter.y - 25, 35);
-            highlight.setInteractive(hitArea, Phaser.Geom.Circle.Contains);
-            highlight.input.cursor = 'pointer';
-            highlight.setDepth(500);
-            
-            baseHighlights.push(highlight);
-            trace(`✨ Created highlight for base ${baseIndex} at (${baseCenter.x}, ${baseCenter.y})`);
+
+    drawHighlights();
+    setupPointerHandlers();
+    setupKeyboardHandlers();
+
+    function drawHighlights() {
+        clearHighlights();
+        const playerColorHex = parseInt(getTeamColorCSS(player.team).replace('#', ''), 16);
+        availableChunkIndices.forEach(idx => {
+            const chunk = chunks[idx];
+            if (!chunk) return;
+            const pos = getTurretPositionForChunk(chunk);
+            const g = scene.add.graphics();
+            g.lineStyle(4, playerColorHex, 0.8);
+            g.fillStyle(playerColorHex, 0.2);
+            g.fillCircle(pos.x, pos.y, 30);
+            g.strokeCircle(pos.x, pos.y, 30);
+            const hitArea = new Phaser.Geom.Circle(pos.x, pos.y, 35);
+            g.setInteractive(hitArea, Phaser.Geom.Circle.Contains);
+            g.input.cursor = 'pointer';
+            g.setDepth(500);
+            highlights.push(g);
+            trace(`✨ Highlight chunk ${idx} @ (${pos.x}, ${pos.y})`);
         });
     }
-    
-    function hideBaseHighlights() {
-        baseHighlights.forEach(highlight => {
-            if (highlight && highlight.scene) {
-                highlight.off('pointerdown');
-                highlight.off('pointerover');
-                highlight.off('pointerout');
-                highlight.destroy();
-            }
-        });
-        baseHighlights = [];
+
+    function clearHighlights() {
+        highlights.forEach(h => { if (h && h.scene) h.destroy(); });
+        highlights = [];
     }
-    
-    function setupBaseSelectionHandlers() {
-        availableBases.forEach((baseIndex, highlightIndex) => {
-            const highlight = baseHighlights[highlightIndex];
-            if (!highlight) return;
-            
-            let isHovering = false;
+
+    function setupPointerHandlers() {
+        availableChunkIndices.forEach((idx, i) => {
+            const g = highlights[i];
+            if (!g) return;
             let hoverTimeout = null;
-            
-            const clickHandler = () => {
+            let hovering = false;
+            g.on('pointerdown', () => {
                 if (!isSelectionActive) return;
-                
-                info(`🎯 Player ${player.name} selected base ${baseIndex} via CLICK`);
-                
-                if (hoverTimeout) {
-                    clearTimeout(hoverTimeout);
-                    hoverTimeout = null;
-                }
-                
-                clearPreviewTurret();
-                completeSelection(baseIndex);
-            };
-            
-            const hoverHandler = () => {
-                if (!isSelectionActive || isHovering) return;
-                
-                isHovering = true;
-                
-                if (keyboardSelectedBaseIndex === -1) {
+                finalize(idx);
+            });
+            g.on('pointerover', () => {
+                if (!isSelectionActive || hovering) return;
+                hovering = true;
+                if (keyboardSelectedChunkIndex === -1) {
                     if (hoverTimeout) clearTimeout(hoverTimeout);
-                    
                     hoverTimeout = setTimeout(() => {
-                        if (keyboardSelectedBaseIndex === -1 && isHovering && isSelectionActive) {
-                            clearPreviewTurret();
-                            createPreviewTurret(baseIndex);
+                        if (keyboardSelectedChunkIndex === -1 && hovering && isSelectionActive) {
+                            clearPreview();
+                            createPreview(idx);
                         }
                         hoverTimeout = null;
                     }, 50);
                 }
-            };
-            
-            const hoverOutHandler = () => {
-                isHovering = false;
-                
-                if (hoverTimeout) {
-                    clearTimeout(hoverTimeout);
-                    hoverTimeout = null;
-                }
-                
-                if (keyboardSelectedBaseIndex === -1) {
-                    clearPreviewTurret();
-                }
-            };
-            
-            // Reuse existing event handler pattern
-            highlight.on('pointerdown', clickHandler);
-            highlight.on('pointerover', hoverHandler);
-            highlight.on('pointerout', hoverOutHandler);
+            });
+            g.on('pointerout', () => {
+                hovering = false;
+                if (hoverTimeout) { clearTimeout(hoverTimeout); hoverTimeout = null; }
+                if (keyboardSelectedChunkIndex === -1) clearPreview();
+            });
         });
     }
-    
+
     function setupKeyboardHandlers() {
-        const keyboard = scene.input.keyboard;
-        
-        // Tab key handler - cycle through bases (reuse existing logic)
-        const tabKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TAB);
-        tabKey.on('down', () => {
-            if (!isSelectionActive) return;
-            cycleToNextBase();
-        });
-        
-        // Enter key handler - confirm selection (reuse existing logic)
-        const enterKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
-        enterKey.on('down', () => {
-            if (!isSelectionActive) return;
-            confirmKeyboardSelection();
-        });
-        
+        const kb = scene.input.keyboard;
+        const tabKey = kb.addKey(Phaser.Input.Keyboard.KeyCodes.TAB);
+        tabKey.on('down', () => { if (isSelectionActive) cycleNext(); });
+        const enterKey = kb.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
+        enterKey.on('down', () => { if (isSelectionActive) confirm(); });
         keyboardHandlers.push(tabKey, enterKey);
     }
-    
-    function cycleToNextBase() {
-        if (availableBases.length === 0) return;
-        
-        // Reuse existing cycling logic
-        const currentIndex = availableBases.findIndex(baseIndex => baseIndex === keyboardSelectedBaseIndex);
-        const nextIndex = (currentIndex + 1) % availableBases.length;
-        keyboardSelectedBaseIndex = availableBases[nextIndex];
-        
-        trace(`⌨️ Cycling to base ${keyboardSelectedBaseIndex}`);
-        
-        // Move camera to show the selected base (reuse existing logic)
-        const basePosition = calculateBaseCenterFromPoints(flatBases[keyboardSelectedBaseIndex], landscapePoints);
-        scene.cameras.main.pan(basePosition.x, basePosition.y, 500, 'Power2');
-        
-        // Update preview turret
-        clearPreviewTurret();
-        createPreviewTurret(keyboardSelectedBaseIndex);
+
+    function cycleNext() {
+        if (availableChunkIndices.length === 0) return;
+        const curIdx = availableChunkIndices.findIndex(i => i === keyboardSelectedChunkIndex);
+        const next = (curIdx + 1) % availableChunkIndices.length;
+        keyboardSelectedChunkIndex = availableChunkIndices[next];
+        trace(`⌨️ Cycling to chunk ${keyboardSelectedChunkIndex}`);
+        const pos = getTurretPositionForChunk(chunks[keyboardSelectedChunkIndex]);
+        scene.cameras.main.pan(pos.x, pos.y, 500, 'Power2');
+        clearPreview();
+        createPreview(keyboardSelectedChunkIndex);
     }
-    
-    function confirmKeyboardSelection() {
-        if (keyboardSelectedBaseIndex === -1) {
-            trace('⌨️ No base selected via keyboard');
-            return;
-        }
-        
-        info(`⌨️ Player ${player.name} confirmed base ${keyboardSelectedBaseIndex} via keyboard`);
-        clearPreviewTurret();
-        completeSelection(keyboardSelectedBaseIndex);
+
+    function confirm() {
+        if (keyboardSelectedChunkIndex === -1) { trace('⌨️ No chunk selected'); return; }
+        info(`⌨️ Player ${player.name} confirmed chunk ${keyboardSelectedChunkIndex}`);
+        clearPreview();
+        finalize(keyboardSelectedChunkIndex);
     }
-    
-    function createPreviewTurret(baseIndex) {
-        const basePosition = calculateBaseCenterFromPoints(flatBases[baseIndex], landscapePoints);
-        const turretX = basePosition.x;
-        const turretY = basePosition.y - 20;
-        
-        // Reuse existing turret creation logic
-        previewTurret = createGunTurret(scene, turretX, turretY, player.team);
+
+    function createPreview(idx) {
+        const pos = getTurretPositionForChunk(chunks[idx]);
+        previewTurret = createGunTurret(scene, pos.x, pos.y, player.team);
         previewTurret.setAlpha(0.7);
         previewTurret.disableInteractive();
         previewTurret.setDepth(100);
     }
-    
-    function clearPreviewTurret() {
-        if (previewTurret) {
-            previewTurret.destroy();
-            previewTurret = null;
-        }
-    }
-    
-    function completeSelection(baseIndex) {
+
+    function clearPreview() { if (previewTurret) { previewTurret.destroy(); previewTurret = null; } }
+
+    function finalize(idx) {
         if (!isSelectionActive) return;
-        
         isSelectionActive = false;
-        const basePosition = calculateBaseCenterFromPoints(flatBases[baseIndex], landscapePoints);
-        
-        // Cleanup
-        cleanupSelection();
-        
-        // Call the appropriate callback
-        callbacks.onBaseSelected(baseIndex, basePosition);
+        const pos = getTurretPositionForChunk(chunks[idx]);
+        cleanup();
+        callbacks.onBaseSelected(idx, pos);
     }
-    
-    function cleanupSelection() {
-        // Clear highlights (reuse existing cleanup logic)
-        hideBaseHighlights();
-        
-        // Clear keyboard handlers
-        keyboardHandlers.forEach(key => {
-            if (key && key.destroy) {
-                key.destroy();
-            }
-        });
-        keyboardHandlers = [];
-        
-        // Remove resize handler
-        if (resizeHandler) {
-            window.removeEventListener('resize', resizeHandler);
-            resizeHandler = null;
-        }
-        
-        // Clear preview turret
-        clearPreviewTurret();
-        
-        // Hide panel
-        if (currentPanel) {
-            hideBaseSelectionPanel(currentPanel);
-            currentPanel = null;
-        }
-        
-        // Reset selection state
-        keyboardSelectedBaseIndex = -1;
-        
-        // Clear external cleanup reference
+
+    function cleanup() {
+        clearHighlights();
+        clearPreview();
+        keyboardHandlers.forEach(k => k?.destroy?.());
+        window.removeEventListener('resize', resizeHandler);
+        if (currentPanel) { hideBaseSelectionPanel(currentPanel); currentPanel = null; }
         scene.activeBaseSelectionCleanup = null;
     }
 }
 
 /**
- * Helper function to calculate base center from landscape points (shared version)
- * @param {FlatBase} base - Base object with start/end indices
- * @param {Array<{x: number, y: number}>} landscapePoints - Array of landscape points
- * @returns {{x: number, y: number}} Base center position
+ * Initialize base selection for teleportation (single player)
+ * @param {Scene} scene - The Phaser scene instance with custom properties
+ * @param {GameState} gameState - Current game state
+ * @returns {Promise<{chunkIndex: number, basePosition: Object}>} Promise that resolves with selected base data
  */
-function calculateBaseCenterFromPoints(base, landscapePoints) {
-    const startPoint = landscapePoints[base.start];
-    const endPoint = landscapePoints[base.end];
-    
-    return {
-        x: (startPoint.x + endPoint.x) / 2,
-        y: startPoint.y
-    };
+export function initializeTeleportBaseSelection(scene, gameState) {
+    info('🔄 Starting teleport (chunk) base selection...');
+    return new Promise((resolve, reject) => {
+        const chunks = scene.landscapeData?.chunks;
+        if (!chunks) {
+            logError('❌ No chunks available in scene');
+            return reject(new Error('No chunks available'));
+        }
+        const currentPlayerNum = getCurrentPlayer(gameState);
+        const currentPlayerKey = `player${currentPlayerNum}`;
+        const playerName = scene.playerData?.[currentPlayerNum - 1]?.name || `Player ${currentPlayerNum}`;
+        /** @type {PlayerData} */
+        const mockPlayer = { id: currentPlayerKey, name: playerName, team: currentPlayerKey, chunkIndex: null, health: 100, turret: null };
+        const occupied = [];
+        for (let i = 1; i <= gameState.numPlayers; i++) {
+            const pKey = `player${i}`; const ps = gameState[pKey];
+            if (ps.health <= 0 || !gameState.playersAlive.includes(i)) continue;
+            if (ps.chunkIndex !== null && ps.chunkIndex !== undefined) occupied.push(ps.chunkIndex);
+        }
+        const availableChunkIndices = listSelectableChunkIndices(chunks, occupied);
+        if (availableChunkIndices.length === 0) {
+            warn('🚫 No available chunks for teleportation');
+            return reject(new Error('No available chunks for teleportation'));
+        }
+        startSinglePlayerChunkSelection(scene, mockPlayer, chunks, availableChunkIndices, {
+            onBaseSelected: (chunkIndex, pos) => { info(`✅ Teleport chunk selected: ${chunkIndex}`); resolve({ chunkIndex, basePosition: { x: pos.x, y: pos.y + 20 } }); },
+            onCancelled: () => { info('🚫 Teleport base selection cancelled'); reject(new Error('Teleport cancelled by user')); }
+        }, true);
+    });
 }

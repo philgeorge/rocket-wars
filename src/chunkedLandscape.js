@@ -564,7 +564,7 @@ export function checkChunkedTerrainCollision(projectile, chunks) {
  * @param {number} worldWidth - World width in pixels
  * @param {number} worldHeight - World height in pixels
  * @param {Object} gameConfig - Game configuration
- * @returns {{landscapeData: {points: Array, flatBases: Array, chunks: TerrainChunk[]}, graphics: Phaser.GameObjects.Graphics}} Chunked landscape
+ * @returns {{landscapeData: {points: Array, chunks: TerrainChunk[]}, graphics: Phaser.GameObjects.Graphics}} Chunked landscape
  */
 export function setupChunkedLandscape(scene, worldWidth, worldHeight, gameConfig) {
     info(`🏔️ Setting up chunked landscape: ${worldWidth}x${worldHeight}px for ${gameConfig.numPlayers} players`);
@@ -573,13 +573,12 @@ export function setupChunkedLandscape(scene, worldWidth, worldHeight, gameConfig
     const baseY = worldHeight - 100;
     const chunkWidth = 40; // Match turret width (40px) for simpler alignment & support logic
     const numPoints = Math.floor(worldWidth / chunkWidth);
-    const { points, flatBases } = generateLandscapePoints(worldWidth, baseY, numPoints, gameConfig.numPlayers);
+    const { points } = generateLandscapePoints(worldWidth, baseY, numPoints, gameConfig.numPlayers);
     
     // Convert to chunks with perfect 1:1 alignment
     const { chunks, graphics } = createChunkedLandscape(scene, points, worldWidth, worldHeight, chunkWidth);
     
-    // Store flat bases info for compatibility (chunked system includes original points and flatBases)
-    const landscapeData = { points, flatBases, chunks };
+    const landscapeData = { points, chunks };
     
     return { landscapeData, graphics };
 }
