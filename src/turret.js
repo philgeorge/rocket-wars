@@ -427,6 +427,8 @@ export function placeTurretsOnChunks(scene, chunks, playerData = []) {
         turret.playerName = player.name;
         turret.playerId = player.id;
         turret.playerData = player;
+        // Store the supporting chunk index directly for simplified falling/support logic
+        turret.chunkIndex = idx;
         const randomAngle = -180 + Math.random() * 180;
         turret.setGunAngle(randomAngle);
         player.turret = turret;

@@ -129,6 +129,8 @@ declare global {
     playerName?: string;
     playerId?: string;
     playerData?: any;
+    // Index of supporting terrain chunk (for simplified support/falling logic)
+    chunkIndex?: number;
     
     // Custom methods
     createOrUpdateTooltip(angle: number, power: number, mouseX: number, mouseY: number): void;

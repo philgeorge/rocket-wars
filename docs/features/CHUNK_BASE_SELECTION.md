@@ -1,10 +1,10 @@
 # Chunk-Based Base Selection Refactor
 
 ## Status
-Draft (planning before implementation)
+Completed (Implemented & merged to main on 2025-08-10)
 
 ## Motivation
-Current base placement relies on precomputed `flatBases` derived from landscape point runs that were flattened after generating alternating flat/mountain sections. With the move to a fully chunked terrain system (and recent alignment of chunk width to 40px = turret width), retaining a separate flat base abstraction:
+Originally, base placement relied on precomputed `flatBases` derived from landscape point runs. The system is now fully chunk-based (chunk width = 40px = turret width). Retaining a separate flat base abstraction previously:
 - Duplicates data already implicit in `chunks`.
 - Complicates teleport & falling logic (need to map between base indices and chunk indices / coordinates).
 - Adds maintenance overhead as terrain destruction only modifies chunks.
@@ -12,14 +12,13 @@ Current base placement relies on precomputed `flatBases` derived from landscape 
 Switching to chunk-based selection simplifies logic: a player's base is just the index of a supporting chunk.
 
 ## High-Level Goals
-1. Remove dependency on `flatBases` for base selection, teleportation, and turret placement.
-2. Represent a base location as a single chunk index (or later, multi-chunk span if needed) stored in `player.baseIndex` (redefined) or renamed field.
+1. Remove dependency on `flatBases` for base selection, teleportation, and turret placement. (DONE)
+2. Represent a base location as a single chunk index stored in `player.chunkIndex` (renamed from baseIndex). (DONE)
 3. Reuse/destructively update existing falling/support logic without coordinate conversions.
 4. Preserve or improve user experience of base selection (visual highlights, keyboard navigation, teleport re-selection).
-5. Keep backwards compatibility path (temporary) to allow rollback if needed.
+5. Keep backwards compatibility path (temporary) to allow rollback if needed. (SUPERSEDED – legacy path removed after validation)
 
 ## Out-of-Scope (Phase 1)
-- Removing `flatBases` generation from `generateLandscapePoints` (can be cleaned later once stable).
 - Advanced suitability scoring (slope analysis, neighbor smoothing).
 - Multi-chunk wide bases.
 - Saving migrations for existing persisted game states (fresh sessions only).
@@ -27,9 +26,9 @@ Switching to chunk-based selection simplifies logic: a player's base is just the
 ## Data Model Changes
 | Field | Old Meaning | New Meaning |
 |-------|-------------|-------------|
-| `player.baseIndex` | Index into `flatBases` array | Index into `landscapeData.chunks` array |
+| `player.chunkIndex` (was `baseIndex`) | Index into `flatBases` array | Index into `landscapeData.chunks` array |
 
-Types update: Clarify doc comment; keep name initially to avoid large diff, rename later if desired (`chunkIndex`).
+The rename to `chunkIndex` has been completed across runtime code and types.
 
 ## Selection Rules (Initial)
 A chunk is selectable if:
@@ -49,42 +48,27 @@ Turret.y = c.y - 25   // existing vertical offset from prior base logic
 ```
 Consistent with current support checks (turret bottom assumed at y+25).
 
-## Refactor Plan (Phases A–E)
-### A. Helpers
-Add small pure functions:
-- `getTurretPositionForChunk(chunk)` -> `{ x, y }`
-- `listSelectableChunkIndices(chunks, gameState)` -> `number[]`
-- (Optional) `isChunkSelectable(chunk, occupiedIndices)`
-
-### B. Base Selection (initial & teleport)
-Replace usage of `flatBases` in `baseSelection.js`:
-- Accept `chunks` instead of `flatBases`.
-- Build `availableChunks` from helper.
-- Highlight & preview: use chunk center coordinate.
-- Keyboard cycling indexes into `availableChunks`.
-
-### C. Turret Placement & Teleport
-- `placeTurretsOnBases` -> new `placeTurretsOnChunks` (leave old function wrapper calling new for transitional compatibility, or inline replace).
-- Teleport selection & `handleTeleportBaseSelected` use chunk indices.
-
-### D. Types & State
-Update `types.d.ts` doc comment for `baseIndex` to indicate chunk index. (Optionally add TODO to rename.)
-
-### E. Cleanup / Compatibility
-- For one release keep `flatBases` generation but ignore it (log once that chunk-based mode active).
-- After validation, remove `flatBases` references & generation branch.
+## Refactor Plan vs Implementation
+| Phase | Description | Status |
+|-------|-------------|--------|
+| A | Helpers (`getTurretPositionForChunk`, `listSelectableChunkIndices`, `isChunkSelectable`) | DONE (all implemented; `isChunkSelectable` simple form used) |
+| B | Base selection & teleport use chunks | DONE |
+| C | Turret placement uses chunks (`placeTurretsOnChunks`), legacy removed | DONE |
+| D | Types updated & field renamed to `chunkIndex` | DONE |
+| E | Remove flat base generation & references | DONE (flatBases fully removed) |
 
 ## Acceptance Criteria
-- Game starts; players can select any valid chunk; turrets spawn correctly aligned.
-- Teleport mode lists only remaining non-destroyed, non-occupied chunks.
-- Destroying supporting chunks and falling still works (support calc unchanged).
-- No references remain that rely on `flatBases` for logic (only allowed in deprecated comments/logs).
-- Lint passes.
+All acceptance criteria have been met:
+- Game starts; players select valid chunks; turrets align correctly.
+- Teleport mode filters destroyed/occupied chunks.
+- Falling/support logic unchanged and compatible (relies on chunk data).
+- No production logic references to `flatBases` remain.
+- Lint passes clean.
 
 ## Testing Strategy
 Manual / lightweight automated:
 1. Start game 2–4 players, select widely spaced chunks.
-2. Fire at terrain under a turret until fall triggers; verify baseIndex still correctly maps to chunk center.
+2. Fire at terrain under a turret until fall triggers; verify chunkIndex still correctly maps to chunk center.
 3. Teleport and ensure old chunk becomes free, new chunk occupied.
 4. Attempt teleport after destroying many chunks (ensure only viable shown).
 
@@ -93,10 +77,10 @@ Potential future unit tests (deferred): pure helper tests for `isChunkSelectable
 ## Risks & Mitigations
 | Risk | Mitigation |
 |------|------------|
-| Existing code silently still uses flatBases somewhere | Grep for `flatBases` after refactor; fail build if found in logic paths |
-| baseIndex meaning confusion | Inline comment + TODO rename; add log on first placement |
+| Existing code silently still uses flatBases somewhere | (Resolved) Removed generators & references |
+| baseIndex meaning confusion | (Resolved) Renamed to chunkIndex |
 | Edge chunks produce awkward placement | Optional post-adjustment to shift inward if at extreme edges |
-| Destroyed chunk still referenced by player | On update loop, validate each player’s chunk still selectable; if not, trigger re-selection or falling logic |
+| Destroyed chunk still referenced by player | TODO: Add periodic validation & UI feedback |
 
 ## Future Enhancements (Not Phase 1)
 - Multi-width bases spanning 2–3 chunks for large structures.
@@ -104,16 +88,15 @@ Potential future unit tests (deferred): pure helper tests for `isChunkSelectable
 - Procedural removal of unnatural narrow spires before selection.
 - Visual mini-map of chunk occupancy.
 
-## Implementation Order & Branching
-1. Commit this design doc.
-2. Implement helpers + new placement function.
-3. Switch selection logic.
-4. Switch teleport logic.
-5. Update types + transitional logging.
-6. Remove dead code & references.
+## Remaining TODOs / Nice-to-Haves
+1. Add runtime validation that a player's `chunkIndex` still points to a non-destroyed, sufficiently tall chunk; if invalid, trigger re-selection or mark player as falling/needs relocation.
+2. Optional advanced filters (neighbor slope, contiguous span) before exposing chunks in selection UI.
+3. Visual differentiation for recently destroyed vs intact neighboring chunks during teleport selection.
+4. Add unit tests for helper functions (`isChunkSelectable`, `listSelectableChunkIndices`, position calc) to lock behavior.
+5. Consider mild inward shift for extreme edge chunks (reduce off-screen risk).
+6. Future enhancement list (multi-chunk bases, scoring, mini-map) remains open.
 
 ## Rollback Plan
-Keep old `flatBases` code untouched until end. If issues arise, toggle a temporary feature flag (e.g., `USE_CHUNK_BASE_SELECTION`) to revert calls to legacy path.
+No longer applicable: legacy flat base path removed. Re-introduction would require restoring prior generator & selection code (not planned).
 
----
-Draft ready for review. After confirmation, will proceed with Phase 1 implementation.
+

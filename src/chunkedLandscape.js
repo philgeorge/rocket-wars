@@ -201,191 +201,75 @@ export function drawChunkedLandscape(graphics, chunks) {
 }
 
 /**
- * Calculate landscape support percentage for a turret based on chunks beneath it
- * @param {any} turret - The turret object
- * @param {TerrainChunk[]} chunks - Array of terrain chunks
- * @returns {number} Percentage of turret width that has landscape support (0-100)
- */
-function calculateTurretSupport(turret, chunks) {
-    const turretWidth = 40; // Turret width in pixels
-    const turretLeft = turret.x - (turretWidth / 2);
-    const turretRight = turret.x + (turretWidth / 2);
-    const turretBottom = turret.y + 25; // Turret sits 25px above base
-    
-    trace(`🔍 Calculating support for turret at (${turret.x.toFixed(1)}, ${turret.y.toFixed(1)}) - team ${turret.team}`);
-    trace(`🔍 Turret spans from x=${turretLeft.toFixed(1)} to x=${turretRight.toFixed(1)}, bottom at y=${turretBottom.toFixed(1)}`);
-    
-    let supportedWidth = 0;
-    const samplePoints = 8; // Sample support every 5px across turret width
-    
-    for (let i = 0; i < samplePoints; i++) {
-        const sampleX = turretLeft + (i / (samplePoints - 1)) * turretWidth;
-        let hasSupport = false;
-        
-        // Check if any chunk provides support at this X position
-        for (const chunk of chunks) {
-            if (chunk.destroyed) continue;
-            
-            // Check if this chunk is at the right X position and extends up to support the turret
-            const chunkLeft = chunk.x;
-            const chunkRight = chunk.x + chunk.width;
-            const chunkTop = chunk.y;
-            
-            if (sampleX >= chunkLeft && sampleX <= chunkRight && chunkTop <= turretBottom + 5) {
-                hasSupport = true;
-                break;
-            }
-        }
-        
-        if (hasSupport) {
-            supportedWidth += turretWidth / samplePoints;
-        }
-    }
-    
-    const supportPercentage = (supportedWidth / turretWidth) * 100;
-    trace(`🔍 Turret support: ${supportedWidth.toFixed(1)}px of ${turretWidth}px supported (${supportPercentage.toFixed(1)}%)`);
-    return supportPercentage;
-}
-
-/**
- * Find the new landing position for a falling turret
- * @param {any} turret - The turret object
- * @param {TerrainChunk[]} chunks - Array of terrain chunks
- * @returns {number|null} New Y position for turret, or null if no valid landing spot
- */
-function findTurretLandingPosition(turret, chunks) {
-    const turretWidth = 40;
-    const turretLeft = turret.x - (turretWidth / 2);
-    const turretRight = turret.x + (turretWidth / 2);
-    
-    trace(`🔍 Finding landing position for turret at x=${turret.x.toFixed(1)} (spans ${turretLeft.toFixed(1)} to ${turretRight.toFixed(1)})`);
-    
-    // Find the highest terrain level that can support at least 50% of the turret
-    let bestLandingY = null;
-    let bestSupportPercentage = 0;
-    
-    // Create a list of potential landing levels from existing chunk tops
-    const potentialLevels = new Set();
-    for (const chunk of chunks) {
-        if (!chunk.destroyed && chunk.height > 10) {
-            potentialLevels.add(chunk.y);
-        }
-    }
-    
-    // Sort levels from highest (lowest Y value) to lowest
-    const sortedLevels = Array.from(potentialLevels).sort((a, b) => a - b);
-    
-    for (const level of sortedLevels) {
-        // Calculate support at this level
-        let supportedWidth = 0;
-        const samplePoints = 8;
-        
-        for (let i = 0; i < samplePoints; i++) {
-            const sampleX = turretLeft + (i / (samplePoints - 1)) * turretWidth;
-            
-            // Check if any chunk provides support at this X position and level
-            for (const chunk of chunks) {
-                if (chunk.destroyed) continue;
-                
-                const chunkLeft = chunk.x;
-                const chunkRight = chunk.x + chunk.width;
-                const chunkTop = chunk.y;
-                
-                if (sampleX >= chunkLeft && sampleX <= chunkRight && 
-                    chunkTop <= level + 5 && (chunkTop + chunk.height) >= level) {
-                    supportedWidth += turretWidth / samplePoints;
-                    break;
-                }
-            }
-        }
-        
-        const supportPercentage = (supportedWidth / turretWidth) * 100;
-        
-        if (supportPercentage >= 50 && supportPercentage > bestSupportPercentage) {
-            bestLandingY = level - 25; // Position turret 25px above surface
-            bestSupportPercentage = supportPercentage;
-            trace(`✅ New best landing position: y=${bestLandingY.toFixed(1)} with ${supportPercentage.toFixed(1)}% support`);
-        }
-    }
-    
-    return bestLandingY;
-}
-
-/**
- * Animate turret falling to new position
- * @param {Phaser.Scene} scene - The Phaser scene
- * @param {any} turret - The turret object
- * @param {number} targetY - Target Y position
- * @param {any} gameState - Current game state
- */
-function animateTurretFalling(scene, turret, targetY, gameState) {
-    info(`🪂 Animating turret fall from y=${turret.y.toFixed(1)} to y=${targetY.toFixed(1)}`);
-    
-    // Apply 10 points of falling damage
-    const FALL_DAMAGE = 10;
-    applyDamage(gameState, turret.team, FALL_DAMAGE);
-    info(`💥 Turret ${turret.team} took ${FALL_DAMAGE} falling damage, health now: ${gameState[turret.team].health}%`);
-    
-    // Update turret visual health indicator
-    if (turret.updateHealthDisplay) {
-        turret.updateHealthDisplay(gameState[turret.team].health);
-    }
-    
-    // Animate the turret falling with gravity-like easing
-    scene.tweens.add({
-        targets: turret,
-        y: targetY,
-        duration: 800, // 0.8 seconds for falling animation
-        ease: 'Bounce.easeOut', // Bouncy landing effect
-        onComplete: () => {
-            info(`🎯 Turret ${turret.team} landed at y=${turret.y.toFixed(1)}`);
-            
-            // Check if the turret/player is still alive after falling damage
-            if (gameState[turret.team].health <= 0) {
-                warn(`💀 Turret ${turret.team} was destroyed by falling damage!`);
-                // Note: Player elimination will be handled by the existing game systems
-                // when the main game loop checks for dead players
-            }
-        }
-    });
-}
-
-/**
- * Check all turrets for loss of landscape support and handle falling
- * @param {Phaser.Scene} scene - The Phaser scene
- * @param {TerrainChunk[]} chunks - Array of terrain chunks
- * @param {any[]} turrets - Array of turrets to check
- * @param {any} gameState - Current game state
- * @returns {boolean} True if any turrets took falling damage
+ * Simplified support check & falling: rely on turret.chunkIndex and single supporting chunk.
+ * If the supporting chunk lowered, turret drops to new top (minus 25px). If destroyed, apply extra damage and mark for potential removal (future).
+ * @param {Phaser.Scene} scene
+ * @param {TerrainChunk[]} chunks
+ * @param {any[]} turrets
+ * @param {any} gameState
+ * @returns {boolean}
  */
 export function handleTurretFalling(scene, chunks, turrets, gameState) {
-    info(`🔍 Checking ${turrets.length} turrets for landscape support after terrain destruction...`);
-    
     let anyTurretFell = false;
-    
+    // Helper: determine which chunk horizontally under the turret center right now
+    function findSupportingChunkIndex(turretX) {
+        for (let i = 0; i < chunks.length; i++) {
+            const c = chunks[i];
+            const left = c.x;
+            const right = c.x + c.width;
+            // Include right edge for final chunk to avoid off-by-one
+            const within = (turretX >= left && (turretX < right || (i === chunks.length - 1 && turretX <= right + 0.5)));
+            if (within) return i;
+        }
+        return -1;
+    }
     turrets.forEach(turret => {
-        const supportPercentage = calculateTurretSupport(turret, chunks);
-        
-        if (supportPercentage < 50) {
-            warn(`⚠️ Turret ${turret.team} has insufficient support (${supportPercentage.toFixed(1)}% < 50%) - initiating fall`);
-            
-            const newPosition = findTurretLandingPosition(turret, chunks);
-            
-            if (newPosition !== null && newPosition > turret.y) {
-                info(`🪂 Turret ${turret.team} will fall to new position y=${newPosition.toFixed(1)}`);
-                animateTurretFalling(scene, turret, newPosition, gameState);
+        // Always recompute based on current X to avoid stale or off-by-one errors
+        const computedIdx = findSupportingChunkIndex(turret.x);
+        if (computedIdx === -1) { trace(`⚠️ No supporting chunk found for turret ${turret.team} at x=${turret.x}`); return; }
+        let idx = turret.chunkIndex;
+        if (idx !== computedIdx) {
+            trace(`♻️ Updating turret ${turret.team} chunkIndex ${idx} -> ${computedIdx}`);
+            turret.chunkIndex = computedIdx;
+            idx = computedIdx;
+        }
+        const chunk = chunks[idx];
+        if (!chunk) return;
+        const expectedTopY = chunk.y - 25; // turret base y
+        trace(`🔎 FallingCheck team=${turret.team} idx=${idx} turretY=${turret.y.toFixed(1)} expectedTopY=${expectedTopY.toFixed(1)} chunkDestroyed=${chunk.destroyed}`);
+        // If chunk destroyed -> treat as total loss of support
+        if (chunk.destroyed) {
+            if (turret.y < chunk.y + chunk.height) { // still visually above original area
+                info(`🪂 Turret ${turret.team} lost its chunk (destroyed) and will take collapse damage`);
+                applyDamage(gameState, turret.team, 15); // slightly higher than normal fall
+                if (turret.updateHealthDisplay) turret.updateHealthDisplay(gameState[turret.team].health);
                 anyTurretFell = true;
-            } else if (newPosition === null) {
-                warn(`💀 Turret ${turret.team} has no valid landing position - would be destroyed`);
-                // Could implement turret destruction here if needed
-            } else {
-                trace(`🚫 Turret ${turret.team} cannot fall upward - staying at current position`);
             }
+            return; // No landing – could add relocation later
+        }
+        // Chunk intact: if top moved downward (animation complete) adjust turret
+        const delta = expectedTopY - turret.y;
+        if (Math.abs(delta) > 1) { // threshold to avoid micro-adjusts
+            const targetY = expectedTopY;
+            info(`🪂 Adjusting turret ${turret.team} from y=${turret.y.toFixed(1)} to y=${targetY.toFixed(1)} (delta=${delta.toFixed(1)})`);
+            // Apply small fall damage proportional to drop distance / 40 (cap 10)
+            const drop = Math.max(0, delta);
+            const FALL_DAMAGE = Math.min(10, Math.round(drop / 4));
+            if (FALL_DAMAGE > 0) {
+                applyDamage(gameState, turret.team, FALL_DAMAGE);
+                if (turret.updateHealthDisplay) turret.updateHealthDisplay(gameState[turret.team].health);
+            }
+            scene.tweens.add({
+                targets: turret,
+                y: targetY,
+                duration: 400,
+                ease: 'Sine.easeIn'
+            });
+            anyTurretFell = true;
         } else {
-            trace(`✅ Turret ${turret.team} has sufficient support (${supportPercentage.toFixed(1)}% >= 50%)`);
+            trace(`✅ No fall needed for ${turret.team} (|delta|=${Math.abs(delta).toFixed(2)})`);
         }
     });
-    
     return anyTurretFell;
 }
 
