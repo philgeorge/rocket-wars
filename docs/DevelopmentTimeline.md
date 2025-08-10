@@ -84,9 +84,13 @@ High level tracking of time spent developing this game.
 ## 27 July, 3 August 5 hours
 - chunked, desructible landscape, falling turrets
 
-## 09 Augues, 3 hours
+## 09 August, 3 hours
 - switch to GPT5
 - project folder re-org
 - code refactoring as per AI suggestions
 - added, configured eslint; clean up all files
 - implemented logger module to replace all direct console access
+
+## 10 August, 2 hours
+- position turrets on any chunk
+- landscape reshaping

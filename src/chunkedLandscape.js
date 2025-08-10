@@ -99,15 +99,45 @@ export function drawChunkedLandscape(graphics, chunks) {
     graphics.beginPath();
     graphics.moveTo(0, worldHeight); // Start at bottom-left
     
-    // Build array of chunk top points for smoothing
+    // Build array of chunk top points for smoothing.
+    // CHANGE: Use TWO points per chunk (near left & right edges) instead of the single centered point.
+    // Example: 40px chunk from x=1000..1040 at y=600 now gets points (1005,600) & (1035,600) giving a flatter top.
+    // We'll still interpolate BETWEEN chunks to allow smooth curves, but keep the line flat *within* a chunk.
     const topPoints = [];
-    chunks.forEach(chunk => {
-        if (!chunk.destroyed) {
-            topPoints.push({
-                x: chunk.x + chunk.width / 2, // Center of chunk
-                y: chunk.y
-            });
+    const edgeOffsetBase = 10; // Increased inset to 10px for clearer rounding visibility
+    chunks.forEach((chunk, idx) => {
+        if (chunk.destroyed) return;
+        // Use a fixed 10px inset unless chunk is too narrow; ensures flatter plateau & clearer transitions.
+        const maxInset = (chunk.width / 2) - 1; // prevent crossing over
+        const inset = Math.min(edgeOffsetBase, maxInset);
+        const leftX = chunk.x + inset;
+        const rightX = chunk.x + chunk.width - inset;
+        // Determine vertical offset relative to neighbors for smoother perceived rounding.
+        const OFF = 5; // magnitude of vertical offset in pixels
+        // Helper to find previous/next non-destroyed chunk
+        function findPrev(i) { for (let p = i - 1; p >= 0; p--) { if (!chunks[p].destroyed) return chunks[p]; } return null; }
+        function findNext(i) { for (let n = i + 1; n < chunks.length; n++) { if (!chunks[n].destroyed) return chunks[n]; } return null; }
+        const prev = findPrev(idx);
+        const next = findNext(idx);
+        // Screen coords: smaller y = higher elevation.
+        let leftY = chunk.y;
+        let rightY = chunk.y;
+        if (prev) {
+            if (prev.y < chunk.y) { // previous higher
+                leftY = chunk.y - OFF; // lift left side a bit
+            } else if (prev.y > chunk.y) { // previous lower
+                leftY = chunk.y + OFF; // dip left side
+            }
         }
+        if (next) {
+            if (next.y < chunk.y) {
+                rightY = chunk.y - OFF; // lift toward a higher next plateau
+            } else if (next.y > chunk.y) {
+                rightY = chunk.y + OFF; // dip toward a lower next plateau
+            }
+        }
+        topPoints.push({ x: leftX, y: leftY, chunkIndex: idx, side: 'left' });
+        topPoints.push({ x: rightX, y: rightY, chunkIndex: idx, side: 'right' });
     });
     
     if (topPoints.length === 0) {
@@ -117,31 +147,29 @@ export function drawChunkedLandscape(graphics, chunks) {
         return;
     }
     
-    // Draw smooth interpolated line through chunk tops
+    // Helper to add a curved transition between two chunk edge points.
+    function addTransition(prev, curr, targetGraphics) {
+        // Rounded corner between chunk plateaus: use cubic smoothstep on Y for zero slope at both ends.
+        // This avoids humps while making the join visibly curved instead of a straight diagonal.
+        const steps = 12; // higher resolution for a smooth arc
+        for (let step = 1; step <= steps; step++) {
+            const t = step / (steps + 1);
+            // Cubic smoothstep (Hermite) gives dy/dt = 0 at t=0 and t=1
+            const smooth = t * t * (3 - 2 * t);
+            const interpX = prev.x + (curr.x - prev.x) * t; // keep x linear for consistent spacing
+            const interpY = prev.y + (curr.y - prev.y) * smooth;
+            targetGraphics.lineTo(interpX, interpY);
+        }
+    }
+
+    // Draw landscape line through chunk top points.
+    // Interpolate only between different chunks so tops remain flat.
     graphics.lineTo(topPoints[0].x, topPoints[0].y);
-    
-    // Create smooth transitions by adding interpolated points
     for (let i = 1; i < topPoints.length; i++) {
         const prev = topPoints[i - 1];
         const curr = topPoints[i];
-        
-        // Add intermediate points for smoother curves
-        const steps = 3; // Number of interpolation steps
-        for (let step = 1; step <= steps; step++) {
-            const t = step / (steps + 1);
-            
-            // Simple interpolation with slight curve
-            const interpX = prev.x + (curr.x - prev.x) * t;
-            const interpY = prev.y + (curr.y - prev.y) * t;
-            
-            // Add slight curve by adjusting Y slightly
-            const midPointAdjustment = Math.sin(t * Math.PI) * 2; // Small curve adjustment
-            const adjustedY = interpY - midPointAdjustment;
-            
-            graphics.lineTo(interpX, adjustedY);
-        }
-        
-        // Finally draw to the actual chunk top
+        const sameChunk = prev.chunkIndex === curr.chunkIndex;
+        if (!sameChunk) addTransition(prev, curr, graphics);
         graphics.lineTo(curr.x, curr.y);
     }
     
@@ -158,16 +186,21 @@ export function drawChunkedLandscape(graphics, chunks) {
     const landscapeChunkOutlines = loadDebugSetting('landscapeChunkOutlines', false);
     if (landscapeChunkOutlines) {
         graphics.lineStyle(2, 0xff0000, 0.7); // Red lines for chunk boundaries
-        chunks.forEach(chunk => {
-            if (!chunk.destroyed) {
-                // Draw chunk boundary rectangle
-                graphics.strokeRect(chunk.x, chunk.y, chunk.width, chunk.height);
-                
-                // Draw a small marker at the chunk top center
-                const centerX = chunk.x + chunk.width / 2;
-                graphics.fillStyle(0xff0000, 1);
-                graphics.fillCircle(centerX, chunk.y, 3);
-            }
+        chunks.forEach((chunk, idx) => {
+            if (chunk.destroyed) return;
+            graphics.strokeRect(chunk.x, chunk.y, chunk.width, chunk.height);
+            const debugMaxInset = (chunk.width / 2) - 1;
+            const inset = Math.min(10, debugMaxInset);
+            // Recompute display offsets like main logic for debugging positions
+            function findPrev(i) { for (let p = i - 1; p >= 0; p--) { if (!chunks[p].destroyed) return chunks[p]; } return null; }
+            function findNext(i) { for (let n = i + 1; n < chunks.length; n++) { if (!chunks[n].destroyed) return chunks[n]; } return null; }
+            const prev = findPrev(idx); const next = findNext(idx);
+            let leftY = chunk.y; let rightY = chunk.y; const OFF = 5;
+            if (prev) { if (prev.y < chunk.y) leftY = chunk.y - OFF; else if (prev.y > chunk.y) leftY = chunk.y + OFF; }
+            if (next) { if (next.y < chunk.y) rightY = chunk.y - OFF; else if (next.y > chunk.y) rightY = chunk.y + OFF; }
+            graphics.fillStyle(0xff0000, 1);
+            graphics.fillCircle(chunk.x + inset, leftY, 3);
+            graphics.fillCircle(chunk.x + chunk.width - inset, rightY, 3);
         });
         
         // Draw the smoothed line in bright blue for visibility
@@ -179,17 +212,8 @@ export function drawChunkedLandscape(graphics, chunks) {
             for (let i = 1; i < topPoints.length; i++) {
                 const prev = topPoints[i - 1];
                 const curr = topPoints[i];
-                
-                // Add intermediate points for smoother curves
-                const steps = 3;
-                for (let step = 1; step <= steps; step++) {
-                    const t = step / (steps + 1);
-                    const interpX = prev.x + (curr.x - prev.x) * t;
-                    const interpY = prev.y + (curr.y - prev.y) * t;
-                    const midPointAdjustment = Math.sin(t * Math.PI) * 2;
-                    const adjustedY = interpY - midPointAdjustment;
-                    graphics.lineTo(interpX, adjustedY);
-                }
+                const sameChunk = prev.chunkIndex === curr.chunkIndex;
+                if (!sameChunk) addTransition(prev, curr, graphics);
                 graphics.lineTo(curr.x, curr.y);
             }
             graphics.strokePath();
