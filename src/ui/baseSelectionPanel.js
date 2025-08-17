@@ -30,25 +30,16 @@ export function createBaseSelectionPanel(scene, currentPlayer) {
             }
         },
         {
-            text: `Click a ${playerColorName.toLowerCase()} circle`,
-            style: {
-                fontSize: '1rem',
-                color: playerColorCSS
-            }
+            text: `Move mouse to highlight a ${playerColorName.toLowerCase()} circle`,
+            style: { fontSize: '1rem', color: playerColorCSS }
         },
         {
-            text: `to position your base.`,
-            style: {
-                fontSize: '1rem',
-                color: playerColorCSS
-            }
+            text: `then click/tap to position your base.`,
+            style: { fontSize: '1rem', color: playerColorCSS }
         },
         {
-            text: `Or use Tab and Enter keys.`,
-            style: {
-                fontSize: '1rem',
-                color: playerColorCSS
-            }
+            text: `Or use Left/Right (A/D) and Enter.`,
+            style: { fontSize: '1rem', color: playerColorCSS }
         }
     ];
     

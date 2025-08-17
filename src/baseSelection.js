@@ -128,13 +128,19 @@ function startBaseSelection(scene, players, resolve) {
  * @param {boolean} isTeleportMode
  */
 function startSinglePlayerChunkSelection(scene, player, chunks, availableChunkIndices, callbacks, isTeleportMode = false) {
-    let highlights = [];
+    // Single dynamic highlight state
+    let highlightCircle = null; // Phaser.GameObjects.Graphics for the single circle
+    let highlightedChunkIndex = -1; // current selected/highlighted chunk index (mouse/keyboard)
+    let highlightPos = null; // {x,y} of current circle center
+    const playerColorHex = parseInt(getTeamColorCSS(player.team).replace('#', ''), 16);
     let currentPanel = createBaseSelectionPanel(scene, player);
     positionBaseSelectionPanel(currentPanel, scene.cameras.main.width, isTeleportMode);
-    let keyboardSelectedChunkIndex = -1;
     let previewTurret = null;
     let isSelectionActive = true;
     const keyboardHandlers = [];
+    // Input listeners we must remove on cleanup
+    let pointerMoveHandler = null;
+    let pointerDownHandler = null;
 
     const resizeHandler = () => {
         if (currentPanel && isSelectionActive) {
@@ -154,94 +160,133 @@ function startSinglePlayerChunkSelection(scene, player, chunks, availableChunkIn
     });
     keyboardHandlers.push(escKey);
 
-    drawHighlights();
-    setupPointerHandlers();
+    ensureHighlightCircle();
+    setupPointerTracking();
     setupKeyboardHandlers();
 
-    function drawHighlights() {
-        clearHighlights();
-        const playerColorHex = parseInt(getTeamColorCSS(player.team).replace('#', ''), 16);
-        availableChunkIndices.forEach(idx => {
-            const chunk = chunks[idx];
-            if (!chunk) return;
-            const pos = getTurretPositionForChunk(chunk);
-            const g = scene.add.graphics();
-            g.lineStyle(4, playerColorHex, 0.8);
-            g.fillStyle(playerColorHex, 0.2);
-            g.fillCircle(pos.x, pos.y, 30);
-            g.strokeCircle(pos.x, pos.y, 30);
-            const hitArea = new Phaser.Geom.Circle(pos.x, pos.y, 35);
-            g.setInteractive(hitArea, Phaser.Geom.Circle.Contains);
-            g.input.cursor = 'pointer';
-            g.setDepth(500);
-            highlights.push(g);
-            trace(`✨ Highlight chunk ${idx} @ (${pos.x}, ${pos.y})`);
-        });
+    function ensureHighlightCircle() {
+        if (highlightCircle && highlightCircle.scene) return;
+        highlightCircle = scene.add.graphics();
+        highlightCircle.setDepth(500);
+        // draw once offscreen; we'll redraw for each move
+        highlightCircle.setVisible(false);
     }
 
-    function clearHighlights() {
-        highlights.forEach(h => { if (h && h.scene) h.destroy(); });
-        highlights = [];
+    function hideHighlight() {
+        highlightedChunkIndex = -1;
+        highlightPos = null;
+        if (highlightCircle) { highlightCircle.clear(); highlightCircle.setVisible(false); }
+        clearPreview();
     }
 
-    function setupPointerHandlers() {
-        availableChunkIndices.forEach((idx, i) => {
-            const g = highlights[i];
-            if (!g) return;
-            let hoverTimeout = null;
-            let hovering = false;
-            g.on('pointerdown', () => {
-                if (!isSelectionActive) return;
-                finalize(idx);
-            });
-            g.on('pointerover', () => {
-                if (!isSelectionActive || hovering) return;
-                hovering = true;
-                if (keyboardSelectedChunkIndex === -1) {
-                    if (hoverTimeout) clearTimeout(hoverTimeout);
-                    hoverTimeout = setTimeout(() => {
-                        if (keyboardSelectedChunkIndex === -1 && hovering && isSelectionActive) {
-                            clearPreview();
-                            createPreview(idx);
-                        }
-                        hoverTimeout = null;
-                    }, 50);
-                }
-            });
-            g.on('pointerout', () => {
-                hovering = false;
-                if (hoverTimeout) { clearTimeout(hoverTimeout); hoverTimeout = null; }
-                if (keyboardSelectedChunkIndex === -1) clearPreview();
-            });
-        });
+    function setupPointerTracking() {
+        const cam = scene.cameras.main;
+        const availableSet = new Set(availableChunkIndices);
+        // helper to get chunk index by worldX
+        function findChunkIndexAtX(worldX) {
+            for (let i = 0; i < chunks.length; i++) {
+                const c = chunks[i];
+                const left = c.x;
+                const right = c.x + c.width;
+                const within = (worldX >= left && (worldX < right || (i === chunks.length - 1 && worldX <= right + 0.5)));
+                if (within) return i;
+            }
+            return -1;
+        }
+        function updateHighlightToIndex(idx) {
+            if (!isSelectionActive) return;
+            if (idx === -1 || !availableSet.has(idx)) { hideHighlight(); return; }
+            const pos = getTurretPositionForChunk(chunks[idx]);
+            highlightedChunkIndex = idx;
+            highlightPos = pos;
+            // redraw circle
+            ensureHighlightCircle();
+            highlightCircle.clear();
+            highlightCircle.lineStyle(4, playerColorHex, 0.8);
+            highlightCircle.fillStyle(playerColorHex, 0.2);
+            highlightCircle.fillCircle(pos.x, pos.y, 30);
+            highlightCircle.strokeCircle(pos.x, pos.y, 30);
+            highlightCircle.setVisible(true);
+            // update preview turret
+            clearPreview();
+            createPreview(idx);
+        }
+        pointerMoveHandler = (pointer) => {
+            if (!isSelectionActive) return;
+            // Convert to world coords
+            const worldX = pointer.worldX ?? (pointer.x + cam.scrollX);
+            const idx = findChunkIndexAtX(worldX);
+            updateHighlightToIndex(idx);
+        };
+        scene.input.on('pointermove', pointerMoveHandler);
+        pointerDownHandler = (pointer) => {
+            if (!isSelectionActive) return;
+            if (highlightedChunkIndex === -1 || !highlightPos) return;
+            // only accept click/tap within circle radius
+            const wx = pointer.worldX ?? (pointer.x + cam.scrollX);
+            const wy = pointer.worldY ?? (pointer.y + cam.scrollY);
+            const dx = wx - highlightPos.x;
+            const dy = wy - highlightPos.y;
+            if (Math.hypot(dx, dy) <= 35) {
+                finalize(highlightedChunkIndex);
+            }
+        };
+        scene.input.on('pointerdown', pointerDownHandler);
     }
 
     function setupKeyboardHandlers() {
         const kb = scene.input.keyboard;
-        const tabKey = kb.addKey(Phaser.Input.Keyboard.KeyCodes.TAB);
-        tabKey.on('down', () => { if (isSelectionActive) cycleNext(); });
+        // Left/Right arrows and A/D keys move selection across available chunks
+        const leftKey = kb.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
+        const rightKey = kb.addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT);
+        const aKey = kb.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+        const dKey = kb.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+        const stepLeft = () => { if (isSelectionActive) stepSelection(-1); };
+        const stepRight = () => { if (isSelectionActive) stepSelection(1); };
+        leftKey.on('down', stepLeft); rightKey.on('down', stepRight);
+        aKey.on('down', stepLeft); dKey.on('down', stepRight);
         const enterKey = kb.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
         enterKey.on('down', () => { if (isSelectionActive) confirm(); });
-        keyboardHandlers.push(tabKey, enterKey);
+        keyboardHandlers.push(leftKey, rightKey, aKey, dKey, enterKey);
     }
 
-    function cycleNext() {
+    function stepSelection(dir) {
         if (availableChunkIndices.length === 0) return;
-        const curIdx = availableChunkIndices.findIndex(i => i === keyboardSelectedChunkIndex);
-        const next = (curIdx + 1) % availableChunkIndices.length;
-        keyboardSelectedChunkIndex = availableChunkIndices[next];
-        trace(`⌨️ Cycling to chunk ${keyboardSelectedChunkIndex}`);
-        const pos = getTurretPositionForChunk(chunks[keyboardSelectedChunkIndex]);
+        // If nothing selected yet, pick nearest to camera center
+        if (highlightedChunkIndex === -1) {
+            const cam = scene.cameras.main;
+            const centerX = cam.midPoint.x;
+            let bestIdx = availableChunkIndices[0];
+            let bestDist = Math.abs(getTurretPositionForChunk(chunks[bestIdx]).x - centerX);
+            for (const idx of availableChunkIndices) {
+                const d = Math.abs(getTurretPositionForChunk(chunks[idx]).x - centerX);
+                if (d < bestDist) { bestDist = d; bestIdx = idx; }
+            }
+            highlightedChunkIndex = bestIdx;
+        } else {
+            const curPos = availableChunkIndices.findIndex(i => i === highlightedChunkIndex);
+            const nextPos = (curPos + (dir < 0 ? -1 : 1) + availableChunkIndices.length) % availableChunkIndices.length;
+            highlightedChunkIndex = availableChunkIndices[nextPos];
+        }
+        const pos = getTurretPositionForChunk(chunks[highlightedChunkIndex]);
+        highlightPos = pos;
+        ensureHighlightCircle();
+        highlightCircle.clear();
+        highlightCircle.lineStyle(4, playerColorHex, 0.8);
+        highlightCircle.fillStyle(playerColorHex, 0.2);
+        highlightCircle.fillCircle(pos.x, pos.y, 30);
+        highlightCircle.strokeCircle(pos.x, pos.y, 30);
+        highlightCircle.setVisible(true);
         scene.cameras.main.pan(pos.x, pos.y, 500, 'Power2');
         clearPreview();
-        createPreview(keyboardSelectedChunkIndex);
+        createPreview(highlightedChunkIndex);
     }
 
     function confirm() {
-        if (keyboardSelectedChunkIndex === -1) { trace('⌨️ No chunk selected'); return; }
-        info(`⌨️ Player ${player.name} confirmed chunk ${keyboardSelectedChunkIndex}`);
+        if (highlightedChunkIndex === -1) { trace('⌨️ No chunk selected'); return; }
+        info(`⌨️ Player ${player.name} confirmed chunk ${highlightedChunkIndex}`);
         clearPreview();
-        finalize(keyboardSelectedChunkIndex);
+        finalize(highlightedChunkIndex);
     }
 
     function createPreview(idx) {
@@ -263,9 +308,11 @@ function startSinglePlayerChunkSelection(scene, player, chunks, availableChunkIn
     }
 
     function cleanup() {
-        clearHighlights();
+        hideHighlight();
         clearPreview();
         keyboardHandlers.forEach(k => k?.destroy?.());
+        if (pointerMoveHandler) scene.input.off('pointermove', pointerMoveHandler);
+        if (pointerDownHandler) scene.input.off('pointerdown', pointerDownHandler);
         window.removeEventListener('resize', resizeHandler);
         if (currentPanel) { hideBaseSelectionPanel(currentPanel); currentPanel = null; }
         scene.activeBaseSelectionCleanup = null;
