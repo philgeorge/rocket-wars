@@ -130,7 +130,7 @@ export function setupResultsPanelRestart(scene) {
                 sceneAny.resultsPanel.setVisible(false);
             }
             // Dispatch a custom event to main.js to tear down Phaser and show the setup form
-            window.dispatchEvent(new CustomEvent('rocketwars:restart-to-setup'));
+            window.dispatchEvent(new window.CustomEvent('rocketwars:restart-to-setup'));
         }
     }, {
         includeKeyboard: true,

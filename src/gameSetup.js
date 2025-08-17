@@ -258,7 +258,7 @@ function showPlayerNamesForm(gameConfig, onGameStart) {
         onGameStart(finalGameConfig);
         // Also dispatch an event so subsequent restarts can start the game again
         try {
-            window.dispatchEvent(new CustomEvent('rocketwars:start-game', { detail: finalGameConfig }));
+            window.dispatchEvent(new window.CustomEvent('rocketwars:start-game', { detail: finalGameConfig }));
         } catch {}
     });
 }

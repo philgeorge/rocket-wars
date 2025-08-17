@@ -38,7 +38,7 @@ initializeGameSetup().then((config) => {
                 gameInstance.destroy(true);
                 gameInstance = null;
             }
-        } catch (e) {
+        } catch {
             // Non-fatal
         }
         // Show setup UI
