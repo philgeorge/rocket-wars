@@ -254,7 +254,11 @@ function showPlayerNamesForm(gameConfig, onGameStart) {
         // Hide player names form and show game container
         hideFormShowGame();
         
-        // Call the game start callback with the final configuration
+        // Call the game start callback with the final configuration (initial load path)
         onGameStart(finalGameConfig);
+        // Also dispatch an event so subsequent restarts can start the game again
+        try {
+            window.dispatchEvent(new CustomEvent('rocketwars:start-game', { detail: finalGameConfig }));
+        } catch {}
     });
 }

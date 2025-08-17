@@ -118,13 +118,19 @@ export function setupResultsPanelRestart(scene) {
     info('🎯 Setting up results panel restart functionality');
     
     let restarted = false;
+    const sceneAny = /** @type {any} */ (scene);
     
     // Use the reusable utility function for input handling
     setupPanelInputDismissal(scene, () => {
         if (!restarted) {
             restarted = true;
-            info('🔄 Restarting game...');
-            window.location.reload();
+            info('🔄 Restarting to setup...');
+            // Hide panel immediately
+            if (sceneAny.resultsPanel) {
+                sceneAny.resultsPanel.setVisible(false);
+            }
+            // Dispatch a custom event to main.js to tear down Phaser and show the setup form
+            window.dispatchEvent(new CustomEvent('rocketwars:restart-to-setup'));
         }
     }, {
         includeKeyboard: true,

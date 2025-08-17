@@ -4,6 +4,12 @@
 
 import { loadDebugSetting } from './debugSettings.js';
 
+// Cache console methods early to avoid later clobbering
+const __console = typeof console !== 'undefined' ? console : /** @type {any} */ ({});
+const __log = (...a) => { try { __console.log?.(...a); } catch { /* noop */ } };
+const __warn = (...a) => { try { __console.warn?.(...a); } catch { /* noop */ } };
+const __error = (...a) => { try { __console.error?.(...a); } catch { /* noop */ } };
+
 // Numeric log levels (lower = more severe)
 export const LOG_LEVEL_ERROR = 1;
 export const LOG_LEVEL_WARNING = 2;
@@ -32,13 +38,20 @@ function resolveNumericLevel(raw, map, fallback) {
 // Current minimum level to output (can be changed at runtime)
 let currentLevel = LOG_LEVEL_TRACE; // default: show everything
 
+function normalizeLevel(lvl) {
+    if (typeof lvl !== 'number' || !isFinite(lvl)) return LOG_LEVEL_TRACE;
+    if (lvl < LOG_LEVEL_ERROR || lvl > LOG_LEVEL_TRACE) return LOG_LEVEL_TRACE;
+    return lvl;
+}
+
 /**
  * Set global minimum log output level.
  * @param {number} level One of LOG_LEVEL_*
  */
 export function setLogLevel(level) {
-    currentLevel = level;
-    info(`Log level set to: ${level}`);
+    currentLevel = normalizeLevel(level);
+    // Print using cached native console to guarantee visibility
+    __log(`Log level set to: ${currentLevel}`);
 }
 
 /**
@@ -55,22 +68,23 @@ export function getLogLevel() {
  * @param {...any} args Values to log
  */
 export function log(level, ...args) {
+    currentLevel = normalizeLevel(currentLevel);
     if (level > currentLevel) return; // filtered out
     switch (level) {
         case LOG_LEVEL_TRACE:
-            console.log(...args);
+            __log(...args);
             break;
         case LOG_LEVEL_INFO:
-            console.log(...args);
+            __log(...args);
             break;
         case LOG_LEVEL_WARNING:
-            console.warn(...args);
+            __warn(...args);
             break;
         case LOG_LEVEL_ERROR:
-            console.error(...args);
+            __error(...args);
             break;
         default:
-            console.log(...args);
+            __log(...args);
     }
 }
 
@@ -81,7 +95,7 @@ export const warn = (...a) => log(LOG_LEVEL_WARNING, ...a);
 export const error = (...a) => log(LOG_LEVEL_ERROR, ...a);
 
 // Initialize log level synchronously via debugSettings
-const __rawLogLevel = loadDebugSetting('logLevel', 'warning');
+const __rawLogLevel = loadDebugSetting('logLevel', 'trace');
 const __levelMapping = {
     error: LOG_LEVEL_ERROR,
     warning: LOG_LEVEL_WARNING,

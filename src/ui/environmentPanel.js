@@ -47,6 +47,7 @@ export function createEnvironmentPanel(scene, gameState) {
             text: 'Time: --',
             style: {
                 fontSize: '1rem',
+                fontStyle: 'bold',
                 color: '#ffff00'
             }
             // Removed custom Y position - let auto-layout handle it

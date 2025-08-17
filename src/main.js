@@ -9,7 +9,7 @@ import { createGameState, startPlayerTurn, getCurrentPlayer, stopTurnTimer, ente
 import { progressTurn } from './turnFlow.js';
 import { updateGameUI } from './ui/updateUI.js';
 import { focusCameraOnActivePlayer } from './projectileManager.js';
-import { initializeGameSetup } from './gameSetup.js';
+import { initializeGameSetup, showFormHideGame } from './gameSetup.js';
 import { initializeBaseSelection } from './baseSelection.js';
 import { WORLD_HEIGHT, calculateWorldWidth } from './constants.js';
 import { setupCameraAndInput, updateKeyboardCamera, setupWorldBounds } from './camera.js';
@@ -20,15 +20,45 @@ import { info, trace, warn, error } from './logger.js';
 // Game configuration and world dimensions will be set from form
 let gameConfig = null;
 let WORLD_WIDTH = 3000; // Default value, will be recalculated
+let gameInstance = null; // Track the Phaser.Game instance for teardown on restart
 
 // Initialize game setup and wait for form submission
 initializeGameSetup().then((config) => {
     gameConfig = config;
-    // Calculate world width based on number of players: 1000 + (numPlayers * 1000)
     WORLD_WIDTH = calculateWorldWidth(gameConfig.numPlayers);
     info(`World width calculated: ${WORLD_WIDTH} pixels for ${gameConfig.numPlayers} players`);
     info(`Gravity set to: ${gameConfig.gravity} (effective: ${gameConfig.gravity * 5} pixels/sec²)`);
     startGame();
+
+    // After first start, enable event-driven restarts
+    window.addEventListener('rocketwars:restart-to-setup', () => {
+        info('🔄 Restart requested: tearing down game and showing setup form');
+        try {
+            if (gameInstance) {
+                gameInstance.destroy(true);
+                gameInstance = null;
+            }
+        } catch (e) {
+            // Non-fatal
+        }
+        // Show setup UI
+        showFormHideGame();
+    });
+
+    window.addEventListener('rocketwars:start-game', (ev) => {
+        // Ignore if a game is already running
+        if (gameInstance) {
+            return;
+        }
+        const detail = /** @type {CustomEvent} */ (ev).detail || {};
+        if (detail && typeof detail === 'object') {
+            gameConfig = detail;
+            WORLD_WIDTH = calculateWorldWidth(gameConfig.numPlayers);
+            info(`World width recalculated: ${WORLD_WIDTH} pixels for ${gameConfig.numPlayers} players`);
+            info(`Gravity set to: ${gameConfig.gravity} (effective: ${gameConfig.gravity * 5} pixels/sec²)`);
+            startGame();
+        }
+    });
 });
 
 /**
@@ -70,7 +100,7 @@ function startGame() {
     };
 
     // Start the game
-    const _game = new Phaser.Game(config);
+    gameInstance = new Phaser.Game(config);
 }
 
 /**
@@ -176,6 +206,9 @@ function create() {
 
     // Listen for window resize events
     window.addEventListener('resize', handleResize);
+    // Ensure we remove the listener when the scene shuts down (on game destroy)
+    this.events.once('shutdown', () => window.removeEventListener('resize', handleResize));
+    this.events.once('destroy', () => window.removeEventListener('resize', handleResize));
 
     // Set up world landscape (generation, drawing, and boundaries)
     const { landscapeData, graphics } = setupChunkedLandscape(this, WORLD_WIDTH, WORLD_HEIGHT, gameConfig);

@@ -94,3 +94,6 @@ High level tracking of time spent developing this game.
 ## 10 August, 2 hours
 - position turrets on any chunk
 - landscape reshaping
+
+## 17 August, 2 hours
+- improved base selection scrolling and preview
