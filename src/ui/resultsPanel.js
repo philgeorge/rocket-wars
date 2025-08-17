@@ -82,6 +82,7 @@ export function createResultsPanel(scene, gameState, playerData = null) {
         }
     },
     {
+        touchText: '',
         text: 'Or press any key.',
         style: {
             fontSize: '0.9rem',
