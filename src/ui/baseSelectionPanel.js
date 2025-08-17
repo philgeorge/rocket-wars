@@ -30,7 +30,7 @@ export function createBaseSelectionPanel(scene, currentPlayer) {
             }
         },
         {
-            text: `Move mouse to highlight a ${playerColorName.toLowerCase()} circle`,
+            text: `Move mouse to place your turret`,
             style: { fontSize: '1rem', color: playerColorCSS }
         },
         {

@@ -3,7 +3,6 @@
 
 import { createGunTurret } from './turret.js';
 import { createBaseSelectionPanel, hideBaseSelectionPanel, positionBaseSelectionPanel } from './ui/index.js';
-import { getTeamColorCSS } from './constants.js';
 import { getCurrentPlayer } from './turnManager.js';
 import { info, trace, warn, error as logError } from './logger.js';
 import { getTurretPositionForChunk, listSelectableChunkIndices } from './chunkBaseHelpers.js';
@@ -128,11 +127,8 @@ function startBaseSelection(scene, players, resolve) {
  * @param {boolean} isTeleportMode
  */
 function startSinglePlayerChunkSelection(scene, player, chunks, availableChunkIndices, callbacks, isTeleportMode = false) {
-    // Single dynamic highlight state
-    let highlightCircle = null; // Phaser.GameObjects.Graphics for the single circle
-    let highlightedChunkIndex = -1; // current selected/highlighted chunk index (mouse/keyboard)
-    let highlightPos = null; // {x,y} of current circle center
-    const playerColorHex = parseInt(getTeamColorCSS(player.team).replace('#', ''), 16);
+    // Track the currently highlighted chunk index (by mouse/keyboard)
+    let highlightedChunkIndex = -1;
     let currentPanel = createBaseSelectionPanel(scene, player);
     positionBaseSelectionPanel(currentPanel, scene.cameras.main.width, isTeleportMode);
     let previewTurret = null;
@@ -160,22 +156,11 @@ function startSinglePlayerChunkSelection(scene, player, chunks, availableChunkIn
     });
     keyboardHandlers.push(escKey);
 
-    ensureHighlightCircle();
     setupPointerTracking();
     setupKeyboardHandlers();
 
-    function ensureHighlightCircle() {
-        if (highlightCircle && highlightCircle.scene) return;
-        highlightCircle = scene.add.graphics();
-        highlightCircle.setDepth(500);
-        // draw once offscreen; we'll redraw for each move
-        highlightCircle.setVisible(false);
-    }
-
-    function hideHighlight() {
+    function clearHighlight() {
         highlightedChunkIndex = -1;
-        highlightPos = null;
-        if (highlightCircle) { highlightCircle.clear(); highlightCircle.setVisible(false); }
         clearPreview();
     }
 
@@ -195,19 +180,9 @@ function startSinglePlayerChunkSelection(scene, player, chunks, availableChunkIn
         }
         function updateHighlightToIndex(idx) {
             if (!isSelectionActive) return;
-            if (idx === -1 || !availableSet.has(idx)) { hideHighlight(); return; }
-            const pos = getTurretPositionForChunk(chunks[idx]);
+            if (idx === -1 || !availableSet.has(idx)) { clearHighlight(); return; }
             highlightedChunkIndex = idx;
-            highlightPos = pos;
-            // redraw circle
-            ensureHighlightCircle();
-            highlightCircle.clear();
-            highlightCircle.lineStyle(4, playerColorHex, 0.8);
-            highlightCircle.fillStyle(playerColorHex, 0.2);
-            highlightCircle.fillCircle(pos.x, pos.y, 30);
-            highlightCircle.strokeCircle(pos.x, pos.y, 30);
-            highlightCircle.setVisible(true);
-            // update preview turret
+            // update preview turret only
             clearPreview();
             createPreview(idx);
         }
@@ -219,17 +194,11 @@ function startSinglePlayerChunkSelection(scene, player, chunks, availableChunkIn
             updateHighlightToIndex(idx);
         };
         scene.input.on('pointermove', pointerMoveHandler);
-        pointerDownHandler = (pointer) => {
+        pointerDownHandler = (_pointer) => {
             if (!isSelectionActive) return;
-            if (highlightedChunkIndex === -1 || !highlightPos) return;
-            // only accept click/tap within circle radius
-            const wx = pointer.worldX ?? (pointer.x + cam.scrollX);
-            const wy = pointer.worldY ?? (pointer.y + cam.scrollY);
-            const dx = wx - highlightPos.x;
-            const dy = wy - highlightPos.y;
-            if (Math.hypot(dx, dy) <= 35) {
-                finalize(highlightedChunkIndex);
-            }
+            if (highlightedChunkIndex === -1) return;
+            // Click/tap confirms the currently highlighted chunk
+            finalize(highlightedChunkIndex);
         };
         scene.input.on('pointerdown', pointerDownHandler);
     }
@@ -269,14 +238,6 @@ function startSinglePlayerChunkSelection(scene, player, chunks, availableChunkIn
             highlightedChunkIndex = availableChunkIndices[nextPos];
         }
         const pos = getTurretPositionForChunk(chunks[highlightedChunkIndex]);
-        highlightPos = pos;
-        ensureHighlightCircle();
-        highlightCircle.clear();
-        highlightCircle.lineStyle(4, playerColorHex, 0.8);
-        highlightCircle.fillStyle(playerColorHex, 0.2);
-        highlightCircle.fillCircle(pos.x, pos.y, 30);
-        highlightCircle.strokeCircle(pos.x, pos.y, 30);
-        highlightCircle.setVisible(true);
         scene.cameras.main.pan(pos.x, pos.y, 500, 'Power2');
         clearPreview();
         createPreview(highlightedChunkIndex);
@@ -308,7 +269,7 @@ function startSinglePlayerChunkSelection(scene, player, chunks, availableChunkIn
     }
 
     function cleanup() {
-        hideHighlight();
+        clearHighlight();
         clearPreview();
         keyboardHandlers.forEach(k => k?.destroy?.());
         if (pointerMoveHandler) scene.input.off('pointermove', pointerMoveHandler);
