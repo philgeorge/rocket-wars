@@ -81,7 +81,7 @@ export function createBasePanel(scene, options = {}) {
  * Add text content to a panel with automatic sizing
  * @param {Phaser.Scene} scene - The Phaser scene
  * @param {Phaser.GameObjects.Container} panel - The panel container
- * @param {Array<{key?: string, text: string, style?: Object, x?: number, y?: number}>} textItems - Text configuration (key and style are optional, will auto-generate key and use default style if not provided)
+ * @param {Array<{key?: string, text: string, touchText?: string, style?: Object, x?: number, y?: number}>} textItems - Text configuration (touchText optional override for touch devices; key and style optional)
  * @param {Object} [options] - Layout options
  * @param {number} [options.startX=10] - Starting X position
  * @param {number} [options.startY=10] - Starting Y position
@@ -105,20 +105,6 @@ export function addPanelText(scene, panel, textItems, options = {}) {
     
     // Get current touch device status
     const isTouch = isTouchDevice();
-    const keyboardWords = ['keyboard', 'Tab', 'Enter', 'ESC', 'key', 'keys'];
-    
-    // Filter text items based on touchDevice property
-    const filteredTextItems = textItems.filter(item => {
-        if (isTouch) {
-            // probably no keyboard, so don't show keyboard instructions
-            if (keyboardWords.some(word => new RegExp(`\\b${word}\\b`, 'i').test(item.text))) {
-                trace(`📜 Filtering out keyboard instruction: ${item.text}`);
-                return false;
-            }
-        }
-        return true;
-    });
-    trace(`📜 Adding ${filteredTextItems} text items to panel (touch: ${isTouch})`);
 
     // modify words in instructions to suit touch devices over mouse
     const wordReplacements = {
@@ -126,19 +112,30 @@ export function addPanelText(scene, panel, textItems, options = {}) {
         "Click": "Tap"
     }
 
-    // Create text elements for filtered items
-    filteredTextItems.forEach((item, index) => {
+    // Create text elements with touch-aware content selection
+    let addedCount = 0;
+    textItems.forEach((item, index) => {
         const x = item.x !== undefined ? item.x : startX;
         const y = item.y !== undefined ? item.y : currentY;
 
-        // Replace mouse-specific words with touch-friendly alternatives on touch devices
-        if (isTouch) {
-            for (const [original, replacement] of Object.entries(wordReplacements)) {
-                item.text = item.text.replace(new RegExp(`\\b${original}\\b`, 'g'), replacement);
+        // Determine the text to render
+        /** @type {string} */
+        let content;
+        if (isTouch && typeof item.touchText === 'string') {
+            // On touch, an empty string means skip this line
+            if (item.touchText === '') return; // skip adding a line
+            content = item.touchText;
+        } else {
+            content = item.text;
+            // Fallback replacements for mouse terms on touch when no touchText provided
+            if (isTouch) {
+                for (const [original, replacement] of Object.entries(wordReplacements)) {
+                    content = content.replace(new RegExp(`\\b${original}\\b`, 'g'), replacement);
+                }
             }
         }
 
-        const textElement = scene.add.text(x, y, item.text, item.style || {});
+        const textElement = scene.add.text(x, y, content, item.style || {});
         panel.add(textElement);
         
         // Store reference by key (auto-generate if not provided)
@@ -153,7 +150,9 @@ export function addPanelText(scene, panel, textItems, options = {}) {
         if (item.y === undefined) {
             currentY += lineHeight;
         }
+        addedCount++;
     });
+    trace(`📜 Added ${addedCount} text items to panel (touch: ${isTouch})`);
     
     // Calculate panel dimensions
     const panelWidth = Math.max(minWidth, Math.min(maxWidth, maxTextWidth + startX));

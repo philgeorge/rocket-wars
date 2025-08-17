@@ -137,6 +137,12 @@ function startSinglePlayerChunkSelection(scene, player, chunks, availableChunkIn
     // Input listeners we must remove on cleanup
     let pointerMoveHandler = null;
     let pointerDownHandler = null;
+    // Hold-to-repeat timers for keyboard navigation
+    let leftHoldTimer = null;
+    let rightHoldTimer = null;
+    // Set pointer cursor for selection and remember the previous cursor
+    const prevCursor = scene.game?.canvas?.style?.cursor || '';
+    if (scene.input?.setDefaultCursor) scene.input.setDefaultCursor('pointer');
 
     const resizeHandler = () => {
         if (currentPanel && isSelectionActive) {
@@ -212,8 +218,61 @@ function startSinglePlayerChunkSelection(scene, player, chunks, availableChunkIn
         const dKey = kb.addKey(Phaser.Input.Keyboard.KeyCodes.D);
         const stepLeft = () => { if (isSelectionActive) stepSelection(-1); };
         const stepRight = () => { if (isSelectionActive) stepSelection(1); };
-        leftKey.on('down', stepLeft); rightKey.on('down', stepRight);
-        aKey.on('down', stepLeft); dKey.on('down', stepRight);
+        // Helpers to check if any of the keys for a direction are currently held
+        const isLeftDown = () => leftKey.isDown || aKey.isDown;
+        const isRightDown = () => rightKey.isDown || dKey.isDown;
+        // Start/stop repeat timers
+        const startLeftHold = () => {
+            if (leftHoldTimer) return;
+            // Initial delay before fast repeat
+            leftHoldTimer = scene.time.addEvent({
+                delay: 250,
+                callback: () => {
+                    if (!isSelectionActive || !isLeftDown()) { stopLeftHold(); return; }
+                    // Start fast repeat
+                    stopLeftHold();
+                    leftHoldTimer = scene.time.addEvent({
+                        delay: 120,
+                        loop: true,
+                        callback: () => {
+                            if (!isSelectionActive || !isLeftDown()) { stopLeftHold(); return; }
+                            stepLeft();
+                        }
+                    });
+                }
+            });
+        };
+        const startRightHold = () => {
+            if (rightHoldTimer) return;
+            rightHoldTimer = scene.time.addEvent({
+                delay: 250,
+                callback: () => {
+                    if (!isSelectionActive || !isRightDown()) { stopRightHold(); return; }
+                    stopRightHold();
+                    rightHoldTimer = scene.time.addEvent({
+                        delay: 120,
+                        loop: true,
+                        callback: () => {
+                            if (!isSelectionActive || !isRightDown()) { stopRightHold(); return; }
+                            stepRight();
+                        }
+                    });
+                }
+            });
+        };
+        const stopLeftHold = () => { if (leftHoldTimer) { leftHoldTimer.remove(); leftHoldTimer = null; } };
+        const stopRightHold = () => { if (rightHoldTimer) { rightHoldTimer.remove(); rightHoldTimer = null; } };
+
+        // Single-step on initial key down
+        leftKey.on('down', () => { stepLeft(); startLeftHold(); });
+        aKey.on('down', () => { stepLeft(); startLeftHold(); });
+        rightKey.on('down', () => { stepRight(); startRightHold(); });
+        dKey.on('down', () => { stepRight(); startRightHold(); });
+        // Stop repeat when all keys for that direction are released
+        leftKey.on('up', () => { if (!isLeftDown()) stopLeftHold(); });
+        aKey.on('up', () => { if (!isLeftDown()) stopLeftHold(); });
+        rightKey.on('up', () => { if (!isRightDown()) stopRightHold(); });
+        dKey.on('up', () => { if (!isRightDown()) stopRightHold(); });
         const enterKey = kb.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
         enterKey.on('down', () => { if (isSelectionActive) confirm(); });
         keyboardHandlers.push(leftKey, rightKey, aKey, dKey, enterKey);
@@ -271,12 +330,18 @@ function startSinglePlayerChunkSelection(scene, player, chunks, availableChunkIn
     function cleanup() {
         clearHighlight();
         clearPreview();
+        if (leftHoldTimer) { leftHoldTimer.remove(); leftHoldTimer = null; }
+        if (rightHoldTimer) { rightHoldTimer.remove(); rightHoldTimer = null; }
         keyboardHandlers.forEach(k => k?.destroy?.());
         if (pointerMoveHandler) scene.input.off('pointermove', pointerMoveHandler);
         if (pointerDownHandler) scene.input.off('pointerdown', pointerDownHandler);
         window.removeEventListener('resize', resizeHandler);
         if (currentPanel) { hideBaseSelectionPanel(currentPanel); currentPanel = null; }
         scene.activeBaseSelectionCleanup = null;
+        // Restore previous cursor
+        if (scene && scene.game && scene.game.canvas) {
+            scene.game.canvas.style.cursor = prevCursor || 'default';
+        }
     }
 }
 

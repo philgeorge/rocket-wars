@@ -23,28 +23,23 @@ export function createAimingInstructionsPanel(scene) {
             }
         },
         {
-            text: 'Click and drag,',
+            text: 'Click, drag, then release to fire.',
             style: {
                 fontSize: '1rem',
                 color: '#cccccc'
             }
         },
         {
-            text: 'then release to fire.',
+            text: 'Keyboard: Enter then ↑,↓,←,→ keys,',
+            touchText: '',
             style: {
                 fontSize: '1rem',
                 color: '#cccccc'
             }
         },
         {
-            text: 'Keyboard: Enter and arrow keys,',
-            style: {
-                fontSize: '1rem',
-                color: '#cccccc'
-            }
-        },
-        {
-            text: 'then Enter again to fire!',
+            text: 'then Enter again to fire.',
+            touchText: '',
             style: {
                 fontSize: '1rem',
                 color: '#cccccc'
@@ -61,21 +56,23 @@ export function createAimingInstructionsPanel(scene) {
             text: ''
         },
         {
-            text: 'Click "T" button to teleport',
+            text: 'Click "T" button or press "T" key',
+            touchText: 'Tap "T" button',
             style: {
                 fontSize: '0.9rem',
                 color: '#00ff00'
             }
         },
         {
-            text: '(and again to cancel).',
+            text: 'to teleport (instead of firing).',
             style: {
                 fontSize: '0.9rem',
                 color: '#00ff00'
             }
         },
         {
-            text: 'Or press "T" key (again to cancel).',
+            text: 'Click or press key again to cancel.',
+            touchText: 'Tap again to cancel.',
             style: {
                 fontSize: '0.9rem',
                 color: '#00ff00'
@@ -85,15 +82,8 @@ export function createAimingInstructionsPanel(scene) {
             text: ''
         },
         {
-            text: 'Click to continue.',
-            style: {
-                fontSize: '0.9rem',
-                color: '#888888',
-                fontStyle: 'italic'
-            }
-        },
-        {
-            text: 'Or press any key.',
+            text: 'Click or press any key to continue.',
+            touchText: 'Tap to continue.',
             style: {
                 fontSize: '0.9rem',
                 color: '#888888',

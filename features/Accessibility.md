@@ -5,9 +5,9 @@ File moved to `../docs/features/Accessibility.md`.
 ## Base Selection using keyboard ✅
 
 - Currently the base selection step of game setup can only be achieved by mouse click (or screen taps). The instructions tell the user to "Click a {colour} circle to position your base".
-- All available bases should still be shown by coloured circles and the current landscape scrolling and base clicking behaviour should be retained. 
+- All available bases should still be shown by coloured circles and the current landscape scrolling and base clicking behaviour should be retained. (since removed)
 - Whilst the game is in "base selection" state, capture the Tab and Enter keys.
-- Pressing Tab key should cycle through selection from the available flat bases.
+- Pressing Tab key should cycle through selection from the available flat bases. (since removed)
 - Show each slected base by moving the camera to it.
 - Show the player's turret placed in the selected base.
 - Pressing Enter key confirms that the selected base is the user's choice. (This is the same as current behaviour of clicking on a circle.)

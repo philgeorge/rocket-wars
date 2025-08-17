@@ -30,15 +30,17 @@ export function createBaseSelectionPanel(scene, currentPlayer) {
             }
         },
         {
-            text: `Move mouse to place your turret`,
+            text: `Scroll then click, or`,
+            touchText: `Scroll then tap`,
             style: { fontSize: '1rem', color: playerColorCSS }
         },
         {
-            text: `then click/tap to position your base.`,
+            text: `use ←,→,A,D and Enter keys`,
+            touchText: '',
             style: { fontSize: '1rem', color: playerColorCSS }
         },
         {
-            text: `Or use Left/Right (A/D) and Enter.`,
+            text: `to position your base.`,
             style: { fontSize: '1rem', color: playerColorCSS }
         }
     ];
