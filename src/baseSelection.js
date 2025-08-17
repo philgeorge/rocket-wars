@@ -137,12 +137,12 @@ function startSinglePlayerChunkSelection(scene, player, chunks, availableChunkIn
     // Input listeners we must remove on cleanup
     let pointerMoveHandler = null;
     let pointerDownHandler = null;
+    let pointerUpHandler = null;
     // Hold-to-repeat timers for keyboard navigation
     let leftHoldTimer = null;
     let rightHoldTimer = null;
-    // Set pointer cursor for selection and remember the previous cursor
+    // Remember the previous cursor; we'll dynamically set during hover
     const prevCursor = scene.game?.canvas?.style?.cursor || '';
-    if (scene.input?.setDefaultCursor) scene.input.setDefaultCursor('pointer');
 
     const resizeHandler = () => {
         if (currentPanel && isSelectionActive) {
@@ -192,21 +192,67 @@ function startSinglePlayerChunkSelection(scene, player, chunks, availableChunkIn
             clearPreview();
             createPreview(idx);
         }
+        // Track down position to detect drags vs taps and compute hover cursor/preview
+        let downX = 0, downY = 0;
+        const DRAG_THRESHOLD = 10; // pixels
+        const ACCEPT_RADIUS = 35; // around turret preview position
+
         pointerMoveHandler = (pointer) => {
             if (!isSelectionActive) return;
             // Convert to world coords
             const worldX = pointer.worldX ?? (pointer.x + cam.scrollX);
+            const worldY = pointer.worldY ?? (pointer.y + cam.scrollY);
             const idx = findChunkIndexAtX(worldX);
             updateHighlightToIndex(idx);
+            // Update cursor only when actually over a selectable spot near turret position
+            if (scene.input?.setDefaultCursor) {
+                if (idx !== -1 && availableSet.has(idx)) {
+                    const pos = getTurretPositionForChunk(chunks[idx]);
+                    const dist = Math.hypot(worldX - pos.x, worldY - pos.y);
+                    if (dist <= ACCEPT_RADIUS) {
+                        scene.input.setDefaultCursor('pointer');
+                    } else {
+                        scene.input.setDefaultCursor('default');
+                    }
+                } else {
+                    scene.input.setDefaultCursor('default');
+                }
+            }
         };
         scene.input.on('pointermove', pointerMoveHandler);
-        pointerDownHandler = (_pointer) => {
+
+        pointerDownHandler = (pointer) => {
             if (!isSelectionActive) return;
-            if (highlightedChunkIndex === -1) return;
-            // Click/tap confirms the currently highlighted chunk
-            finalize(highlightedChunkIndex);
+            // record world coordinates to detect drag distances
+            downX = pointer.worldX ?? (pointer.x + cam.scrollX);
+            downY = pointer.worldY ?? (pointer.y + cam.scrollY);
+        };
+        pointerUpHandler = (pointer) => {
+            if (!isSelectionActive) return;
+            const upX = pointer.worldX ?? (pointer.x + cam.scrollX);
+            const upY = pointer.worldY ?? (pointer.y + cam.scrollY);
+            // If pointer moved too much, treat as drag/scroll: do not place
+            if (Math.hypot(upX - downX, upY - downY) > DRAG_THRESHOLD) {
+                trace('🖱️ Drag detected during base selection; not placing turret');
+                return;
+            }
+            // Determine chunk at tap X and validate availability
+            const idx = findChunkIndexAtX(upX);
+            if (idx === -1 || !availableSet.has(idx)) {
+                trace(`🚫 Tap at x=${upX.toFixed(1)} did not hit an available chunk`);
+                return;
+            }
+            const pos = getTurretPositionForChunk(chunks[idx]);
+            // Require tap near where turret would be drawn
+            const dist = Math.hypot(upX - pos.x, upY - pos.y);
+            if (dist <= ACCEPT_RADIUS) {
+                finalize(idx);
+            } else {
+                trace(`🚫 Tap (${upX.toFixed(1)},${upY.toFixed(1)}) too far from turret position (${pos.x.toFixed(1)},${pos.y.toFixed(1)}) (d=${dist.toFixed(1)})`);
+            }
         };
         scene.input.on('pointerdown', pointerDownHandler);
+        scene.input.on('pointerup', pointerUpHandler);
     }
 
     function setupKeyboardHandlers() {
@@ -312,7 +358,7 @@ function startSinglePlayerChunkSelection(scene, player, chunks, availableChunkIn
     function createPreview(idx) {
         const pos = getTurretPositionForChunk(chunks[idx]);
         previewTurret = createGunTurret(scene, pos.x, pos.y, player.team);
-        previewTurret.setAlpha(0.7);
+        previewTurret.setAlpha(0.5);
         previewTurret.disableInteractive();
         previewTurret.setDepth(100);
     }
@@ -335,6 +381,7 @@ function startSinglePlayerChunkSelection(scene, player, chunks, availableChunkIn
         keyboardHandlers.forEach(k => k?.destroy?.());
         if (pointerMoveHandler) scene.input.off('pointermove', pointerMoveHandler);
         if (pointerDownHandler) scene.input.off('pointerdown', pointerDownHandler);
+        if (pointerUpHandler) scene.input.off('pointerup', pointerUpHandler);
         window.removeEventListener('resize', resizeHandler);
         if (currentPanel) { hideBaseSelectionPanel(currentPanel); currentPanel = null; }
         scene.activeBaseSelectionCleanup = null;
