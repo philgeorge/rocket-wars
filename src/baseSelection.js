@@ -141,6 +141,16 @@ function startSinglePlayerChunkSelection(scene, player, chunks, availableChunkIn
     // Hold-to-repeat timers for keyboard navigation
     let leftHoldTimer = null;
     let rightHoldTimer = null;
+    // Track held direction keys (to avoid center auto-preview while navigating by keys)
+    let leftHeld = false;
+    let rightHeld = false;
+    // Watcher for camera center movement (e.g., trackpad panning)
+    let centerWatchTimer = null;
+    // Block center preview while keyboard-driven camera pan is in progress
+    let keyboardPanActive = false;
+    // Short-lived suppression window to prevent center-preview right after keyboard nav
+    let suppressCenterUntil = 0;
+    const bumpSuppress = (ms = 250) => { suppressCenterUntil = Math.max(suppressCenterUntil, Date.now() + ms); };
     // Remember the previous cursor; we'll dynamically set during hover
     const prevCursor = scene.game?.canvas?.style?.cursor || '';
 
@@ -194,20 +204,48 @@ function startSinglePlayerChunkSelection(scene, player, chunks, availableChunkIn
         }
         // Track down position to detect drags vs taps and compute hover cursor/preview
         let downX = 0, downY = 0;
+        let dragging = false;
         const DRAG_THRESHOLD = 10; // pixels
         const ACCEPT_RADIUS = 35; // around turret preview position
 
         pointerMoveHandler = (pointer) => {
             if (!isSelectionActive) return;
+            // While navigating with keyboard or during keyboard pan, don't let pointer override selection
+            if (leftHeld || rightHeld || keyboardPanActive) return;
             // Convert to world coords
             const worldX = pointer.worldX ?? (pointer.x + cam.scrollX);
             const worldY = pointer.worldY ?? (pointer.y + cam.scrollY);
-            const idx = findChunkIndexAtX(worldX);
-            updateHighlightToIndex(idx);
+            // Determine if this is a drag
+            if (downX !== 0 || downY !== 0) {
+                const moved = Math.hypot((pointer.worldX ?? (pointer.x + cam.scrollX)) - downX, (pointer.worldY ?? (pointer.y + cam.scrollY)) - downY);
+                dragging = moved > DRAG_THRESHOLD;
+            }
+            if (dragging) {
+                // While dragging (scrolling), preview the center chunk
+                const centerX = cam.midPoint.x;
+                const cIdx = findChunkIndexAtX(centerX);
+                if (cIdx !== -1 && availableSet.has(cIdx) && Date.now() >= suppressCenterUntil) {
+                    if (highlightedChunkIndex !== cIdx) {
+                        trace(`👁️ Drag preview -> center chunk ${cIdx}`);
+                        highlightedChunkIndex = cIdx;
+                        clearPreview();
+                        createPreview(cIdx);
+                    }
+                } else {
+                    // No selectable center: clear
+                    if (highlightedChunkIndex !== -1) { trace('👁️ Drag preview -> no selectable center, clearing'); }
+                    highlightedChunkIndex = -1;
+                    clearPreview();
+                }
+            } else {
+                const idx = findChunkIndexAtX(worldX);
+                updateHighlightToIndex(idx);
+            }
             // Update cursor only when actually over a selectable spot near turret position
             if (scene.input?.setDefaultCursor) {
-                if (idx !== -1 && availableSet.has(idx)) {
-                    const pos = getTurretPositionForChunk(chunks[idx]);
+                const idxForCursor = findChunkIndexAtX(worldX);
+                if (idxForCursor !== -1 && availableSet.has(idxForCursor)) {
+                    const pos = getTurretPositionForChunk(chunks[idxForCursor]);
                     const dist = Math.hypot(worldX - pos.x, worldY - pos.y);
                     if (dist <= ACCEPT_RADIUS) {
                         scene.input.setDefaultCursor('pointer');
@@ -223,17 +261,21 @@ function startSinglePlayerChunkSelection(scene, player, chunks, availableChunkIn
 
         pointerDownHandler = (pointer) => {
             if (!isSelectionActive) return;
+            bumpSuppress(150);
             // record world coordinates to detect drag distances
             downX = pointer.worldX ?? (pointer.x + cam.scrollX);
             downY = pointer.worldY ?? (pointer.y + cam.scrollY);
+            dragging = false;
         };
         pointerUpHandler = (pointer) => {
             if (!isSelectionActive) return;
+            bumpSuppress(150);
             const upX = pointer.worldX ?? (pointer.x + cam.scrollX);
             const upY = pointer.worldY ?? (pointer.y + cam.scrollY);
             // If pointer moved too much, treat as drag/scroll: do not place
             if (Math.hypot(upX - downX, upY - downY) > DRAG_THRESHOLD) {
                 trace('🖱️ Drag detected during base selection; not placing turret');
+                dragging = false;
                 return;
             }
             // Determine chunk at tap X and validate availability
@@ -253,6 +295,33 @@ function startSinglePlayerChunkSelection(scene, player, chunks, availableChunkIn
         };
         scene.input.on('pointerdown', pointerDownHandler);
         scene.input.on('pointerup', pointerUpHandler);
+
+        // Also watch camera center changes (trackpad panning) to refresh preview
+        let lastCenterX = cam.midPoint.x;
+        centerWatchTimer = scene.time.addEvent({
+            delay: 100,
+            loop: true,
+            callback: () => {
+                if (!isSelectionActive) return;
+                const cx = cam.midPoint.x;
+                if (Math.abs(cx - lastCenterX) > 1 && !leftHeld && !rightHeld && !keyboardPanActive && Date.now() >= suppressCenterUntil) {
+                    const idx = findChunkIndexAtX(cx);
+                    if (idx !== -1 && availableSet.has(idx)) {
+                        if (highlightedChunkIndex !== idx) {
+                            trace(`👁️ Center preview -> chunk ${idx}`);
+                            highlightedChunkIndex = idx;
+                            clearPreview();
+                            createPreview(idx);
+                        }
+                    } else {
+                        if (highlightedChunkIndex !== -1) { trace('👁️ Center preview -> no selectable center, clearing'); }
+                        highlightedChunkIndex = -1;
+                        clearPreview();
+                    }
+                    lastCenterX = cx;
+                }
+            }
+        });
     }
 
     function setupKeyboardHandlers() {
@@ -310,15 +379,15 @@ function startSinglePlayerChunkSelection(scene, player, chunks, availableChunkIn
         const stopRightHold = () => { if (rightHoldTimer) { rightHoldTimer.remove(); rightHoldTimer = null; } };
 
         // Single-step on initial key down
-        leftKey.on('down', () => { stepLeft(); startLeftHold(); });
-        aKey.on('down', () => { stepLeft(); startLeftHold(); });
-        rightKey.on('down', () => { stepRight(); startRightHold(); });
-        dKey.on('down', () => { stepRight(); startRightHold(); });
+        leftKey.on('down', () => { leftHeld = true; bumpSuppress(250); stepLeft(); startLeftHold(); });
+        aKey.on('down', () => { leftHeld = true; bumpSuppress(250); stepLeft(); startLeftHold(); });
+        rightKey.on('down', () => { rightHeld = true; bumpSuppress(250); stepRight(); startRightHold(); });
+        dKey.on('down', () => { rightHeld = true; bumpSuppress(250); stepRight(); startRightHold(); });
         // Stop repeat when all keys for that direction are released
-        leftKey.on('up', () => { if (!isLeftDown()) stopLeftHold(); });
-        aKey.on('up', () => { if (!isLeftDown()) stopLeftHold(); });
-        rightKey.on('up', () => { if (!isRightDown()) stopRightHold(); });
-        dKey.on('up', () => { if (!isRightDown()) stopRightHold(); });
+        leftKey.on('up', () => { leftHeld = false; if (!isLeftDown()) stopLeftHold(); });
+        aKey.on('up', () => { leftHeld = false; if (!isLeftDown()) stopLeftHold(); });
+        rightKey.on('up', () => { rightHeld = false; if (!isRightDown()) stopRightHold(); });
+        dKey.on('up', () => { rightHeld = false; if (!isRightDown()) stopRightHold(); });
         const enterKey = kb.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
         enterKey.on('down', () => { if (isSelectionActive) confirm(); });
         keyboardHandlers.push(leftKey, rightKey, aKey, dKey, enterKey);
@@ -343,7 +412,22 @@ function startSinglePlayerChunkSelection(scene, player, chunks, availableChunkIn
             highlightedChunkIndex = availableChunkIndices[nextPos];
         }
         const pos = getTurretPositionForChunk(chunks[highlightedChunkIndex]);
-        scene.cameras.main.pan(pos.x, pos.y, 500, 'Power2');
+        const cam = scene.cameras.main;
+        keyboardPanActive = true;
+        // Suppress center-preview for the duration of the pan (and a bit after)
+        bumpSuppress(750);
+        trace(`⌨️ Keyboard pan to chunk ${highlightedChunkIndex} at x=${pos.x.toFixed(1)}`);
+        cam.pan(pos.x, pos.y, 500, 'Power2');
+        if (cam && cam.once) {
+            cam.once('camerapancomplete', () => {
+                keyboardPanActive = false;
+                // Small extra window after completion in case of late center delta
+                bumpSuppress(150);
+                trace('⌨️ Keyboard pan complete');
+            });
+        }
+        // Safety clear in case the event isn't fired
+        scene.time.delayedCall(520, () => { keyboardPanActive = false; bumpSuppress(150); });
         clearPreview();
         createPreview(highlightedChunkIndex);
     }
@@ -360,7 +444,8 @@ function startSinglePlayerChunkSelection(scene, player, chunks, availableChunkIn
         previewTurret = createGunTurret(scene, pos.x, pos.y, player.team);
         previewTurret.setAlpha(0.5);
         previewTurret.disableInteractive();
-        previewTurret.setDepth(100);
+        previewTurret.setDepth(900);
+        trace(`👁️ Showing preview turret at chunk ${idx} (${pos.x.toFixed(1)}, ${pos.y.toFixed(1)})`);
     }
 
     function clearPreview() { if (previewTurret) { previewTurret.destroy(); previewTurret = null; } }
@@ -378,6 +463,7 @@ function startSinglePlayerChunkSelection(scene, player, chunks, availableChunkIn
         clearPreview();
         if (leftHoldTimer) { leftHoldTimer.remove(); leftHoldTimer = null; }
         if (rightHoldTimer) { rightHoldTimer.remove(); rightHoldTimer = null; }
+        if (centerWatchTimer) { centerWatchTimer.remove(); centerWatchTimer = null; }
         keyboardHandlers.forEach(k => k?.destroy?.());
         if (pointerMoveHandler) scene.input.off('pointermove', pointerMoveHandler);
         if (pointerDownHandler) scene.input.off('pointerdown', pointerDownHandler);
